@@ -5,6 +5,7 @@ function VehicleList({ onViewDetails }) {
   const [vehicles, setVehicles] = useState([])
   const [watchLevels, setWatchLevels] = useState([])
   const [agencies, setAgencies] = useState([])
+  const [requesters, setRequesters] = useState([])
 
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
@@ -208,6 +209,7 @@ function VehicleList({ onViewDetails }) {
       vehicleResult,
       watchResult,
       agencyResult,
+      requesterResult,
     ] = await Promise.all([
       supabase
         .from('vehicles')
@@ -225,6 +227,11 @@ function VehicleList({ onViewDetails }) {
         .select('*')
         .eq('active', true)
         .order('name'),
+
+      supabase
+        .from('requesters')
+        .select('id, name, rank, phone')
+        .order('name'),  
     ])
 
     if (vehicleResult.error) {
@@ -238,6 +245,10 @@ function VehicleList({ onViewDetails }) {
 
     if (agencyResult.error) {
       console.error(agencyResult.error)
+    }
+
+    if (requesterResult.error) {
+      console.error(requesterResult.error)
     }
 
     const vehicleRows =
@@ -257,6 +268,10 @@ function VehicleList({ onViewDetails }) {
       agencyResult.data || []
     )
 
+    setRequesters(
+      requesterResult.data || []
+    )
+
     setLoading(false)
   }
 
@@ -270,6 +285,24 @@ function VehicleList({ onViewDetails }) {
     return agencies.find(
       (item) => String(item.id) === String(id)
     )
+  }
+
+  const getRequester = (id) => {
+    return requesters.find(
+      (item) => String(item.id) === String(id)
+    )
+  }
+
+  const formatPhone = (phone) => {
+    if (!phone) return '-'
+
+    const digits = String(phone).replace(/\D/g, '')
+
+    if (digits.length === 9 || digits.length === 10) {
+      return `${digits.slice(0, -7)}-${digits.slice(-7)}`
+    }
+
+    return phone
   }
 
   const filteredVehicles = useMemo(() => {
@@ -773,9 +806,9 @@ function VehicleList({ onViewDetails }) {
                   <th>ทะเบียน</th>
                   <th>ข้อมูลรถ</th>
                   <th>ระดับเฝ้าระวัง</th>
-                  <th>หน่วยงาน</th>
+                  <th>ที่มาข้อมูล</th>
                   <th>สถานะ</th>
-                  <th></th>
+                  <th>รายละเอียด</th>
                 </tr>
               </thead>
 
@@ -791,6 +824,11 @@ function VehicleList({ onViewDetails }) {
                     getAgency(
                       vehicle.agency_id
                     )
+
+                  const requester = 
+                    getRequester(
+                      vehicle.requested_by_id
+                    )  
 
                   return (
                     <tr key={vehicle.id}>
@@ -855,17 +893,31 @@ function VehicleList({ onViewDetails }) {
 
                       <td className="badge-table-cell">
                         <span
-                            className={`watch-badge ${getWatchLevelClass(
+                          className={`watch-badge ${getWatchLevelClass(
                             watch?.name
-                            )}`}
+                          )}`}
                         >
-                            {watch?.name || '-'}
+                          {watch?.name || '-'}
                         </span>
-                        </td>
+                      </td>
 
                       <td>
-                        {agency?.name || '-'}
+                        <div className="requester-cell">
+                          <strong>
+                            {vehicle.requested_by || '-'}
+                          </strong>
+
+                          <span>
+                            {formatPhone(requester?.phone)}
+                          </span>
+
+                          <small>
+                            {agency?.name || '-'}
+                          </small>
+                        </div>
                       </td>
+
+                      
 
                       <td className="badge-table-cell">
                             {vehicle.case_status === 'closed' ? (
@@ -912,6 +964,11 @@ function VehicleList({ onViewDetails }) {
                 getAgency(
                   vehicle.agency_id
                 )
+
+              const requester =
+                getRequester(
+                  vehicle.requested_by_id
+                )  
 
               return (
                 <div
@@ -981,11 +1038,20 @@ function VehicleList({ onViewDetails }) {
                       </strong>
                     </div>
 
-                    <div>
-                      <span>หน่วยงาน</span>
+                    <div className="mobile-requester-source">
+                      <span>ที่มาข้อมูล</span>
+
                       <strong>
-                        {agency?.name || '-'}
+                        {vehicle.requested_by || '-'}
                       </strong>
+
+                      <b>
+                        {formatPhone(requester?.phone)}
+                      </b>
+
+                      <small>
+                        {agency?.name || '-'}
+                      </small>
                     </div>
 
                     <div>

@@ -16,6 +16,18 @@ function Settings({ profile }) {
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('success')
 
+  const formatPhone = (phone) => {
+    if (!phone) return ''
+
+    const digits = String(phone).replace(/\D/g, '')
+
+    if (digits.length === 9 || digits.length === 10) {
+      return `${digits.slice(0, -7)}-${digits.slice(-7)}`
+    }
+
+    return phone
+  }
+
   // =========================
   // AGENCY FORM
   // =========================
@@ -33,8 +45,14 @@ function Settings({ profile }) {
     id: null,
     name: '',
     rank: '',
-    agency_id: '',
+    phone: '',
+    agency_ids: [],
   })
+
+  const [requesterAgencies, setRequesterAgencies] =
+    useState([])
+
+  const [openAgencyIds, setOpenAgencyIds] = useState([])
 
   useEffect(() => {
     loadData()
@@ -53,18 +71,27 @@ function Settings({ profile }) {
     setLoading(true)
     setMessage('')
 
-    const [agencyResult, requesterResult] =
-      await Promise.all([
-        supabase
-          .from('agencies')
-          .select('*')
-          .order('name'),
+    const [
+      agencyResult,
+      requesterResult,
+      requesterAgencyResult,
+    ] = await Promise.all([
 
-        supabase
-          .from('requesters')
-          .select('*')
-          .order('name'),
-      ])
+      supabase
+        .from('agencies')
+        .select('*')
+        .order('name'),
+
+      supabase
+        .from('requesters')
+        .select('*')
+        .order('name'),
+
+      supabase
+        .from('requester_agencies')
+        .select('requester_id, agency_id'),
+
+    ])
 
     if (agencyResult.error) {
       console.error(agencyResult.error)
@@ -82,8 +109,23 @@ function Settings({ profile }) {
       )
     }
 
+    if (requesterAgencyResult.error) {
+      console.error(
+        requesterAgencyResult.error
+      )
+
+      showMessage(
+        'error',
+        `โหลดความสัมพันธ์หน่วยงานไม่สำเร็จ: ${requesterAgencyResult.error.message}`
+      )
+    }
+
     setAgencies(agencyResult.data || [])
     setRequesters(requesterResult.data || [])
+
+    setRequesterAgencies(
+      requesterAgencyResult.data || []
+    )
 
     setLoading(false)
   }
@@ -261,24 +303,60 @@ function Settings({ profile }) {
       id: null,
       name: '',
       rank: '',
-      agency_id: '',
+      phone: '',
+      agency_ids: [],
     })
   }
 
   const editRequester = (requester) => {
+    const agencyIds = requesterAgencies
+      .filter(
+        (item) =>
+          String(item.requester_id) ===
+          String(requester.id)
+      )
+      .map((item) =>
+        String(item.agency_id)
+      )
+
     setRequesterForm({
       id: requester.id,
       name: requester.name || '',
       rank: requester.rank || '',
-      agency_id:
-        requester.agency_id?.toString() || '',
+      phone: requester.phone || '',
+      agency_ids: agencyIds,
+    })
+  }
+
+  const toggleRequesterAgency = (agencyId) => {
+    const value = String(agencyId)
+
+    setRequesterForm((prev) => {
+      const exists =
+        prev.agency_ids.includes(value)
+
+      return {
+        ...prev,
+        agency_ids: exists
+          ? prev.agency_ids.filter(
+              (id) => id !== value
+            )
+          : [...prev.agency_ids, value],
+      }
     })
   }
 
   const saveRequester = async (e) => {
     e.preventDefault()
 
-    const name = requesterForm.name.trim()
+    const name =
+      requesterForm.name.trim()
+
+    const phone =
+      requesterForm.phone.trim()
+
+    const agencyIds =
+      requesterForm.agency_ids
 
     if (!name) {
       showMessage(
@@ -288,46 +366,122 @@ function Settings({ profile }) {
       return
     }
 
+    if (agencyIds.length === 0) {
+      showMessage(
+        'error',
+        'กรุณาเลือกอย่างน้อย 1 หน่วยงาน'
+      )
+      return
+    }
+
     setSaving(true)
     setMessage('')
 
-    const requesterData = {
-      name,
-      rank: requesterForm.rank.trim() || null,
+    try {
+      let requesterId =
+        requesterForm.id
 
-      agency_id: requesterForm.agency_id
-        ? Number(requesterForm.agency_id)
-        : null,
-    }
+      const firstAgencyId =
+        agencyIds.length > 0
+          ? Number(agencyIds[0])
+          : null
 
-    let error
+      const requesterData = {
+        name,
+        rank:
+          requesterForm.rank.trim() ||
+          null,
 
-    if (requesterForm.id) {
-      const result = await supabase
-        .from('requesters')
-        .update(requesterData)
-        .eq('id', requesterForm.id)
+        phone:
+          phone || null,
 
-      error = result.error
-    } else {
-      const result = await supabase
-        .from('requesters')
-        .insert({
-          ...requesterData,
-          active: true,
-        })
+        // เก็บไว้ชั่วคราว
+        // เพื่อรองรับโค้ดหน้าเก่า
+        agency_id:
+          firstAgencyId,
+      }
 
-      error = result.error
-    }
+      // =========================
+      // UPDATE REQUESTER
+      // =========================
 
-    if (error) {
-      console.error(error)
+      if (requesterId) {
+        const { error } =
+          await supabase
+            .from('requesters')
+            .update(requesterData)
+            .eq('id', requesterId)
 
-      showMessage(
-        'error',
-        `บันทึกข้อมูลไม่สำเร็จ: ${error.message}`
-      )
-    } else {
+        if (error) {
+          throw error
+        }
+      }
+
+      // =========================
+      // CREATE REQUESTER
+      // =========================
+
+      else {
+        const {
+          data,
+          error,
+        } = await supabase
+          .from('requesters')
+          .insert({
+            ...requesterData,
+            active: true,
+          })
+          .select('id')
+          .single()
+
+        if (error) {
+          throw error
+        }
+
+        requesterId = data.id
+      }
+
+      // =========================
+      // ลบ Agency เก่า
+      // =========================
+
+      const {
+        error: deleteAgencyError,
+      } = await supabase
+        .from('requester_agencies')
+        .delete()
+        .eq(
+          'requester_id',
+          requesterId
+        )
+
+      if (deleteAgencyError) {
+        throw deleteAgencyError
+      }
+
+      // =========================
+      // เพิ่ม Agency ชุดใหม่
+      // =========================
+
+      const agencyRows =
+        agencyIds.map((agencyId) => ({
+          requester_id:
+            requesterId,
+
+          agency_id:
+            Number(agencyId),
+        }))
+
+      const {
+        error: insertAgencyError,
+      } = await supabase
+        .from('requester_agencies')
+        .insert(agencyRows)
+
+      if (insertAgencyError) {
+        throw insertAgencyError
+      }
+
       showMessage(
         'success',
         requesterForm.id
@@ -336,10 +490,18 @@ function Settings({ profile }) {
       )
 
       resetRequesterForm()
-      await loadData()
-    }
 
-    setSaving(false)
+      await loadData()
+    } catch (error) {
+      console.error(error)
+
+      showMessage(
+        'error',
+        `บันทึกข้อมูลไม่สำเร็จ: ${error.message}`
+      )
+    } finally {
+      setSaving(false)
+    }
   }
 
   const toggleRequester = async (requester) => {
@@ -445,6 +607,52 @@ function Settings({ profile }) {
         (agency) =>
           String(agency.id) === String(agencyId)
       )?.name || '-'
+    )
+  }
+
+  const getRequesterAgencyNames = (requesterId) => {
+    return requesterAgencies
+      .filter(
+        (item) =>
+          String(item.requester_id) ===
+          String(requesterId)
+      )
+      .map((item) =>
+        agencies.find(
+          (agency) =>
+            String(agency.id) ===
+            String(item.agency_id)
+        )?.name
+      )
+      .filter(Boolean)
+  }
+
+  const toggleRequesterAgencyGroup = (agencyId) => {
+    const value = String(agencyId)
+
+    setOpenAgencyIds((prev) =>
+      prev.includes(value)
+        ? prev.filter((id) => id !== value)
+        : [...prev, value]
+    )
+  }
+
+
+  const getRequestersByAgency = (agencyId) => {
+    const requesterIds = new Set(
+      requesterAgencies
+        .filter(
+          (item) =>
+            String(item.agency_id) ===
+            String(agencyId)
+        )
+        .map((item) =>
+          String(item.requester_id)
+        )
+    )
+
+    return requesters.filter((requester) =>
+      requesterIds.has(String(requester.id))
     )
   }
 
@@ -699,73 +907,121 @@ function Settings({ profile }) {
 
             <form onSubmit={saveRequester}>
 
-              <div className="modern-field">
-                <label>ชื่อ</label>
+             <div className="requester-basic-grid">
 
-                <input
-                  value={requesterForm.name}
-                  onChange={(e) =>
-                    setRequesterForm((prev) => ({
-                      ...prev,
-                      name: e.target.value,
-                    }))
-                  }
-                  placeholder="ชื่อ - นามสกุล"
-                />
+                <div className="modern-field">
+                  <label>ยศ / ตำแหน่ง</label>
+
+                  <input
+                    value={requesterForm.rank}
+                    onChange={(e) =>
+                      setRequesterForm((prev) => ({
+                        ...prev,
+                        rank: e.target.value,
+                      }))
+                    }
+                    placeholder="เช่น พ.ต.อ."
+                  />
+                </div>
+
+                <div className="modern-field">
+                  <label>ชื่อ - นามสกุล</label>
+
+                  <input
+                    value={requesterForm.name}
+                    onChange={(e) =>
+                      setRequesterForm((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
+                    placeholder="ชื่อ - นามสกุล"
+                  />
+                </div>
+
               </div>
 
-
               <div className="modern-field">
-                <label>ยศ / ตำแหน่ง</label>
+                <label>เบอร์โทรศัพท์</label>
 
                 <input
-                  value={requesterForm.rank}
+                  type="tel"
+                  value={requesterForm.phone}
                   onChange={(e) =>
                     setRequesterForm((prev) => ({
                       ...prev,
-                      rank: e.target.value,
+                      phone: e.target.value,
                     }))
                   }
-                  placeholder="เช่น พ.ต.อ."
+                  placeholder="เช่น 081-234-5678"
                 />
-              </div>
+              </div>  
 
 
               <div className="modern-field">
-                <label>หน่วยงาน</label>
+                <label>
+                  หน่วยงานที่เกี่ยวข้อง
+                </label>
 
-                <select
-                  value={requesterForm.agency_id}
-                  onChange={(e) =>
-                    setRequesterForm((prev) => ({
-                      ...prev,
-                      agency_id: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="">
-                    -- เลือกหน่วยงาน --
-                  </option>
-
+                <div className="requester-agency-options">
                   {agencies
-                    .filter(
-                      (agency) =>
-                        agency.active ||
-                        String(agency.id) ===
-                          String(
-                            requesterForm.agency_id
-                          )
-                    )
-                    .map((agency) => (
-                      <option
-                        key={agency.id}
-                        value={agency.id}
-                      >
-                        {agency.name}
-                      </option>
-                    ))}
-                </select>
+                    .filter((agency) => agency.active)
+                    .map((agency) => {
+                      const checked =
+                        requesterForm.agency_ids.includes(
+                          String(agency.id)
+                        )
+
+                      return (
+                        <label
+                          key={agency.id}
+                          className={`requester-agency-option ${
+                            checked ? 'selected' : ''
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              toggleRequesterAgency(agency.id)
+                            }
+                          />
+
+                          <span className="requester-agency-check">
+                            {checked ? '✓' : ''}
+                          </span>
+
+                          <span className="requester-agency-text">
+                            {agency.name}
+                          </span>
+                        </label>
+                      )
+                    })}
+                </div>     
+                {requesterForm.agency_ids.length > 0 && (
+                  <div className="requester-selected-agencies">
+                    {requesterForm.agency_ids.map((agencyId) => {
+                      const agency = agencies.find(
+                        (item) =>
+                          String(item.id) === String(agencyId)
+                      )
+
+                      if (!agency) return null
+
+                      return (
+                        <span
+                          key={agency.id}
+                          className="requester-selected-chip"
+                        >
+                          {agency.name}
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}    
               </div>
+
+
 
 
               <div className="settings-form-actions">
@@ -802,87 +1058,156 @@ function Settings({ profile }) {
               ผู้ขอเพิ่มเข้าระบบ ({requesters.length})
             </h3>
 
-            <div className="settings-list">
+            <div className="requester-agency-groups">
 
-              {requesters.map((requester) => (
-                <div
-                  className={`settings-row ${
-                    !requester.active
-                      ? 'inactive'
-                      : ''
-                  }`}
-                  key={requester.id}
-                >
+              {agencies.map((agency) => {
+                const members =
+                  getRequestersByAgency(agency.id)
 
-                  <div>
+                if (members.length === 0) {
+                  return null
+                }
 
-                    <strong>
-                      {[
-                        requester.rank,
-                        requester.name,
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                    </strong>
+                const isOpen =
+                  openAgencyIds.includes(
+                    String(agency.id)
+                  )
 
-                    <small>
-                      {getAgencyName(
-                        requester.agency_id
-                      )}
-                    </small>
+                return (
+                  <div
+                    key={agency.id}
+                    className={`requester-agency-group ${
+                      isOpen ? 'open' : ''
+                    }`}
+                  >
 
-                    <span
-                      className={
-                        requester.active
-                          ? 'settings-status active'
-                          : 'settings-status inactive'
+                    <button
+                      type="button"
+                      className="requester-agency-group-header"
+                      onClick={() =>
+                        toggleRequesterAgencyGroup(
+                          agency.id
+                        )
                       }
+                      aria-expanded={isOpen}
                     >
-                      {requester.active
-                        ? 'ใช้งาน'
-                        : 'ปิดใช้งาน'}
-                    </span>
+
+                      <span className="requester-group-title">
+                        {agency.name}
+                      </span>
+
+                      <span className="requester-group-count">
+                        {members.length} คน
+                      </span>
+
+                      <span className="requester-group-arrow">
+                        {isOpen ? '▼' : '▶'}
+                      </span>
+
+                    </button>
+
+
+                    {isOpen && (
+                      <div className="requester-agency-group-content">
+
+                        {members.map((requester) => (
+                          <div
+                            key={requester.id}
+                            className={`requester-group-member ${
+                              !requester.active
+                                ? 'inactive'
+                                : ''
+                            }`}
+                          >
+
+                            <div className="requester-group-member-info">
+
+                              <strong>
+                                {[
+                                  requester.rank,
+                                  requester.name,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' ')}
+                              </strong>
+
+
+                              <div className="requester-group-member-meta">
+
+                                {requester.phone && (
+                                  <span className="requester-phone">
+                                    📞 {formatPhone(requester.phone)}
+                                  </span>
+                                )}
+
+                                <span
+                                  className={`settings-status-pill ${
+                                    requester.active
+                                      ? 'active'
+                                      : 'inactive'
+                                  }`}
+                                >
+                                  {requester.active
+                                    ? 'ใช้งาน'
+                                    : 'ปิดใช้งาน'}
+                                </span>
+
+                              </div>
+
+                            </div>
+
+
+                            <div className="settings-row-actions">
+
+                              {isAdmin && (
+                                <button
+                                  className="settings-edit-button"
+                                  onClick={() =>
+                                    editRequester(requester)
+                                  }
+                                >
+                                  แก้ไข
+                                </button>
+                              )}
+
+                              <button
+                                className={
+                                  requester.active
+                                    ? 'settings-disable-button'
+                                    : 'settings-enable-button'
+                                }
+                                onClick={() =>
+                                  toggleRequester(requester)
+                                }
+                              >
+                                {requester.active
+                                  ? 'ปิดใช้งาน'
+                                  : 'เปิดใช้งาน'}
+                              </button>
+
+                              {isAdmin && (
+                                <button
+                                  className="settings-disable-button"
+                                  onClick={() =>
+                                    deleteRequester(requester)
+                                  }
+                                  disabled={saving}
+                                >
+                                  ลบถาวร
+                                </button>
+                              )}
+
+                            </div>
+
+                          </div>
+                        ))}
+
+                      </div>
+                    )}
 
                   </div>
-
-                <div className="settings-row-actions">
-
-                  {isAdmin && (
-                    <button
-                      className="settings-edit-button"
-                      onClick={() => editRequester(requester)}
-                    >
-                      แก้ไข
-                    </button>
-                  )}
-
-                  <button
-                    className={
-                      requester.active
-                        ? 'settings-disable-button'
-                        : 'settings-enable-button'
-                    }
-                    onClick={() => toggleRequester(requester)}
-                  >
-                    {requester.active
-                      ? 'ปิดใช้งาน'
-                      : 'เปิดใช้งาน'}
-                  </button>
-
-                  {isAdmin && (
-                    <button
-                      className="settings-disable-button"
-                      onClick={() => deleteRequester(requester)}
-                      disabled={saving}
-                    >
-                      ลบถาวร
-                    </button>
-                  )}
-
-</div>  
-
-                </div>
-              ))}
+                )
+              })}
 
             </div>
 

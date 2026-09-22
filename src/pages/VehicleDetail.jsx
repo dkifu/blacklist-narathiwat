@@ -14,6 +14,7 @@ function VehicleDetail({
   const [agency, setAgency] = useState(null)
   const [recordCenter, setRecordCenter] = useState(null)
   const [createdByUser, setCreatedByUser] = useState(null)
+  const [requester, setRequester] = useState(null)
 
   const [sharingLine, setSharingLine] = useState(false)
   const [vehicleImageUrl, setVehicleImageUrl] = useState('')
@@ -97,6 +98,7 @@ function VehicleDetail({
       watchResult,
       agencyResult,
       centerResult,
+      requesterResult,
     ] = await Promise.all([
 
     data.watch_level_id
@@ -122,11 +124,20 @@ function VehicleDetail({
           .eq('id', data.created_center_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+
+    data.requested_by_id
+      ? supabase
+          .from('requesters')
+          .select('id, name, rank, phone')
+          .eq('id', data.requested_by_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),  
   ])
 
   setWatchLevel(watchResult.data || null)
   setAgency(agencyResult.data || null)
   setRecordCenter(centerResult.data || null)
+  setRequester(requesterResult.data || null)
 
   
 
@@ -175,6 +186,18 @@ function VehicleDetail({
       dateStyle: 'medium',
       timeStyle: 'short',
     }).format(new Date(dateString))
+  }
+
+  const formatPhone = (phone) => {
+    if (!phone) return ''
+
+    const digits = String(phone).replace(/\D/g, '')
+
+    if (digits.length === 9 || digits.length === 10) {
+      return `${digits.slice(0, -7)}-${digits.slice(-7)}`
+    }
+
+    return phone
   }
 
   const fullPlate = [
@@ -243,12 +266,15 @@ function VehicleDetail({
 
       
 
-      const imageUrl = vehicle.image_path
-        ? await createVehicleImageUrl(
-            vehicle.image_path,
-            3600
-          )
-        : null
+      let imageUrl = null
+
+        if (vehicle.image_path) {
+          const { data } = supabase.storage
+            .from('vehicle-images')
+            .getPublicUrl(vehicle.image_path)
+
+          imageUrl = data?.publicUrl || null
+      }
 
   const flexMessage = {
     type: 'flex',
@@ -653,8 +679,17 @@ function VehicleDetail({
                 </div>
 
                 <div className="photo-extra-card">
-                    <span>ผู้ขอเพิ่มเข้าระบบ</span>
-                    <strong>{vehicle.requested_by || '-'}</strong>
+                  <span>ผู้ขอเพิ่มเข้าระบบ</span>
+
+                  <strong>
+                    {vehicle.requested_by || '-'}
+                  </strong>
+
+                  {requester?.phone && (
+                    <div className="detail-requester-phone">
+                      📞 {formatPhone(requester.phone)}
+                    </div>
+                  )}
                 </div>
 
             </div>

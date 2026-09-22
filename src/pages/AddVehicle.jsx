@@ -120,6 +120,7 @@ function AddVehicle({
   const [watchLevels, setWatchLevels] = useState([])
   const [agencies, setAgencies] = useState([])
   const [requesters, setRequesters] = useState([])
+  const [requesterAgencies, setRequesterAgencies] = useState([])
 
   const [centers, setCenters] = useState([])
   const [centerMembers, setCenterMembers] = useState([])
@@ -755,6 +756,7 @@ function AddVehicle({
       agencyResult,
       brandResult,
       requesterResult,
+      requesterAgencyResult,
       centerResult,
       memberResult,
     ] = await Promise.all([
@@ -782,6 +784,10 @@ function AddVehicle({
         .select('*')
         .eq('active', true)
         .order('name'),
+
+      supabase
+        .from('requester_agencies')
+        .select('requester_id, agency_id'),  
 
       supabase
         .from('centers')
@@ -818,6 +824,10 @@ function AddVehicle({
       console.error(requesterResult.error)
     }
 
+    if (requesterAgencyResult.error) {
+      console.error(requesterAgencyResult.error)
+    }
+
     if (centerResult.error) {
       console.error(centerResult.error)
     }
@@ -830,6 +840,10 @@ function AddVehicle({
     setAgencies(agencyResult.data || [])
     setVehicleBrands(brandResult.data || [])
     setRequesters(requesterResult.data || [])
+
+    setRequesterAgencies(
+      requesterAgencyResult.data || []
+    )
 
     setCenters(centerResult.data || [])
     setCenterMembers(memberResult.data || [])
@@ -1367,11 +1381,24 @@ function AddVehicle({
       (item) => String(item.id) === String(form.agency_id)
     )?.name || '-'
 
+  const requesterIdsForAgency = new Set(
+    requesterAgencies
+      .filter(
+        (item) =>
+          String(item.agency_id) ===
+          String(form.agency_id)
+      )
+      .map((item) =>
+        String(item.requester_id)
+      )
+  )
+
   const filteredRequesters = requesters.filter(
-      (requester) =>
-        String(requester.agency_id) ===
-        String(form.agency_id)
-    )
+    (requester) =>
+      requesterIdsForAgency.has(
+        String(requester.id)
+      )
+  )
 
     const filteredCenterMembers = centerMembers.filter(
     (member) =>
