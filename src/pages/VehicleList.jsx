@@ -11,6 +11,7 @@ function VehicleList({ onViewDetails }) {
 
   const [imageUrls, setImageUrls] = useState({})
   const [currentPage, setCurrentPage] = useState(1)
+  const [hoverPreview, setHoverPreview] = useState(null)
 
   const signedUrlCacheRef = useRef(new Map())
 
@@ -47,6 +48,55 @@ function VehicleList({ onViewDetails }) {
         default:
         return 'badge-default'
     }
+  }
+
+  const showHoverPreview = (e, vehicle) => {
+    const url = imageUrls[vehicle.id]
+
+    if (!url) return
+
+    const rect =
+      e.currentTarget.getBoundingClientRect()
+
+    const previewWidth = 360
+    const previewHeight = 270
+    const gap = 14
+
+    let left = rect.right + gap
+    let top = rect.top
+
+    // ถ้าด้านขวาไม่พอ ให้เด้งไปด้านซ้าย
+    if (
+      left + previewWidth >
+      window.innerWidth - 12
+    ) {
+      left =
+        rect.left -
+        previewWidth -
+        gap
+    }
+
+    // ป้องกันภาพเลยขอบล่าง
+    if (
+      top + previewHeight >
+      window.innerHeight - 12
+    ) {
+      top =
+        window.innerHeight -
+        previewHeight -
+        12
+    }
+
+    if (top < 12) {
+      top = 12
+    }
+
+    setHoverPreview({
+      url,
+      alt: formatPlate(vehicle),
+      left,
+      top,
+    })
   }
 
   const prepareFirstPageImages = async (vehicleRows) => {
@@ -746,10 +796,13 @@ function VehicleList({ onViewDetails }) {
                     <tr key={vehicle.id}>
 
                       <td>
-                        <button
+                        <div
                           className="vehicle-thumb-button"
-                          onClick={() =>
-                            onViewDetails(vehicle.id)
+                          onMouseEnter={(e) =>
+                            showHoverPreview(e, vehicle)
+                          }
+                          onMouseLeave={() =>
+                            setHoverPreview(null)
                           }
                         >
                           {imageUrls[vehicle.id] ? (
@@ -766,7 +819,7 @@ function VehicleList({ onViewDetails }) {
                               🚗
                             </div>
                           )}
-                        </button>
+                        </div>
                       </td>
 
                       <td>
@@ -1009,6 +1062,21 @@ function VehicleList({ onViewDetails }) {
           </div>
 
         </>
+      )}
+
+       {hoverPreview && (
+        <div
+          className="vehicle-hover-preview"
+          style={{
+            left: hoverPreview.left,
+            top: hoverPreview.top,
+          }}
+        >
+          <img
+            src={hoverPreview.url}
+            alt={hoverPreview.alt}
+          />
+        </div>
       )}
 
     </div>
