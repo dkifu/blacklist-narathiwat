@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 function VehicleList({ onViewDetails }) {
@@ -8,6 +8,14 @@ function VehicleList({ onViewDetails }) {
 
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
+
+  const [imageUrls, setImageUrls] = useState({})
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const signedUrlCacheRef = useRef(new Map())
+
+  const ITEMS_PER_PAGE = 10
+  const SIGNED_URL_TTL = 3600
 
   const [search, setSearch] = useState('')
   const [watchFilter, setWatchFilter] = useState('')
@@ -39,7 +47,104 @@ function VehicleList({ onViewDetails }) {
         default:
         return 'badge-default'
     }
+  }
+
+  const prepareFirstPageImages = async (vehicleRows) => {
+    const firstPageVehicles = vehicleRows
+      .filter((vehicle) => {
+        return (
+          !statusFilter ||
+          vehicle.case_status === statusFilter
+        )
+      })
+      .slice(0, ITEMS_PER_PAGE)
+
+    const vehiclesWithImages =
+      firstPageVehicles
+        .map((vehicle) => ({
+          ...vehicle,
+          preview_path:
+            vehicle.thumbnail_path ||
+            vehicle.image_path,
+        }))
+        .filter(
+          (vehicle) => vehicle.preview_path
+        )
+
+    if (vehiclesWithImages.length === 0) {
+      return
     }
+
+    const paths = vehiclesWithImages.map(
+      (vehicle) => vehicle.preview_path
+    )
+
+    const { data, error } =
+      await supabase.storage
+        .from('vehicle-images')
+        .createSignedUrls(
+          paths,
+          SIGNED_URL_TTL
+        )
+
+    if (error) {
+      console.error(
+        'First page image error:',
+        error
+      )
+
+      return
+    }
+
+    const expiresAt =
+      Date.now() +
+      SIGNED_URL_TTL * 1000
+
+    const firstPageUrls = {}
+
+    const preloadPromises =
+      vehiclesWithImages.map(
+        (vehicle, index) => {
+          const signedUrl =
+            data?.[index]?.signedUrl
+
+          if (!signedUrl) {
+            return Promise.resolve()
+          }
+
+          firstPageUrls[vehicle.id] =
+            signedUrl
+
+          signedUrlCacheRef.current.set(
+            vehicle.preview_path,
+            {
+              url: signedUrl,
+              expiresAt,
+            }
+          )
+
+          return new Promise((resolve) => {
+            const img = new Image()
+
+            img.fetchPriority = 'high'
+            img.decoding = 'async'
+
+            img.onload = resolve
+            img.onerror = resolve
+
+            img.src = signedUrl
+          })
+        }
+      )
+
+    // รอให้ browser ได้ Thumbnail หน้าแรกจริง ๆ
+    await Promise.all(preloadPromises)
+
+    setImageUrls((prev) => ({
+      ...prev,
+      ...firstPageUrls,
+    }))
+  }
 
   useEffect(() => {
     loadData()
@@ -85,9 +190,22 @@ function VehicleList({ onViewDetails }) {
       console.error(agencyResult.error)
     }
 
-    setVehicles(vehicleResult.data || [])
-    setWatchLevels(watchResult.data || [])
-    setAgencies(agencyResult.data || [])
+    const vehicleRows =
+      vehicleResult.data || []
+
+    await prepareFirstPageImages(
+      vehicleRows
+    )
+
+    setVehicles(vehicleRows)
+
+    setWatchLevels(
+      watchResult.data || []
+    )
+
+    setAgencies(
+      agencyResult.data || []
+    )
 
     setLoading(false)
   }
@@ -149,6 +267,280 @@ function VehicleList({ onViewDetails }) {
     search,
     watchFilter,
     statusFilter,
+  ])
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredVehicles.length / ITEMS_PER_PAGE)
+  )
+
+  const paginatedVehicles = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+
+    return filteredVehicles.slice(
+      startIndex,
+      startIndex + ITEMS_PER_PAGE
+    )
+  }, [filteredVehicles, currentPage])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, watchFilter, statusFilter])
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
+
+  const preloadImage = (url) => {
+    if (!url) return
+
+    const img = new Image()
+
+    img.decoding = 'async'
+    img.fetchPriority = 'low'
+    img.src = url
+  }
+
+  const prefetchVehicleImages = async (vehiclesToPrefetch) => {
+    if (!vehiclesToPrefetch.length) return
+
+    const now = Date.now()
+
+    const urlsToPreload = []
+    const vehiclesToSign = []
+
+    vehiclesToPrefetch.forEach((vehicle) => {
+      const imagePath =
+        vehicle.thumbnail_path || vehicle.image_path
+
+      if (!imagePath) return
+
+      const cached =
+        signedUrlCacheRef.current.get(imagePath)
+
+      if (
+        cached &&
+        cached.expiresAt > now + 5 * 60 * 1000
+      ) {
+        urlsToPreload.push(cached.url)
+      } else {
+        vehiclesToSign.push({
+          ...vehicle,
+          preview_path: imagePath,
+        })
+      }
+    })
+
+    // รูปที่มี Signed URL อยู่แล้ว
+    // ให้ browser preload ไฟล์จริงไว้เลย
+    urlsToPreload.forEach(preloadImage)
+
+    if (vehiclesToSign.length === 0) {
+      return
+    }
+
+    const paths = vehiclesToSign.map(
+      (vehicle) => vehicle.preview_path
+    )
+
+    const { data, error } = await supabase.storage
+      .from('vehicle-images')
+      .createSignedUrls(paths, SIGNED_URL_TTL)
+
+    if (error) {
+      console.error(
+        'Prefetch signed URL error:',
+        error
+      )
+      return
+    }
+
+    const expiresAt =
+      Date.now() + SIGNED_URL_TTL * 1000
+
+    vehiclesToSign.forEach((vehicle, index) => {
+      const result = data?.[index]
+
+      if (!result?.signedUrl) return
+
+      signedUrlCacheRef.current.set(
+        vehicle.preview_path,
+        {
+          url: result.signedUrl,
+          expiresAt,
+        }
+      )
+
+      // สำคัญ:
+      // ดาวน์โหลด Thumbnail เข้ browser cache ล่วงหน้า
+      preloadImage(result.signedUrl)
+    })
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    let prefetchTimer = null
+
+    const scheduleNextPagePrefetch = () => {
+      const nextPageStart =
+        currentPage * ITEMS_PER_PAGE
+
+      const nextPageVehicles =
+        filteredVehicles.slice(
+          nextPageStart,
+          nextPageStart + ITEMS_PER_PAGE
+        )
+
+      if (nextPageVehicles.length === 0) {
+        return
+      }
+
+      // รอหน้า current โหลดก่อนนิดเดียว
+      // แล้วแอบโหลดหน้าถัดไปทันที
+      prefetchTimer = window.setTimeout(() => {
+        if (!cancelled) {
+          prefetchVehicleImages(
+            nextPageVehicles
+          )
+        }
+      }, 150)
+    }
+
+    const loadImages = async () => {
+      const now = Date.now()
+
+      const cachedUrls = {}
+      const vehiclesToSign = []
+
+      paginatedVehicles.forEach((vehicle) => {
+        const imagePath =
+          vehicle.thumbnail_path ||
+          vehicle.image_path
+
+        if (!imagePath) {
+          cachedUrls[vehicle.id] = ''
+          return
+        }
+
+        const cached =
+          signedUrlCacheRef.current.get(
+            imagePath
+          )
+
+        if (
+          cached &&
+          cached.expiresAt >
+            now + 5 * 60 * 1000
+        ) {
+          cachedUrls[vehicle.id] =
+            cached.url
+        } else {
+          vehiclesToSign.push({
+            ...vehicle,
+            preview_path: imagePath,
+          })
+        }
+      })
+
+      // รูปที่มี cache ให้แสดงทันที
+      if (
+        !cancelled &&
+        Object.keys(cachedUrls).length > 0
+      ) {
+        setImageUrls((prev) => ({
+          ...prev,
+          ...cachedUrls,
+        }))
+      }
+
+      // ถ้าหน้าปัจจุบันมี cache ครบแล้ว
+      // ก็เริ่ม prefetch หน้าถัดไปเลย
+      if (vehiclesToSign.length === 0) {
+        scheduleNextPagePrefetch()
+        return
+      }
+
+      const paths = vehiclesToSign.map(
+        (vehicle) => vehicle.preview_path
+      )
+
+      const { data, error } =
+        await supabase.storage
+          .from('vehicle-images')
+          .createSignedUrls(
+            paths,
+            SIGNED_URL_TTL
+          )
+
+      if (error) {
+        console.error(
+          'Batch image load error:',
+          error
+        )
+        return
+      }
+
+      if (cancelled) return
+
+      const newUrls = {}
+
+      const expiresAt =
+        Date.now() +
+        SIGNED_URL_TTL * 1000
+
+      vehiclesToSign.forEach(
+        (vehicle, index) => {
+          const result = data?.[index]
+
+          if (result?.signedUrl) {
+            newUrls[vehicle.id] =
+              result.signedUrl
+
+            signedUrlCacheRef.current.set(
+              vehicle.preview_path,
+              {
+                url: result.signedUrl,
+                expiresAt,
+              }
+            )
+          } else {
+            newUrls[vehicle.id] = ''
+
+            console.error(
+              'Signed URL failed:',
+              vehicle.preview_path,
+              result?.error
+            )
+          }
+        }
+      )
+
+      setImageUrls((prev) => ({
+        ...prev,
+        ...newUrls,
+      }))
+
+      // สำคัญ:
+      // หลังหน้า current ได้ URL ครบ
+      // ให้โหลดหน้าถัดไปทันที
+      scheduleNextPagePrefetch()
+    }
+
+    loadImages()
+
+    return () => {
+      cancelled = true
+
+      if (prefetchTimer) {
+        clearTimeout(prefetchTimer)
+      }
+    }
+  }, [
+    paginatedVehicles,
+    currentPage,
+    filteredVehicles,
   ])
 
   const openCount = vehicles.filter(
@@ -327,6 +719,7 @@ function VehicleList({ onViewDetails }) {
 
               <thead>
                 <tr>
+                  <th>ภาพ</th>
                   <th>ทะเบียน</th>
                   <th>ข้อมูลรถ</th>
                   <th>ระดับเฝ้าระวัง</th>
@@ -338,7 +731,7 @@ function VehicleList({ onViewDetails }) {
 
               <tbody>
 
-                {filteredVehicles.map((vehicle) => {
+                {paginatedVehicles.map((vehicle) => {
                   const watch =
                     getWatchLevel(
                       vehicle.watch_level_id
@@ -351,6 +744,30 @@ function VehicleList({ onViewDetails }) {
 
                   return (
                     <tr key={vehicle.id}>
+
+                      <td>
+                        <button
+                          className="vehicle-thumb-button"
+                          onClick={() =>
+                            onViewDetails(vehicle.id)
+                          }
+                        >
+                          {imageUrls[vehicle.id] ? (
+                            <img
+                              className="vehicle-thumbnail"
+                              src={imageUrls[vehicle.id]}
+                              alt={formatPlate(vehicle)}
+                              loading="eager"
+                              decoding="async"
+                              fetchPriority="high"
+                            />
+                          ) : (
+                            <div className="vehicle-thumbnail-empty">
+                              🚗
+                            </div>
+                          )}
+                        </button>
+                      </td>
 
                       <td>
                         <div className="plate-cell">
@@ -432,7 +849,7 @@ function VehicleList({ onViewDetails }) {
 
           <div className="vehicle-mobile-list">
 
-            {filteredVehicles.map((vehicle) => {
+            {paginatedVehicles.map((vehicle) => {
               const watch =
                 getWatchLevel(
                   vehicle.watch_level_id
@@ -448,6 +865,28 @@ function VehicleList({ onViewDetails }) {
                   className="vehicle-mobile-card"
                   key={vehicle.id}
                 >
+
+                  <button
+                    className="mobile-vehicle-image"
+                    onClick={() =>
+                      onViewDetails(vehicle.id)
+                    }
+                  >
+                    {imageUrls[vehicle.id] ? (
+                      <img
+                        src={imageUrls[vehicle.id]}
+                        alt={formatPlate(vehicle)}
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="high"
+                      />
+                    ) : (
+                      <div className="mobile-vehicle-image-empty">
+                        <span>🚗</span>
+                        <small>ไม่มีรูปภาพ</small>
+                      </div>
+                    )}
+                  </button>
 
                   <div className="mobile-card-top">
 
@@ -519,6 +958,56 @@ function VehicleList({ onViewDetails }) {
             })}
 
           </div>
+
+          <div className="vehicle-pagination">
+
+            <div className="pagination-info">
+              แสดง{' '}
+              {filteredVehicles.length === 0
+                ? 0
+                : (currentPage - 1) * ITEMS_PER_PAGE + 1}
+              {' - '}
+              {Math.min(
+                currentPage * ITEMS_PER_PAGE,
+                filteredVehicles.length
+              )}
+              {' จาก '}
+              {filteredVehicles.length}
+              {' รายการ'}
+            </div>
+
+            <div className="pagination-controls">
+
+              <button
+                disabled={currentPage === 1}
+                onClick={() =>
+                  setCurrentPage((page) =>
+                    Math.max(page - 1, 1)
+                  )
+                }
+              >
+                ← ก่อนหน้า
+              </button>
+
+              <span>
+                หน้า {currentPage} / {totalPages}
+              </span>
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() =>
+                  setCurrentPage((page) =>
+                    Math.min(page + 1, totalPages)
+                  )
+                }
+              >
+                ถัดไป →
+              </button>
+
+            </div>
+
+          </div>
+
         </>
       )}
 

@@ -16,6 +16,7 @@ function VehicleDetail({
   const [createdByUser, setCreatedByUser] = useState(null)
 
   const [sharingLine, setSharingLine] = useState(false)
+  const [vehicleImageUrl, setVehicleImageUrl] = useState('')
 
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
@@ -25,15 +26,31 @@ function VehicleDetail({
 
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('success')
-  const getImageUrl = (path) => {
-  if (!path) return ''
+  const createVehicleImageUrl = async (
+    path,
+    expiresIn = 3600
+  ) => {
+    if (!path) return ''
 
-    const { data } = supabase.storage
+    const { data, error } =
+      await supabase.storage
         .from('vehicle-images')
-        .getPublicUrl(path)
+        .createSignedUrl(
+          path,
+          expiresIn
+        )
 
-    return data.publicUrl
-}
+    if (error) {
+      console.error(
+        'สร้าง Signed URL รูปไม่สำเร็จ:',
+        error
+      )
+
+      return ''
+    }
+
+    return data?.signedUrl || ''
+  }
 
   useEffect(() => {
     loadVehicle()
@@ -59,7 +76,21 @@ function VehicleDetail({
 
     setVehicle(data)
 
-    // รถหลักโหลดสำเร็จแล้ว ให้เปิดหน้ารายละเอียดทันที
+    if (data.image_path) {
+      const signedImageUrl =
+        await createVehicleImageUrl(
+          data.image_path,
+          3600
+        )
+
+      setVehicleImageUrl(
+        signedImageUrl
+      )
+    } else {
+      setVehicleImageUrl('')
+    }
+
+    // รถ + รูปพร้อมแล้วค่อยเปิดหน้า
     setLoading(false)
 
     const [
@@ -213,8 +244,11 @@ function VehicleDetail({
       
 
       const imageUrl = vehicle.image_path
-  ? getImageUrl(vehicle.image_path)
-  : null
+        ? await createVehicleImageUrl(
+            vehicle.image_path,
+            3600
+          )
+        : null
 
   const flexMessage = {
     type: 'flex',
@@ -530,27 +564,28 @@ function VehicleDetail({
                 </p>
             </div>
 
-            {vehicle.image_path && (
-                <a
-                href={getImageUrl(vehicle.image_path)}
+            {vehicleImageUrl && (
+              <a
+                href={vehicleImageUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="open-image-button"
-                >
+              >
                 เปิดภาพเต็ม
-                </a>
+              </a>
             )}
+                
 
             </div>
 
             <div className="detail-photo-frame">
 
-            {vehicle.image_path ? (
-
-                <img
-                src={getImageUrl(vehicle.image_path)}
+            {vehicleImageUrl ? (
+              <img
+                src={vehicleImageUrl}
                 alt={`รถ ${fullPlate}`}
-                />
+                decoding="async"
+              />
 
             ) : (
 

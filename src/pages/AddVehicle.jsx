@@ -150,14 +150,23 @@ function AddVehicle({
   return localDate.toISOString().split('T')[0]
 }
 
-  const getImageUrl = (path) => {
+  const getImageUrl = async (path) => {
     if (!path) return ''
 
-    const { data } = supabase.storage
+    const { data, error } = await supabase.storage
       .from('vehicle-images')
-      .getPublicUrl(path)
+      .createSignedUrl(path, 3600)
 
-    return data.publicUrl
+    if (error) {
+      console.error(
+        'ไม่สามารถสร้าง Signed URL ได้:',
+        error
+      )
+
+      return ''
+    }
+
+    return data?.signedUrl || ''
   }
 
   const processImageFile = (file) => {
@@ -203,6 +212,98 @@ function AddVehicle({
       fileName.endsWith('.gif') ||
       fileName.endsWith('.bmp')
     )
+  }
+
+  const createThumbnailBlob = (file) => {
+    return new Promise((resolve, reject) => {
+      if (!file) {
+        reject(new Error('ไม่พบไฟล์รูปภาพ'))
+        return
+      }
+
+      const objectUrl = URL.createObjectURL(file)
+      const image = new Image()
+
+      image.onload = () => {
+        try {
+          const MAX_SIZE = 480
+
+          let width = image.naturalWidth
+          let height = image.naturalHeight
+
+          const scale = Math.min(
+            1,
+            MAX_SIZE / Math.max(width, height)
+          )
+
+          width = Math.max(
+            1,
+            Math.round(width * scale)
+          )
+
+          height = Math.max(
+            1,
+            Math.round(height * scale)
+          )
+
+          const canvas =
+            document.createElement('canvas')
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext('2d')
+
+          if (!ctx) {
+            URL.revokeObjectURL(objectUrl)
+            reject(
+              new Error('ไม่สามารถสร้าง Canvas ได้')
+            )
+            return
+          }
+
+          ctx.drawImage(
+            image,
+            0,
+            0,
+            width,
+            height
+          )
+
+          canvas.toBlob(
+            (blob) => {
+              URL.revokeObjectURL(objectUrl)
+
+              if (!blob) {
+                reject(
+                  new Error(
+                    'ไม่สามารถสร้าง Thumbnail ได้'
+                  )
+                )
+                return
+              }
+
+              resolve(blob)
+            },
+            'image/webp',
+            0.72
+          )
+        } catch (error) {
+          URL.revokeObjectURL(objectUrl)
+          reject(error)
+        }
+      }
+
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl)
+
+        reject(
+          new Error('ไม่สามารถอ่านไฟล์รูปภาพได้')
+        )
+      }
+
+      image.src = objectUrl
+    })
   }
 
   const processImageUrl = async (url) => {
@@ -566,11 +667,16 @@ function AddVehicle({
       data.vehicle_type || ''
     )
 
-    setExistingImagePath(data.image_path || '')
+    setExistingImagePath(
+      data.image_path || ''
+    )
 
     if (data.image_path) {
+      const signedImageUrl =
+        await getImageUrl(data.image_path)
+
       setImagePreview(
-        getImageUrl(data.image_path)
+        signedImageUrl
       )
     } else {
       setImagePreview('')
@@ -1020,28 +1126,90 @@ function AddVehicle({
     // =========================
 
     if (imageFile && savedVehicleId) {
-
       const imagePath =
         `${savedVehicleId}/main`
 
-      const { error: uploadError } =
-        await supabase.storage
+      const thumbnailPath =
+        `${savedVehicleId}/thumbnail.webp`
+
+      let thumbnailBlob
+
+      try {
+        thumbnailBlob =
+          await createThumbnailBlob(imageFile)
+      } catch (thumbnailError) {
+        console.error(
+          'Thumbnail error:',
+          thumbnailError
+        )
+
+        setMessageType('error')
+
+        setMessage(
+          `บันทึกข้อมูลรถแล้ว แต่สร้าง Thumbnail ไม่สำเร็จ: ${thumbnailError.message}`
+        )
+
+        setSaving(false)
+        return
+      }
+
+      // Upload รูปต้นฉบับ + Thumbnail พร้อมกัน
+      const [
+        originalUpload,
+        thumbnailUpload,
+      ] = await Promise.all([
+        supabase.storage
           .from('vehicle-images')
           .upload(
             imagePath,
             imageFile,
             {
               upsert: true,
-              contentType: imageFile.type,
+              contentType:
+                imageFile.type || 'image/jpeg',
+              cacheControl: '3600',
             }
-          )
+          ),
 
-      if (uploadError) {
-        console.error(uploadError)
+        supabase.storage
+          .from('vehicle-images')
+          .upload(
+            thumbnailPath,
+            thumbnailBlob,
+            {
+              upsert: true,
+              contentType: 'image/webp',
+              cacheControl: '3600',
+            }
+          ),
+      ])
+
+      if (originalUpload.error) {
+        console.error(
+          'Original upload error:',
+          originalUpload.error
+        )
 
         setMessageType('error')
+
         setMessage(
-          `บันทึกข้อมูลรถแล้ว แต่ Upload รูปไม่สำเร็จ: ${uploadError.message}`
+          `บันทึกข้อมูลรถแล้ว แต่ Upload รูปต้นฉบับไม่สำเร็จ: ${originalUpload.error.message}`
+        )
+
+        setSaving(false)
+        return
+      }
+
+      if (thumbnailUpload.error) {
+        console.error(
+          'Thumbnail upload error:',
+          thumbnailUpload.error
+        )
+
+        setMessageType('error')
+
+        setMessage(
+          `Upload รูปต้นฉบับสำเร็จ แต่ Upload Thumbnail ไม่สำเร็จ: ${thumbnailUpload.error.message}`
         )
 
         setSaving(false)
@@ -1053,6 +1221,7 @@ function AddVehicle({
           .from('vehicles')
           .update({
             image_path: imagePath,
+            thumbnail_path: thumbnailPath,
           })
           .eq('id', savedVehicleId)
 
@@ -1060,6 +1229,7 @@ function AddVehicle({
         console.error(imageDbError)
 
         setMessageType('error')
+
         setMessage(
           `Upload รูปสำเร็จ แต่บันทึก path รูปไม่สำเร็จ: ${imageDbError.message}`
         )
