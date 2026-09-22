@@ -495,28 +495,64 @@ function VehicleDetail({
       vehicle.plate_number.trim()
     ) {
       setMessageType('error')
-      setMessage('เลขทะเบียนที่พิมพ์ยืนยันไม่ถูกต้อง')
+      setMessage(
+        'เลขทะเบียนที่พิมพ์ยืนยันไม่ถูกต้อง'
+      )
       return
     }
 
     setProcessing(true)
+    setMessage('')
 
-    const { error } = await supabase
-      .from('vehicles')
-      .delete()
-      .eq('id', vehicle.id)
+    try {
+      const imagePaths = [
+        vehicle.image_path,
+        vehicle.thumbnail_path,
+      ].filter(Boolean)
 
-    if (error) {
-      setMessageType('error')
-      setMessage(error.message)
+      const { error: deleteVehicleError } =
+        await supabase
+          .from('vehicles')
+          .delete()
+          .eq('id', vehicle.id)
+
+      if (deleteVehicleError) {
+        throw deleteVehicleError
+      }
+
+      if (imagePaths.length > 0) {
+        const { error: storageError } =
+          await supabase.storage
+            .from('vehicle-images')
+            .remove(imagePaths)
+
+        if (storageError) {
+          console.error(
+            'ลบรูปจาก Storage ไม่สำเร็จ:',
+            storageError
+          )
+        }
+      }
+
+      setShowDeleteModal(false)
+      setDeleteConfirm('')
       setProcessing(false)
-      return
+
+      onDeleted()
+    } catch (error) {
+      console.error(
+        'ลบข้อมูลรถไม่สำเร็จ:',
+        error
+      )
+
+      setMessageType('error')
+      setMessage(
+        error?.message ||
+          'เกิดข้อผิดพลาดในการลบข้อมูล'
+      )
+
+      setProcessing(false)
     }
-
-    setShowDeleteModal(false)
-    setProcessing(false)
-
-    onDeleted()
   }
 
   if (loading) {

@@ -306,6 +306,71 @@ function AddVehicle({
     })
   }
 
+  const compressMainImage = async (file) => {
+    if (!file) return null
+
+    const imageUrl = URL.createObjectURL(file)
+
+    try {
+      const img = new Image()
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve
+        img.onerror = reject
+        img.src = imageUrl
+      })
+
+      const canvas =
+        document.createElement('canvas')
+
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+
+      const ctx = canvas.getContext('2d')
+
+      if (!ctx) {
+        return file
+      }
+
+      ctx.drawImage(
+        img,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      )
+
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob(
+          resolve,
+          'image/webp',
+          0.85
+        )
+      })
+
+      if (!blob) {
+        return file
+      }
+
+      // ถ้าบีบแล้วใหญ่กว่าเดิม
+      // ใช้ไฟล์ต้นฉบับแทน
+      if (blob.size >= file.size) {
+        return file
+      }
+
+      return new File(
+        [blob],
+        'main.webp',
+        {
+          type: 'image/webp',
+          lastModified: Date.now(),
+        }
+      )
+    } finally {
+      URL.revokeObjectURL(imageUrl)
+    }
+  }
+
   const processImageUrl = async (url) => {
     if (!url) return false
 
@@ -1153,6 +1218,21 @@ function AddVehicle({
         return
       }
 
+      let compressedMain = imageFile
+
+      try {
+        compressedMain =
+          await compressMainImage(imageFile)
+      } catch (compressError) {
+        console.error(
+          'Main image compression error:',
+          compressError
+        )
+
+        // ถ้าบีบไม่ได้ ใช้ไฟล์ต้นฉบับแทน
+        compressedMain = imageFile
+      }
+
       // Upload รูปต้นฉบับ + Thumbnail พร้อมกัน
       const [
         originalUpload,
@@ -1162,14 +1242,15 @@ function AddVehicle({
           .from('vehicle-images')
           .upload(
             imagePath,
-            imageFile,
+            compressedMain,
             {
               upsert: true,
               contentType:
-                imageFile.type || 'image/jpeg',
+                compressedMain.type || 'image/jpeg',
               cacheControl: '3600',
             }
-          ),
+          )
+          ,
 
         supabase.storage
           .from('vehicle-images')
