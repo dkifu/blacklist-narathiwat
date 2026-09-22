@@ -1,4 +1,4 @@
-name: Deploy Blacklist to GitHub Pages
+name: Deploy Blacklist to GitHub Pages & use public image URL for LINE sharing
 
 on:
   push:
