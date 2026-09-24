@@ -17,7 +17,12 @@ function VehicleDetail({
   const [requester, setRequester] = useState(null)
 
   const [sharingLine, setSharingLine] = useState(false)
+
   const [vehicleImageUrl, setVehicleImageUrl] = useState('')
+  const [templateImageUrl, setTemplateImageUrl] = useState('')
+
+  const [creatingTemplate, setCreatingTemplate] = useState(false)
+  const [deletingTemplate, setDeletingTemplate] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
@@ -77,22 +82,34 @@ function VehicleDetail({
 
     setVehicle(data)
 
-    if (data.image_path) {
-      const signedImageUrl =
-        await createVehicleImageUrl(
-          data.image_path,
-          3600
-        )
+    const [
+      signedOriginalUrl,
+      signedTemplateUrl,
+    ] = await Promise.all([
+      data.image_path
+        ? createVehicleImageUrl(
+            data.image_path,
+            3600
+          )
+        : Promise.resolve(''),
 
-      setVehicleImageUrl(
-        signedImageUrl
-      )
-    } else {
-      setVehicleImageUrl('')
-    }
+      data.template_image_path
+        ? createVehicleImageUrl(
+            data.template_image_path,
+            3600
+          )
+        : Promise.resolve(''),
+    ])
 
-    // รถ + รูปพร้อมแล้วค่อยเปิดหน้า
-    setLoading(false)
+    setVehicleImageUrl(
+      signedOriginalUrl
+    )
+
+    setTemplateImageUrl(
+      signedTemplateUrl
+    )
+
+    
 
     const [
       watchResult,
@@ -162,9 +179,10 @@ function VehicleDetail({
     setCreatedByUser(creatorData || null)
   } else {
     setCreatedByUser(null)
-  }  
+  }
 
-    
+  // ข้อมูลทุกอย่างโหลดครบแล้วค่อยเปิดหน้า
+  setLoading(false)
   }
 
   const formatDate = (dateString) => {
@@ -238,6 +256,1152 @@ function VehicleDetail({
 
   const watchTheme = getWatchLevelTheme(watchLevel?.name)
 
+  const hasTemplate =
+    Boolean(
+      vehicle?.template_image_path &&
+      templateImageUrl
+    )
+
+  const displayImageUrl =
+    templateImageUrl ||
+    vehicleImageUrl
+
+  const canManageTemplate =
+    ['admin', 'supervisor', 'operator', 'center']
+      .includes(profile?.role)
+
+  const drawRoundedRect = (
+    ctx,
+    x,
+    y,
+    width,
+    height,
+    radius,
+    fillStyle
+  ) => {
+    const r = Math.min(
+      radius,
+      width / 2,
+      height / 2
+    )
+
+    ctx.beginPath()
+
+    ctx.moveTo(x + r, y)
+    ctx.lineTo(x + width - r, y)
+
+    ctx.quadraticCurveTo(
+      x + width,
+      y,
+      x + width,
+      y + r
+    )
+
+    ctx.lineTo(
+      x + width,
+      y + height - r
+    )
+
+    ctx.quadraticCurveTo(
+      x + width,
+      y + height,
+      x + width - r,
+      y + height
+    )
+
+    ctx.lineTo(x + r, y + height)
+
+    ctx.quadraticCurveTo(
+      x,
+      y + height,
+      x,
+      y + height - r
+    )
+
+    ctx.lineTo(x, y + r)
+
+    ctx.quadraticCurveTo(
+      x,
+      y,
+      x + r,
+      y
+    )
+
+    ctx.closePath()
+
+    ctx.fillStyle = fillStyle
+    ctx.fill()
+  }
+
+
+  const drawCoverImage = (
+    ctx,
+    image,
+    x,
+    y,
+    width,
+    height
+  ) => {
+    const imageRatio =
+      image.width / image.height
+
+    const boxRatio =
+      width / height
+
+    let sourceWidth
+    let sourceHeight
+    let sourceX
+    let sourceY
+
+    if (imageRatio > boxRatio) {
+      sourceHeight = image.height
+      sourceWidth =
+        sourceHeight * boxRatio
+
+      sourceX =
+        (image.width - sourceWidth) / 2
+
+      sourceY = 0
+    } else {
+      sourceWidth = image.width
+      sourceHeight =
+        sourceWidth / boxRatio
+
+      sourceX = 0
+
+      sourceY =
+        (image.height - sourceHeight) / 2
+    }
+
+    ctx.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      x,
+      y,
+      width,
+      height
+    )
+  }
+
+
+  const drawWrappedText = (
+    ctx,
+    text,
+    x,
+    y,
+    maxWidth,
+    lineHeight,
+    maxLines = 3
+  ) => {
+    const value = String(text || '-')
+    const chars = [...value]
+
+    const lines = []
+    let line = ''
+
+    for (let i = 0; i < chars.length; i += 1) {
+      const testLine = line + chars[i]
+
+      if (
+        ctx.measureText(testLine).width > maxWidth &&
+        line
+      ) {
+        lines.push(line)
+        line = chars[i]
+      } else {
+        line = testLine
+      }
+    }
+
+    if (line) {
+      lines.push(line)
+    }
+
+    const visibleLines = lines.slice(0, maxLines)
+
+    visibleLines.forEach((item, index) => {
+      ctx.fillText(
+        item,
+        x,
+        y + index * lineHeight
+      )
+    })
+
+    return visibleLines.length
+  }
+
+
+  const buildVehicleTemplateBlob =
+    async () => {
+
+    if (!vehicleImageUrl) {
+      throw new Error(
+        'ไม่พบภาพต้นฉบับของรถ'
+      )
+    }
+
+    if (document.fonts?.ready) {
+      await document.fonts.ready
+    }
+
+    const response =
+      await fetch(vehicleImageUrl)
+
+    if (!response.ok) {
+      throw new Error(
+        'ไม่สามารถโหลดภาพต้นฉบับได้'
+      )
+    }
+
+    const originalBlob =
+      await response.blob()
+
+    const image =
+      await createImageBitmap(
+        originalBlob
+      )
+
+    const canvas =
+      document.createElement('canvas')
+
+    // 20:13
+    canvas.width = 1600
+    canvas.height = 1040
+
+    const ctx =
+      canvas.getContext('2d')
+
+    const themes = {
+    // รถเป้าหมาย = แดง
+    target: {
+      main: '#e5484d',
+      text: '#ffffff',
+    },
+
+    // รถเฝ้าระวัง-ตรวจสอบ = ส้ม
+    watch: {
+      main: '#e89532',
+      text: '#ffffff',
+    },
+
+    // รถเฝ้าติดตาม = เขียว
+    track: {
+      main: '#2fb171',
+      text: '#ffffff',
+    },
+
+    // รถ VIP = น้ำเงิน
+    vip: {
+      main: '#3b82f6',
+      text: '#ffffff',
+    },
+
+    // รถทดสอบ = ม่วง
+    test: {
+      main: '#9b59b6',
+      text: '#ffffff',
+    },
+
+    // ไม่มีข้อมูล
+    default: {
+      main: '#64748b',
+      text: '#ffffff',
+    },
+  }
+
+    const theme =
+      themes[watchTheme] ||
+      themes.default
+
+
+    // =====================
+    // BACKGROUND
+    // =====================
+
+    ctx.fillStyle = '#f5f8fc'
+
+    ctx.fillRect(
+      0,
+      0,
+      1600,
+      1040
+    )
+
+
+    // =====================
+    // HEADER
+    // =====================
+
+    const gradient =
+      ctx.createLinearGradient(
+        30,
+        0,
+        1000,
+        0
+      )
+
+    gradient.addColorStop(
+      0,
+      '#55d7df'
+    )
+
+    gradient.addColorStop(
+      1,
+      '#1453aa'
+    )
+
+    drawRoundedRect(
+      ctx,
+      30,
+      28,
+      1010,
+      135,
+      24,
+      gradient
+    )
+
+    
+
+    const centerName =
+      recordCenter?.name ||
+      'ไม่ระบุศูนย์'
+
+    ctx.fillStyle = '#ffffff'
+
+    let centerFontSize = 72
+
+    do {
+      ctx.font =
+        `800 ${centerFontSize}px "Noto Sans Thai", Arial, sans-serif`
+
+      if (
+        ctx.measureText(centerName).width <= 900
+      ) {
+        break
+      }
+
+      centerFontSize -= 2
+    } while (centerFontSize > 42)
+
+    ctx.textBaseline = 'middle'
+
+    ctx.fillText(
+      centerName,
+      72,
+      96
+    )
+
+    ctx.textBaseline = 'alphabetic'
+
+
+    // =====================
+    // WATCH LEVEL
+    // =====================
+
+    drawRoundedRect(
+      ctx,
+      1065,
+      28,
+      505,
+      135,
+      24,
+      theme.main
+    )
+
+    ctx.fillStyle =
+      theme.text
+
+    ctx.textAlign = 'center'
+
+    ctx.font =
+      '800 46px "Noto Sans Thai", Arial, sans-serif'
+
+    ctx.fillText(
+      watchLevel?.name ||
+        'รถ Blacklist',
+      1317,
+      110
+    )
+
+    ctx.textAlign = 'left'
+
+
+    // =====================
+    // IMAGE AREA
+    // =====================
+
+    drawRoundedRect(
+      ctx,
+      30,
+      190,
+      1010,
+      650,
+      26,
+      '#245f9f'
+    )
+
+    ctx.save()
+
+    ctx.beginPath()
+
+    ctx.roundRect(
+      45,
+      205,
+      980,
+      620,
+      20
+    )
+
+    ctx.clip()
+
+    drawCoverImage(
+      ctx,
+      image,
+      45,
+      205,
+      980,
+      620
+    )
+
+    ctx.restore()
+
+    // =====================
+    // RIGHT INFORMATION
+    // =====================
+
+        const rightX = 1065
+        const rightY = 190
+        const rightW = 505
+        const rightH = 650
+
+        const rightInnerX = 1090
+        const rightInnerW = 455
+
+        drawRoundedRect(
+          ctx,
+          rightX,
+          rightY,
+          rightW,
+          rightH,
+          26,
+          '#2e64a3'
+        )
+
+        // ---------------------
+        // HEADER : ทะเบียนรถ
+        // ---------------------
+
+        ctx.textAlign = 'center'
+        ctx.fillStyle = '#ffffff'
+        ctx.font =
+          '700 28px "Noto Sans Thai", Arial, sans-serif'
+
+        ctx.fillText(
+          'ทะเบียนรถ',
+          rightX + rightW / 2,
+          228
+        )
+
+          // ---------------------
+          // PLATE CARD
+          // ---------------------
+
+          drawRoundedRect(
+            ctx,
+            rightInnerX,
+            248,
+            rightInnerW,
+            150,
+            24,
+            '#f8fafc'
+          )
+
+          ctx.fillStyle = '#111827'
+          ctx.textAlign = 'center'
+
+          const plateCenterX =
+            rightX + rightW / 2
+
+          // ตรวจว่าเป็นรถจักรยานยนต์หรือไม่
+          const isMotorcycle =
+            String(vehicle.vehicle_type || '')
+              .includes('จักรยานยนต์')
+
+
+          // helper สำหรับลด font อัตโนมัติ
+          // กรณีชื่อจังหวัด / ทะเบียนยาว
+          const drawPlateText = (
+            text,
+            y,
+            {
+              maxFontSize,
+              minFontSize,
+              maxWidth = 400,
+              weight = 800,
+            }
+          ) => {
+            let fontSize = maxFontSize
+
+            do {
+              ctx.font =
+                `${weight} ${fontSize}px "Noto Sans Thai", Arial, sans-serif`
+
+              if (
+                ctx.measureText(String(text || '-')).width <=
+                maxWidth
+              ) {
+                break
+              }
+
+              fontSize -= 2
+            } while (fontSize > minFontSize)
+
+            ctx.fillText(
+              text || '-',
+              plateCenterX,
+              y
+            )
+          }
+
+
+          if (isMotorcycle) {
+
+            // =====================================
+            // รถจักรยานยนต์
+            //
+            // บรรทัด 1 : หมวดอักษร
+            // บรรทัด 2 : จังหวัด
+            // บรรทัด 3 : เลขทะเบียน
+            // =====================================
+
+            drawPlateText(
+              vehicle.plate_letters,
+              292,
+              {
+                maxFontSize: 40,
+                minFontSize: 30,
+                maxWidth: 390,
+              }
+            )
+
+            drawPlateText(
+              vehicle.province,
+              333,
+              {
+                maxFontSize: 30,
+                minFontSize: 22,
+                maxWidth: 390,
+                weight: 700,
+              }
+            )
+
+            drawPlateText(
+              vehicle.plate_number,
+              378,
+              {
+                maxFontSize: 44,
+                minFontSize: 32,
+                maxWidth: 390,
+              }
+            )
+
+          } else {
+
+            // =====================================
+            // รถทั่วไป
+            // Layout เดิม
+            // =====================================
+
+            drawPlateText(
+              fullPlate,
+              325,
+              {
+                maxFontSize: 60,
+                minFontSize: 42,
+                maxWidth: 400,
+              }
+            )
+
+            // จังหวัดลดขนาดลงจากเดิม
+            drawPlateText(
+              vehicle.province,
+              378,
+              {
+                maxFontSize: 36,
+                minFontSize: 26,
+                maxWidth: 400,
+                weight: 700,
+              }
+            )
+          }
+
+          ctx.textAlign = 'left'
+
+        // ---------------------
+        // CASE INFO AREA
+        // ---------------------
+
+        const incidentArea =
+          [vehicle.police_station, vehicle.case_province]
+            .filter(Boolean)
+            .join(' / ') || '-'
+
+            const infoCardX = 1090
+            const infoCardW = 455
+
+            // =========================
+            // INFO CARD LAYOUT
+            // =========================
+
+            const infoStartY = 412
+            const infoCardH = 96
+            const infoGap = 10
+
+            const drawInfoCard = ({
+              title,
+              value,
+              index,
+              fontSize = 18,
+              lineHeight = 20,
+              maxLines = 2,
+            }) => {
+
+              const y =
+                infoStartY +
+                index * (infoCardH + infoGap)
+
+              // -------------------------
+              // CARD
+              // -------------------------
+
+              drawRoundedRect(
+                ctx,
+                infoCardX,
+                y,
+                infoCardW,
+                infoCardH,
+                16,
+                'rgba(255, 255, 255, 0.10)'
+              )
+
+              // -------------------------
+              // TITLE CHIP
+              // -------------------------
+
+              ctx.font =
+                '700 14px "Noto Sans Thai", Arial, sans-serif'
+
+              const chipWidth = Math.min(
+                infoCardW - 32,
+                ctx.measureText(title).width + 26
+              )
+
+              drawRoundedRect(
+                ctx,
+                infoCardX + 16,
+                y + 11,
+                chipWidth,
+                24,
+                12,
+                'rgba(255, 255, 255, 0.16)'
+              )
+
+              ctx.fillStyle =
+                'rgba(255, 255, 255, 0.90)'
+
+              ctx.fillText(
+                title,
+                infoCardX + 29,
+                y + 28
+              )
+
+              // -------------------------
+              // VALUE
+              // -------------------------
+
+              ctx.fillStyle = '#ffffff'
+
+              ctx.font =
+                `600 ${fontSize}px "Noto Sans Thai", Arial, sans-serif`
+
+              drawWrappedText(
+                ctx,
+                value || '-',
+                infoCardX + 17,
+                y + 59,
+                infoCardW - 34,
+                lineHeight,
+                maxLines
+              )
+            }
+
+
+            // =========================
+            // DATA
+            // =========================
+
+            drawInfoCard({
+              title: 'รายละเอียดคดี',
+              value: vehicle.detail,
+              index: 0,
+              fontSize: 20,
+              lineHeight: 25,
+              maxLines: 2,
+            })
+
+            drawInfoCard({
+              title: 'วันที่เกิดเหตุ',
+              value: formatDate(vehicle.incident_date),
+              index: 1,
+              fontSize: 18,
+              lineHeight: 25,
+              maxLines: 1,
+            })
+
+            drawInfoCard({
+              title: 'พื้นที่เกิดเหตุ',
+              value: 'สภ.'+incidentArea,
+              index: 2,
+              fontSize: 20,
+              lineHeight: 25,
+              maxLines: 1,
+            })
+
+            drawInfoCard({
+              title: 'แผนเผชิญเหตุ',
+              value: vehicle.response_plan,
+              index: 3,
+              fontSize: 20,
+              lineHeight: 25,
+              maxLines: 2,
+            })
+    
+
+    // =====================
+    // BOTTOM
+    // =====================
+
+    drawRoundedRect(
+      ctx,
+      30,
+      855,
+      1540,
+      175,
+      25,
+      '#ffffff'
+    )
+
+    const vehicleName =
+      [
+        vehicle.brand,
+        vehicle.model,
+        vehicle.color,
+      ]
+        .filter(Boolean)
+        .join(' ') ||
+      'ไม่ระบุข้อมูลรถ'
+
+    let requesterPhone =
+      requester?.phone || ''
+
+    if (
+      !requesterPhone &&
+      vehicle.requested_by_id
+    ) {
+      const {
+        data: requesterPhoneData,
+      } = await supabase
+        .from('requesters')
+        .select('phone')
+        .eq(
+          'id',
+          vehicle.requested_by_id
+        )
+        .maybeSingle()
+
+      requesterPhone =
+        requesterPhoneData?.phone || ''
+    }
+
+    const phone =
+      requesterPhone
+        ? formatPhone(requesterPhone)
+        : '-'
+
+    const otherDetails =
+      String(vehicle.vehicle_description || '').trim() || '-'
+
+
+    // ---------------------
+    // LEFT BLOCK
+    // ---------------------
+
+    ctx.fillStyle = '#111827'
+
+    ctx.font =
+      '800 45px "Noto Sans Thai", Arial, sans-serif'
+
+    ctx.fillText(
+      vehicleName,
+      65,
+      905
+    )
+
+    
+
+    ctx.font =
+      '600 28px "Noto Sans Thai", Arial, sans-serif'
+
+    ctx.fillStyle = '#475569'
+
+    ctx.fillText(
+      `หน่วยงาน: ${
+        agency?.name || '-'
+      }`,
+      65,
+      948
+    )
+
+    const requesterText =
+      `ผู้ขอเพิ่มรถ : ${
+        vehicle.requested_by || '-'
+      }`
+
+    ctx.fillText(
+      requesterText,
+      65,
+      988
+    )
+
+    const requesterTextWidth =
+      ctx.measureText(requesterText).width
+
+    ctx.fillText(
+      `โทร : ${phone}`,
+      65 + requesterTextWidth + 25,
+      988
+    )
+
+    // ---------------------
+    // VERTICAL DIVIDER
+    // ---------------------
+
+    ctx.save()
+
+    ctx.strokeStyle = '#b5bac2'
+    ctx.lineWidth = 4
+
+    ctx.beginPath()
+
+    ctx.moveTo(
+      1053,
+      880
+    )
+
+    ctx.lineTo(
+      1053,
+      1008
+    )
+
+    ctx.stroke()
+
+    ctx.restore()
+
+
+    // ---------------------
+    // CENTER-RIGHT BLOCK
+    // ---------------------
+
+    const infoBlockX = 1120
+
+    ctx.fillStyle = '#475569'
+
+    ctx.font =
+      '600 28px "Noto Sans Thai", Arial, sans-serif'
+
+    ctx.fillText(
+      `เลขเครื่อง : ${
+        vehicle.engine_number || '-'
+      }`,
+      infoBlockX,
+      905
+    )
+
+    ctx.fillText(
+      `เลขตัวถัง : ${
+        vehicle.chassis_number || '-'
+      }`,
+      infoBlockX,
+      945
+    )
+
+    const otherLabel = 'ลักษณะอื่นๆ :'
+
+    ctx.fillText(
+      otherLabel,
+      infoBlockX,
+      985
+    )
+
+    const otherLabelWidth =
+      ctx.measureText(otherLabel).width
+
+    drawWrappedText(
+      ctx,
+      otherDetails,
+      infoBlockX + otherLabelWidth + 15,
+      985,
+      250,
+      22,
+      2
+    )
+
+
+    
+
+
+    return await new Promise(
+      (resolve, reject) => {
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(
+                new Error(
+                  'สร้างไฟล์ Template ไม่สำเร็จ'
+                )
+              )
+
+              return
+            }
+
+            resolve(blob)
+          },
+
+          'image/jpeg',
+          0.92
+        )
+      }
+    )
+  }    
+
+  const handleCreateTemplate =
+    async () => {
+
+    try {
+      setCreatingTemplate(true)
+      setMessage('')
+
+      const blob =
+        await buildVehicleTemplateBlob()
+
+      const newPath =
+        `templates/${vehicle.id}/template-${Date.now()}.jpg`
+
+      const oldPath =
+        vehicle.template_image_path
+
+      const {
+        error: uploadError,
+      } = await supabase.storage
+        .from('vehicle-images')
+        .upload(
+          newPath,
+          blob,
+          {
+            contentType:
+              'image/jpeg',
+
+            cacheControl:
+              '3600',
+
+            upsert: false,
+          }
+        )
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+
+      const {
+        error: updateError,
+      } = await supabase
+        .from('vehicles')
+        .update({
+          template_image_path:
+            newPath,
+        })
+        .eq(
+          'id',
+          vehicle.id
+        )
+
+
+      if (updateError) {
+
+        await supabase.storage
+          .from('vehicle-images')
+          .remove([newPath])
+
+        throw updateError
+      }
+
+
+      // สร้างใหม่สำเร็จแล้ว
+      // ค่อยลบ Template เก่า
+
+      if (
+        oldPath &&
+        oldPath !== newPath
+      ) {
+        const {
+          error: removeOldError,
+        } = await supabase.storage
+          .from('vehicle-images')
+          .remove([oldPath])
+
+        if (removeOldError) {
+          console.error(
+            'ลบ Template เก่าไม่สำเร็จ:',
+            removeOldError
+          )
+        }
+      }
+
+
+      await loadVehicle()
+
+      setMessageType(
+        'success'
+      )
+
+      setMessage(
+        'สร้าง Template เรียบร้อยแล้ว'
+      )
+
+    } catch (error) {
+
+      console.error(
+        'สร้าง Template ไม่สำเร็จ:',
+        error
+      )
+
+      setMessageType(
+        'error'
+      )
+
+      setMessage(
+        `สร้าง Template ไม่สำเร็จ: ${
+          error?.message ||
+          'เกิดข้อผิดพลาด'
+        }`
+      )
+
+    } finally {
+
+      setCreatingTemplate(
+        false
+      )
+    }
+  }
+
+  const handleDeleteTemplate =
+    async () => {
+
+    if (
+      !vehicle.template_image_path
+    ) {
+      return
+    }
+
+    const confirmed =
+      window.confirm(
+        'ยืนยันลบ Template?\n\nระบบจะกลับไปใช้ภาพ Original อัตโนมัติ'
+      )
+
+    if (!confirmed) return
+
+
+    try {
+
+      setDeletingTemplate(true)
+      setMessage('')
+
+      const oldPath =
+        vehicle.template_image_path
+
+
+      const {
+        error: updateError,
+      } = await supabase
+        .from('vehicles')
+        .update({
+          template_image_path:
+            null,
+        })
+        .eq(
+          'id',
+          vehicle.id
+        )
+
+
+      if (updateError) {
+        throw updateError
+      }
+
+
+      const {
+        error: removeError,
+      } = await supabase.storage
+        .from('vehicle-images')
+        .remove([oldPath])
+
+
+      if (removeError) {
+        console.error(
+          'ลบไฟล์ Template ไม่สำเร็จ:',
+          removeError
+        )
+      }
+
+
+      await loadVehicle()
+
+      setMessageType(
+        'success'
+      )
+
+      setMessage(
+        'ลบ Template แล้ว ระบบกลับมาใช้ภาพ Original'
+      )
+
+    } catch (error) {
+
+      console.error(error)
+
+      setMessageType(
+        'error'
+      )
+
+      setMessage(
+        `ลบ Template ไม่สำเร็จ: ${
+          error?.message ||
+          'เกิดข้อผิดพลาด'
+        }`
+      )
+
+    } finally {
+
+      setDeletingTemplate(
+        false
+      )
+    }
+  }
+
   const handleShareLine = async () => {
     try {
       setSharingLine(true)
@@ -268,13 +1432,21 @@ function VehicleDetail({
 
       let imageUrl = null
 
-        if (vehicle.image_path) {
-          const { data } = supabase.storage
-            .from('vehicle-images')
-            .getPublicUrl(vehicle.image_path)
+        const shareImagePath =
+          vehicle.template_image_path ||
+          vehicle.image_path
 
-          imageUrl = data?.publicUrl || null
-      }
+        if (shareImagePath) {
+          const { data } =
+            supabase.storage
+              .from('vehicle-images')
+              .getPublicUrl(
+                shareImagePath
+              )
+
+          imageUrl =
+            data?.publicUrl || null
+        }
 
   const flexMessage = {
     type: 'flex',
@@ -534,6 +1706,7 @@ function VehicleDetail({
       const imagePaths = [
         vehicle.image_path,
         vehicle.thumbnail_path,
+        vehicle.template_image_path,
       ].filter(Boolean)
 
       const { error: deleteVehicleError } =
@@ -619,63 +1792,111 @@ function VehicleDetail({
             <div className="detail-panel-heading">
 
             <div>
+              <div className="detail-image-title-row">
                 <h3>รูปรถ</h3>
 
-                <p>
-                ภาพหลักที่บันทึกไว้ในระบบ
-                </p>
+                <span
+                  className={`image-source-badge-inline ${
+                    hasTemplate ? 'template' : 'original'
+                  }`}
+                >
+                  {hasTemplate ? 'TEMPLATE' : 'ORIGINAL'}
+                </span>
+              </div>
+
+              <p>
+                {hasTemplate
+                  ? 'กำลังแสดงภาพ Template'
+                  : 'ภาพหลักที่บันทึกไว้ในระบบ'}
+              </p>
             </div>
 
-            {vehicleImageUrl && (
-              <a
-                href={vehicleImageUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="open-image-button"
-              >
-                เปิดภาพเต็ม
-              </a>
-            )}
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap',
+                justifyContent: 'flex-end',
+                alignItems: 'stretch',
+              }}
+            >
+              {canManageTemplate && vehicleImageUrl && (
+                <button
+                  type="button"
+                  className="open-image-button detail-action-button"
+                  onClick={handleCreateTemplate}
+                  disabled={creatingTemplate || deletingTemplate}
+                >
+                  {creatingTemplate
+                    ? 'กำลังสร้าง...'
+                    : hasTemplate
+                      ? 'สร้าง Template ใหม่'
+                      : 'สร้าง Template'}
+                </button>
+              )}
+
+              {canManageTemplate && hasTemplate && (
+                <button
+                  type="button"
+                  className="delete-action-button detail-action-button"
+                  onClick={handleDeleteTemplate}
+                  disabled={deletingTemplate || creatingTemplate}
+                >
+                  {deletingTemplate ? 'กำลังลบ...' : 'ลบ Template'}
+                </button>
+              )}
+
+              {displayImageUrl && (
+                <a
+                  href={displayImageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="open-image-button detail-action-button"
+                >
+                  เปิดภาพเต็ม
+                </a>
+              )}
+            </div>
                 
 
             </div>
 
-            <div className="detail-photo-frame">
+            <div
+                className={`detail-photo-frame ${
+                  hasTemplate ? 'template-mode' : ''
+                }`}
+              >
+                
 
-            {vehicleImageUrl ? (
-              <img
-                src={vehicleImageUrl}
-                alt={`รถ ${fullPlate}`}
-                decoding="async"
-              />
+                {displayImageUrl ? (
+                  <img
+                    src={displayImageUrl}
+                    alt={`รถ ${fullPlate}`}
+                    decoding="async"
+                  />
+                ) : (
+                  <div className="detail-no-photo">
+                    <span>🚗</span>
 
-            ) : (
+                    <strong>
+                      ยังไม่มีรูปภาพ
+                    </strong>
+                  </div>
+                )}
+              </div>
 
-                <div className="detail-no-photo">
-
-                <span>🚗</span>
-
-                <strong>
-                    ยังไม่มีรูปภาพ
-                </strong>
-
-                </div>
-
-            )}
-
-            </div>
-            <div className="detail-photo-extra">
+              <div className="detail-photo-extra">
 
                 <div className="photo-extra-card">
-                    <span>ระดับเฝ้าระวัง</span>
+                  <span>ระดับเฝ้าระวัง</span>
 
-                    <div
-                        className={`watch-level-highlight ${getWatchLevelTheme(
-                        watchLevel?.name
-                        )}`}
-                    >
-                        {watchLevel?.name || '-'}
-                    </div>
+                  <div
+                    className={`watch-level-highlight ${getWatchLevelTheme(
+                      watchLevel?.name
+                    )}`}
+                  >
+                    {watchLevel?.name || '-'}
+                  </div>
                 </div>
 
                 <div className="photo-extra-card">
@@ -690,10 +1911,14 @@ function VehicleDetail({
                       📞 {formatPhone(requester.phone)}
                     </div>
                   )}
+
                 </div>
 
-            </div>
-            {/* เหตุ / คดี */}
+              </div>
+
+              {/* เหตุ / คดี */}
+
+            
 
                 <div className="secondary-section">
 
@@ -702,9 +1927,15 @@ function VehicleDetail({
                 <div className="secondary-grid">
 
                     <DetailItem
-                    label="รายละเอียดเหตุ"
-                    value={vehicle.detail}
-                    wide
+                      label="รายละเอียดเหตุ"
+                      value={vehicle.detail}
+                      className="case-detail-item"
+                    />
+
+                    <DetailItem
+                      label="แผนเผชิญเหตุ"
+                      value={vehicle.response_plan}
+                      className="response-plan-item"
                     />
 
                     <DetailItem
@@ -1177,12 +2408,13 @@ function DetailItem({
   label,
   value,
   wide = false,
+  className = '',
 }) {
   return (
     <div
       className={`detail-item ${
         wide ? 'wide' : ''
-      }`}
+      } ${className}`}
     >
       <span>{label}</span>
 

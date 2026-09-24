@@ -635,7 +635,9 @@ function AddVehicle({
     case_province: '',
 
     detail: '',
+    response_plan: '',
     watch_level_id: '',
+    
 
     requested_by_id: '',
     requested_by: '',
@@ -703,6 +705,7 @@ function AddVehicle({
         data.case_province || '',
 
       detail: data.detail || '',
+      response_plan: data.response_plan || '',
 
       watch_level_id:
         data.watch_level_id?.toString() || '',
@@ -1028,6 +1031,7 @@ function AddVehicle({
       case_province: '',
 
       detail: '',
+      response_plan: '',
       watch_level_id: '',
 
           requested_by_id: '',
@@ -1730,6 +1734,18 @@ function AddVehicle({
                 onChange={handleChange}
                 rows="4"
                 placeholder="ระบุรายละเอียดเหตุ / คดี"
+              />
+            </div>
+
+            <div className="modern-field full">
+              <label>แผนเผชิญเหตุ</label>
+
+              <textarea
+                name="response_plan"
+                value={form.response_plan}
+                onChange={handleChange}
+                rows="4"
+                placeholder="ระบุแนวทางปฏิบัติเมื่อพบรถ"
               />
             </div>
 

@@ -2498,6 +2498,33 @@ body {
   font-size: 12px;
 
   white-space: nowrap;
+
+  cursor: pointer;
+}
+
+.detail-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 46px;
+  padding: 0 18px;
+  box-sizing: border-box;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+
+  text-decoration: none;
+  white-space: nowrap;
+
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.detail-action-button:disabled {
+  cursor: not-allowed;
 }
 
 @media (max-width: 600px) {
@@ -2786,6 +2813,17 @@ body {
   grid-column: 1 / -1;
 }
 
+
+.secondary-grid .case-detail-item {
+  grid-column: 1 / 3;
+}
+
+.secondary-grid .response-plan-item {
+  grid-column: 3 / 4;
+}
+
+
+
 .secondary-divider {
   height: 1px;
 
@@ -2895,6 +2933,15 @@ body {
   }
 
   .secondary-grid .detail-item.wide {
+    grid-column: auto;
+  }
+
+ 
+  .secondary-grid .case-detail-item {
+    grid-column: auto;
+  }
+
+  .secondary-grid .response-plan-item {
     grid-column: auto;
   }
 
@@ -5897,4 +5944,83 @@ input[type="checkbox"] {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
+}
+
+/* ==========================================
+   VEHICLE DETAIL - TEMPLATE IMAGE
+========================================== */
+
+.detail-photo-frame {
+  position: relative;
+}
+
+/* ตอนมี Template ให้ใช้สัดส่วนเดียวกับ LINE 20:13 */
+.detail-photo-frame.template-mode {
+  aspect-ratio: 20 / 13;
+  max-height: none;
+}
+
+.detail-photo-frame.template-mode img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.image-source-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+
+  padding: 6px 12px;
+
+  border-radius: 999px;
+
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+
+  backdrop-filter: blur(8px);
+
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.image-source-badge.original {
+  background: rgba(51, 65, 85, 0.88);
+}
+
+.image-source-badge.template {
+  background: rgba(5, 150, 105, 0.92);
+}
+
+.detail-image-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.image-source-badge-inline {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 4px 9px;
+
+  border-radius: 999px;
+
+  color: #ffffff;
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+}
+
+.image-source-badge-inline.original {
+  background: #475569;
+}
+
+.image-source-badge-inline.template {
+  background: #059669;
 }
