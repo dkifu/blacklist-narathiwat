@@ -266,7 +266,7 @@ function VehicleDetail({
     templateImageUrl ||
     vehicleImageUrl
 
-  const canManageTemplate = Boolean(profile?.id)
+  const canManageTemplate = true
 
   const drawRoundedRect = (
     ctx,
@@ -430,7 +430,75 @@ function VehicleDetail({
 
     return visibleLines.length
   }
+  
+  const createThumbnailBlobFromBlob = async (sourceBlob) => {
+    if (!sourceBlob) {
+      throw new Error('ไม่พบรูปสำหรับสร้าง Thumbnail')
+    }
 
+    const image = await createImageBitmap(sourceBlob)
+
+    try {
+      const MAX_SIZE = 480
+
+      let width = image.width
+      let height = image.height
+
+      const scale = Math.min(
+        1,
+        MAX_SIZE / Math.max(width, height)
+      )
+
+      width = Math.max(
+        1,
+        Math.round(width * scale)
+      )
+
+      height = Math.max(
+        1,
+        Math.round(height * scale)
+      )
+
+      const canvas =
+        document.createElement('canvas')
+
+      canvas.width = width
+      canvas.height = height
+
+      const ctx = canvas.getContext('2d')
+
+      if (!ctx) {
+        throw new Error('ไม่สามารถสร้าง Canvas สำหรับ Thumbnail ได้')
+      }
+
+      ctx.drawImage(
+        image,
+        0,
+        0,
+        width,
+        height
+      )
+
+      return await new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(
+                new Error('ไม่สามารถสร้าง Thumbnail ได้')
+              )
+              return
+            }
+
+            resolve(blob)
+          },
+          'image/webp',
+          0.72
+        )
+      })
+    } finally {
+      image.close?.()
+    }
+  }
 
   const buildVehicleTemplateBlob =
     async () => {
@@ -1193,92 +1261,159 @@ function VehicleDetail({
       setCreatingTemplate(true)
       setMessage('')
 
-      const blob =
+      // สร้างภาพ Template
+      const templateBlob =
         await buildVehicleTemplateBlob()
 
-      const newPath =
-        `templates/${vehicle.id}/template-${Date.now()}.jpg`
-
-      const oldPath =
-        vehicle.template_image_path
-
-      const {
-        error: uploadError,
-      } = await supabase.storage
-        .from('vehicle-images')
-        .upload(
-          newPath,
-          blob,
-          {
-            contentType:
-              'image/jpeg',
-
-            cacheControl:
-              '3600',
-
-            upsert: false,
-          }
+      // สร้าง Thumbnail จาก Template
+      const thumbnailBlob =
+        await createThumbnailBlobFromBlob(
+          templateBlob
         )
 
-      if (uploadError) {
-        throw uploadError
+      const timestamp = Date.now()
+
+      const newTemplatePath =
+        `templates/${vehicle.id}/template-${timestamp}.jpg`
+
+      const newThumbnailPath =
+        `${vehicle.id}/thumbnail-${timestamp}.webp`
+
+      const oldTemplatePath =
+        vehicle.template_image_path
+
+      const oldThumbnailPath =
+        vehicle.thumbnail_path
+
+      // Upload Template + Thumbnail พร้อมกัน
+      const [
+        templateUpload,
+        thumbnailUpload,
+      ] = await Promise.all([
+
+        supabase.storage
+          .from('vehicle-images')
+          .upload(
+            newTemplatePath,
+            templateBlob,
+            {
+              contentType: 'image/jpeg',
+              cacheControl: '3600',
+              upsert: false,
+            }
+          ),
+
+        supabase.storage
+          .from('vehicle-images')
+          .upload(
+            newThumbnailPath,
+            thumbnailBlob,
+            {
+              contentType: 'image/webp',
+              cacheControl: '3600',
+              upsert: false,
+            }
+          ),
+
+      ])
+
+      // ถ้า Upload ตัวใดตัวหนึ่งไม่ผ่าน
+      if (
+        templateUpload.error ||
+        thumbnailUpload.error
+      ) {
+
+        const uploadedPaths = []
+
+        if (!templateUpload.error) {
+          uploadedPaths.push(
+            newTemplatePath
+          )
+        }
+
+        if (!thumbnailUpload.error) {
+          uploadedPaths.push(
+            newThumbnailPath
+          )
+        }
+
+        if (uploadedPaths.length > 0) {
+          await supabase.storage
+            .from('vehicle-images')
+            .remove(uploadedPaths)
+        }
+
+        throw (
+          templateUpload.error ||
+          thumbnailUpload.error
+        )
       }
 
-
+      // เปลี่ยนทั้ง Template และ Thumbnail
+      // ใน Database พร้อมกัน
       const {
         error: updateError,
       } = await supabase
         .from('vehicles')
         .update({
           template_image_path:
-            newPath,
+            newTemplatePath,
+
+          thumbnail_path:
+            newThumbnailPath,
         })
         .eq(
           'id',
           vehicle.id
         )
 
-
       if (updateError) {
 
+        // DB ไม่ผ่าน ลบไฟล์ใหม่ทิ้ง
         await supabase.storage
           .from('vehicle-images')
-          .remove([newPath])
+          .remove([
+            newTemplatePath,
+            newThumbnailPath,
+          ])
 
         throw updateError
       }
 
+      // DB เปลี่ยนสำเร็จแล้ว
+      // ค่อยลบ Template / Thumbnail เก่า
+      const oldPaths = [
+        oldTemplatePath,
+        oldThumbnailPath,
+      ].filter(
+        (path) =>
+          path &&
+          path !== newTemplatePath &&
+          path !== newThumbnailPath
+      )
 
-      // สร้างใหม่สำเร็จแล้ว
-      // ค่อยลบ Template เก่า
+      if (oldPaths.length > 0) {
 
-      if (
-        oldPath &&
-        oldPath !== newPath
-      ) {
         const {
           error: removeOldError,
         } = await supabase.storage
           .from('vehicle-images')
-          .remove([oldPath])
+          .remove(oldPaths)
 
         if (removeOldError) {
           console.error(
-            'ลบ Template เก่าไม่สำเร็จ:',
+            'ลบไฟล์เก่าไม่สำเร็จ:',
             removeOldError
           )
         }
       }
 
-
       await loadVehicle()
 
-      setMessageType(
-        'success'
-      )
+      setMessageType('success')
 
       setMessage(
-        'สร้าง Template เรียบร้อยแล้ว'
+        'สร้าง Template และอัปเดตภาพ Preview เรียบร้อยแล้ว'
       )
 
     } catch (error) {
@@ -1288,9 +1423,7 @@ function VehicleDetail({
         error
       )
 
-      setMessageType(
-        'error'
-      )
+      setMessageType('error')
 
       setMessage(
         `สร้าง Template ไม่สำเร็จ: ${
@@ -1301,9 +1434,8 @@ function VehicleDetail({
 
     } finally {
 
-      setCreatingTemplate(
-        false
-      )
+      setCreatingTemplate(false)
+
     }
   }
 
@@ -1323,67 +1455,135 @@ function VehicleDetail({
 
     if (!confirmed) return
 
-
     try {
 
       setDeletingTemplate(true)
       setMessage('')
 
-      const oldPath =
+      if (!vehicleImageUrl) {
+        throw new Error(
+          'ไม่พบภาพ Original ของรถ'
+        )
+      }
+
+      const oldTemplatePath =
         vehicle.template_image_path
 
+      const oldThumbnailPath =
+        vehicle.thumbnail_path
 
+      // โหลดภาพ Original
+      const response =
+        await fetch(vehicleImageUrl)
+
+      if (!response.ok) {
+        throw new Error(
+          'ไม่สามารถโหลดภาพ Original ได้'
+        )
+      }
+
+      const originalBlob =
+        await response.blob()
+
+      // สร้าง Thumbnail จาก Original
+      const thumbnailBlob =
+        await createThumbnailBlobFromBlob(
+          originalBlob
+        )
+
+      const newThumbnailPath =
+        `${vehicle.id}/thumbnail-${Date.now()}.webp`
+
+      // Upload Thumbnail ใหม่
+      const {
+        error: thumbnailUploadError,
+      } = await supabase.storage
+        .from('vehicle-images')
+        .upload(
+          newThumbnailPath,
+          thumbnailBlob,
+          {
+            contentType: 'image/webp',
+            cacheControl: '3600',
+            upsert: false,
+          }
+        )
+
+      if (thumbnailUploadError) {
+        throw thumbnailUploadError
+      }
+
+      // สลับ Database กลับมา Original
+      // พร้อมเปลี่ยน Thumbnail
       const {
         error: updateError,
       } = await supabase
         .from('vehicles')
         .update({
-          template_image_path:
-            null,
+          template_image_path: null,
+          thumbnail_path:
+            newThumbnailPath,
         })
         .eq(
           'id',
           vehicle.id
         )
 
-
       if (updateError) {
+
+        // DB ไม่ผ่าน ลบ Thumbnail ใหม่
+        await supabase.storage
+          .from('vehicle-images')
+          .remove([
+            newThumbnailPath,
+          ])
+
         throw updateError
       }
 
+      // DB สำเร็จแล้ว
+      // ค่อยลบ Template และ Thumbnail เก่า
+      const oldPaths = [
+        oldTemplatePath,
+        oldThumbnailPath,
+      ].filter(
+        (path) =>
+          path &&
+          path !== newThumbnailPath
+      )
 
-      const {
-        error: removeError,
-      } = await supabase.storage
-        .from('vehicle-images')
-        .remove([oldPath])
+      if (oldPaths.length > 0) {
 
+        const {
+          error: removeError,
+        } = await supabase.storage
+          .from('vehicle-images')
+          .remove(oldPaths)
 
-      if (removeError) {
-        console.error(
-          'ลบไฟล์ Template ไม่สำเร็จ:',
-          removeError
-        )
+        if (removeError) {
+          console.error(
+            'ลบไฟล์เก่าไม่สำเร็จ:',
+            removeError
+          )
+        }
       }
-
 
       await loadVehicle()
 
-      setMessageType(
-        'success'
-      )
+      setMessageType('success')
 
       setMessage(
-        'ลบ Template แล้ว ระบบกลับมาใช้ภาพ Original'
+        'ลบ Template แล้ว และเปลี่ยนภาพ Preview กลับเป็น Original'
       )
 
     } catch (error) {
 
-      console.error(error)
-
-      setMessageType(
-        'error'
+      console.error(
+        'ลบ Template ไม่สำเร็จ:',
+        error
       )
+
+      setMessageType('error')
 
       setMessage(
         `ลบ Template ไม่สำเร็จ: ${
@@ -1394,9 +1594,8 @@ function VehicleDetail({
 
     } finally {
 
-      setDeletingTemplate(
-        false
-      )
+      setDeletingTemplate(false)
+
     }
   }
 

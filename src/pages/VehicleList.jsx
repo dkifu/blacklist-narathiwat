@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-function VehicleList({ onViewDetails }) {
+function VehicleList({
+  onViewDetails,
+  savedPage = 1,
+  onPageChange,
+}) {
   const [vehicles, setVehicles] = useState([])
   const [watchLevels, setWatchLevels] = useState([])
   const [agencies, setAgencies] = useState([])
@@ -11,10 +15,17 @@ function VehicleList({ onViewDetails }) {
   const [errorMessage, setErrorMessage] = useState('')
 
   const [imageUrls, setImageUrls] = useState({})
-  const [currentPage, setCurrentPage] = useState(1)
+  
+  const currentPage = savedPage
+
+  const setCurrentPage = (value) => {
+    onPageChange?.(value)
+  }
+
   const [hoverPreview, setHoverPreview] = useState(null)
 
   const signedUrlCacheRef = useRef(new Map())
+  
 
   const ITEMS_PER_PAGE = 10
   const SIGNED_URL_TTL = 3600
@@ -366,15 +377,15 @@ function VehicleList({ onViewDetails }) {
     )
   }, [filteredVehicles, currentPage])
 
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [search, watchFilter, statusFilter])
+  
 
   useEffect(() => {
+    if (loading) return
+
     if (currentPage > totalPages) {
       setCurrentPage(totalPages)
     }
-  }, [currentPage, totalPages])
+  }, [currentPage, totalPages, loading])
 
   const preloadImage = (url) => {
     if (!url) return
@@ -711,9 +722,10 @@ function VehicleList({ onViewDetails }) {
 
           <input
             value={search}
-            onChange={(e) =>
+            onChange={(e) => {
               setSearch(e.target.value)
-            }
+              setCurrentPage(1)
+            }}
             placeholder="ทะเบียน / จังหวัด / ยี่ห้อ / รุ่น / เลขตัวถัง..."
           />
         </div>
@@ -723,9 +735,10 @@ function VehicleList({ onViewDetails }) {
 
           <select
             value={watchFilter}
-            onChange={(e) =>
-              setWatchFilter(e.target.value)
-            }
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setCurrentPage(1)
+            }}
           >
             <option value="">
               ทุกระดับ
@@ -771,6 +784,7 @@ function VehicleList({ onViewDetails }) {
             setSearch('')
             setWatchFilter('')
             setStatusFilter('')
+            setCurrentPage(1)
           }}
         >
           ล้างตัวกรอง

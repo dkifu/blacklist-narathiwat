@@ -21,6 +21,8 @@ function App() {
   const [loginLoading, setLoginLoading] = useState(false)
   const [message, setMessage] = useState('')
 
+  const [vehicleListPage, setVehicleListPage] = useState(1)
+
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [selectedVehicleId, setSelectedVehicleId] = useState(null)
 
@@ -327,12 +329,12 @@ function App() {
             ) : currentPage === 'vehicles' ? (
 
               <VehicleList
+                savedPage={vehicleListPage}
+                onPageChange={setVehicleListPage}
+
                 onViewDetails={(vehicleId) => {
-
                   setSelectedVehicleId(vehicleId)
-
                   setCurrentPage('vehicleDetail')
-
                 }}
               />
 
