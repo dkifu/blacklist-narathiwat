@@ -225,6 +225,43 @@ function VehicleDetail({
     .filter(Boolean)
     .join(' ')
 
+  const getPlateTheme = (plateType = '') => {
+    const themes = {
+      'ป้ายพื้นสีขาว': {
+        bg: '#f8fafc',
+        text: '#111827',
+        border: '#cbd5e1',
+      },
+      'ป้ายพื้นสีเหลือง': {
+        bg: '#f4d03f',
+        text: '#111827',
+        border: '#d4ac0d',
+      },
+      'ป้ายพื้นสีเขียว': {
+        bg: '#1f8b4c',
+        text: '#ffffff',
+        border: '#166534',
+      },
+      'ป้ายพื้นสีแดง': {
+        bg: '#e5484d',
+        text: '#111827',
+        border: '#b91c1c',
+      },
+      'ป้ายพื้นสีดำ': {
+        bg: '#111827',
+        text: '#ffffff',
+        border: '#334155',
+      },
+    }
+
+    return themes[plateType] || themes['ป้ายพื้นสีขาว']
+  }
+
+  const isMotorcycleVehicle = String(vehicle?.vehicle_type || '')
+    .includes('จักรยานยนต์')
+
+  const plateTheme = getPlateTheme(vehicle?.plate_type)  
+
   const getWatchLevelTheme = (name = '') => {
     if (!name) return 'default'
 
@@ -771,9 +808,45 @@ function VehicleDetail({
           228
         )
 
+          
           // ---------------------
           // PLATE CARD
           // ---------------------
+
+          const plateType =
+            String(vehicle.plate_type || '').trim()
+
+          const plateThemes = {
+            'ป้ายพื้นสีขาว': {
+              bg: '#f8fafc',
+              text: '#111827',
+              border: '#cbd5e1',
+            },
+            'ป้ายพื้นสีเหลือง': {
+              bg: '#f1c40f',
+              text: '#111827',
+              border: '#b7950b',
+            },
+            'ป้ายพื้นสีเขียว': {
+              bg: '#1f8b4c',
+              text: '#ffffff',
+              border: '#166534',
+            },
+            'ป้ายพื้นสีแดง': {
+              bg: '#e74c3c',
+              text: '#111827',
+              border: '#c0392b',
+            },
+            'ป้ายพื้นสีดำ': {
+              bg: '#111827',
+              text: '#ffffff',
+              border: '#334155',
+            },
+          }
+
+          const plateTheme =
+            plateThemes[plateType] ||
+            plateThemes['ป้ายพื้นสีขาว']
 
           drawRoundedRect(
             ctx,
@@ -782,10 +855,25 @@ function VehicleDetail({
             rightInnerW,
             150,
             24,
-            '#f8fafc'
+            plateTheme.bg
           )
 
-          ctx.fillStyle = '#111827'
+          // เส้นขอบป้าย
+          ctx.save()
+          ctx.strokeStyle = plateTheme.border
+          ctx.lineWidth = 3
+          ctx.beginPath()
+          ctx.roundRect(
+            rightInnerX,
+            248,
+            rightInnerW,
+            150,
+            24
+          )
+          ctx.stroke()
+          ctx.restore()
+
+          ctx.fillStyle = plateTheme.text
           ctx.textAlign = 'center'
 
           const plateCenterX =
@@ -1769,6 +1857,23 @@ function VehicleDetail({
             color: '#555555',
             wrap: true,
           },
+          {
+            type: 'text',
+            text: 'แผนเผชิญเหตุ',
+            weight: 'bold',
+            size: 'sm',
+            margin: 'md',
+          },
+          {
+            type: 'text',
+            text: vehicle.response_plan || '-',
+            size: 'sm',
+            color: '#555555',
+            wrap: true,
+          },
+
+
+
           ],
           },
 
@@ -1964,6 +2069,49 @@ function VehicleDetail({
     return (
       <div className="detail-empty">
         ไม่พบข้อมูลรถ
+      </div>
+    )
+  }
+
+  const renderPlatePreview = () => {
+    return (
+      <div
+        className={`detail-plate-preview ${
+          isMotorcycleVehicle ? 'motorcycle' : 'standard'
+        }`}
+        style={{
+          backgroundColor: plateTheme.bg,
+          color: plateTheme.text,
+          borderColor: plateTheme.border,
+        }}
+      >
+        
+
+        {isMotorcycleVehicle ? (
+          <>
+            <div className="detail-plate-line plate-line-letters">
+              {vehicle?.plate_letters || '-'}
+            </div>
+
+            <div className="detail-plate-line plate-line-province">
+              {vehicle?.province || '-'}
+            </div>
+
+            <div className="detail-plate-line plate-line-number">
+              {vehicle?.plate_number || '-'}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="detail-plate-line plate-line-main">
+              {fullPlate || '-'}
+            </div>
+
+            <div className="detail-plate-line plate-line-province">
+              {vehicle?.province || '-'}
+            </div>
+          </>
+        )}
       </div>
     )
   }
@@ -2173,21 +2321,15 @@ function VehicleDetail({
 
                 <div>
 
-                <div className="detail-plate-block">
-                    <h2 className="detail-main-plate">
-                        {fullPlate || '-'}
-                    </h2>
-
-                    <div className="detail-main-province">
-                        {vehicle.province || '-'}
-                    </div>
+                  <div className="detail-plate-block">
+                    {renderPlatePreview()}
 
                     <div className="detail-car-name">
-                        {[vehicle.brand, vehicle.model]
+                      {[vehicle.brand, vehicle.model]
                         .filter(Boolean)
                         .join(' ') || 'ไม่ระบุยี่ห้อ / รุ่น'}
                     </div>
-                    </div>
+                  </div>  
 
                 </div>
 

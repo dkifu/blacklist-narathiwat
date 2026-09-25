@@ -85,6 +85,7 @@ function Settings({ profile }) {
       supabase
         .from('requesters')
         .select('*')
+        .is('deleted_at', null)
         .order('name'),
 
       supabase
@@ -560,7 +561,7 @@ function Settings({ profile }) {
       .join(' ')
 
     const confirmed = window.confirm(
-      `ยืนยันลบ "${fullName}" ถาวร?\n\nการลบไม่สามารถย้อนกลับได้`
+      `ยืนยันลบ "${fullName}" ออกจากการใช้งาน?\n\nข้อมูลเก่าที่ยังอ้างอิงบุคคลนี้จะยังคงอยู่`
     )
 
     if (!confirmed) return
@@ -570,7 +571,10 @@ function Settings({ profile }) {
 
     const { error } = await supabase
       .from('requesters')
-      .delete()
+      .update({
+        active: false,
+        deleted_at: new Date().toISOString(),
+      })
       .eq('id', requester.id)
 
     if (error) {
@@ -594,7 +598,7 @@ function Settings({ profile }) {
 
     showMessage(
       'success',
-      `ลบ "${fullName}" เรียบร้อยแล้ว`
+      `ลบ "${fullName}" ออกจากการใช้งานแล้ว`
     )
 
     await loadData()
@@ -1193,7 +1197,7 @@ function Settings({ profile }) {
                                   }
                                   disabled={saving}
                                 >
-                                  ลบถาวร
+                                  ลบออกจากระบบ
                                 </button>
                               )}
 

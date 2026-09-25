@@ -985,23 +985,17 @@ body {
   display: grid;
 
   grid-template-columns:
-    minmax(250px, 2fr)
-    minmax(180px, 1fr)
-    minmax(160px, 1fr)
-    auto;
+    minmax(280px, 2fr)
+    repeat(3, minmax(180px, 1fr));
 
   gap: 14px;
-
   align-items: end;
 
   padding: 18px;
-
   margin-bottom: 20px;
 
   border-radius: 15px;
-
   background: #171b24;
-
   border: 1px solid #29303e;
 }
 
@@ -1103,8 +1097,9 @@ body {
 /* จัดหัวข้อให้ตรงกับข้อมูลในแต่ละคอลัมน์ */
 
 /* ทะเบียน */
-.vehicle-table th:nth-child(2) {
-  text-align: left;
+.vehicle-table th:nth-child(2),
+.vehicle-table td:nth-child(2) {
+  text-align: center;
 }
 
 /* ข้อมูลรถ */
@@ -1154,6 +1149,60 @@ body {
 
 .vehicle-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.list-plate-preview {
+  width: 92px;
+  height: 58px;
+
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px 10px;
+
+  border: 2px solid;
+  border-radius: 9px;
+
+  text-align: center;
+  line-height: 1.05;
+
+  box-sizing: border-box;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 4px 10px rgba(0, 0, 0, 0.16);
+}
+
+.list-plate-preview.standard .list-plate-main {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.list-plate-preview.standard .list-plate-province {
+  margin-top: 7px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+
+
+.list-plate-preview.motorcycle .list-plate-letters {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.list-plate-preview.motorcycle .list-plate-province {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.list-plate-preview.motorcycle .list-plate-number {
+  margin-top: 2px;
+  font-size: 16px;
+  font-weight: 900;
 }
 
 .plate-cell strong,
@@ -2976,6 +3025,79 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.detail-plate-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ป้ายทะเบียนแบบใหม่ */
+.detail-plate-preview {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  width: fit-content;
+  min-width: 170px;
+  max-width: 240px;
+
+  padding: 14px 18px 12px;
+
+  border: 3px solid;
+  border-radius: 18px;
+
+  text-align: center;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.detail-plate-caption {
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0.78;
+  margin-bottom: 6px;
+}
+
+.detail-plate-line {
+  line-height: 1.05;
+}
+
+.detail-plate-preview.standard .plate-line-main {
+  font-size: 2.15rem;
+  font-weight: 900;
+}
+
+.detail-plate-preview.standard .plate-line-province {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.detail-plate-preview.motorcycle {
+  min-width: 150px;
+  padding: 12px 16px 10px;
+}
+
+.detail-plate-preview.motorcycle .plate-line-letters {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.detail-plate-preview.motorcycle .plate-line-province {
+  font-size: 1rem;
+  font-weight: 800;
+  margin-top: 3px;
+}
+
+.detail-plate-preview.motorcycle .plate-line-number {
+  font-size: 1.9rem;
+  font-weight: 900;
+  margin-top: 3px;
 }
 
 .detail-main-plate {

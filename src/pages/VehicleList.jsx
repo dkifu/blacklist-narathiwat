@@ -34,6 +34,10 @@ function VehicleList({
   const [watchFilter, setWatchFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('open')
 
+  const [plateTypeFilter, setPlateTypeFilter] = useState('')
+  const [agencyFilter, setAgencyFilter] = useState('')
+  const [requesterFilter, setRequesterFilter] = useState('')
+
   const getWatchLevelClass = (watchLevel) => {
     switch (watchLevel) {
         case 'รถเป้าหมาย':
@@ -241,8 +245,9 @@ function VehicleList({
 
       supabase
         .from('requesters')
-        .select('id, name, rank, phone')
-        .order('name'),  
+        .select('id, name, rank, phone, active')
+        .eq('active', true)
+        .order('name')
     ])
 
     if (vehicleResult.error) {
@@ -321,22 +326,13 @@ function VehicleList({
 
     return vehicles.filter((vehicle) => {
       const searchText = [
-        vehicle.plate_letters,
-        vehicle.plate_number,
-        vehicle.province,
-        vehicle.vehicle_type,
-        vehicle.brand,
-        vehicle.model,
-        vehicle.color,
-        vehicle.engine_number,
-        vehicle.chassis_number,
-        vehicle.police_station,
-        vehicle.case_province,
-        vehicle.requested_by,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
+      vehicle.plate_letters,
+      vehicle.plate_number,
+      vehicle.province,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
 
       const matchesSearch =
         !keyword || searchText.includes(keyword)
@@ -350,10 +346,25 @@ function VehicleList({
         !statusFilter ||
         vehicle.case_status === statusFilter
 
+      const matchesPlateType =
+        !plateTypeFilter ||
+        vehicle.plate_type === plateTypeFilter
+
+      const matchesAgency =
+        !agencyFilter ||
+        String(vehicle.agency_id) === String(agencyFilter)
+
+      const matchesRequester =
+        !requesterFilter ||
+        String(vehicle.requested_by_id) === String(requesterFilter)  
+
       return (
         matchesSearch &&
         matchesWatch &&
-        matchesStatus
+        matchesStatus &&
+        matchesPlateType &&
+        matchesAgency &&
+        matchesRequester
       )
     })
   }, [
@@ -361,6 +372,9 @@ function VehicleList({
     search,
     watchFilter,
     statusFilter,
+    plateTypeFilter,
+    agencyFilter,
+    requesterFilter,
   ])
 
   const totalPages = Math.max(
@@ -654,6 +668,85 @@ function VehicleList({
       .join(' ')
   }
 
+  const PlateBadge = ({ vehicle }) => {
+    const fullPlate = formatPlate(vehicle) || '-'
+
+    const isMotorcycle = String(
+      vehicle?.vehicle_type || ''
+    ).includes('จักรยานยนต์')
+
+    const themes = {
+      'ป้ายพื้นสีขาว': {
+        bg: '#f8fafc',
+        text: '#111827',
+        border: '#cbd5e1',
+      },
+      'ป้ายพื้นสีเหลือง': {
+        bg: '#f4d03f',
+        text: '#111827',
+        border: '#d4ac0d',
+      },
+      'ป้ายพื้นสีเขียว': {
+        bg: '#1f8b4c',
+        text: '#ffffff',
+        border: '#166534',
+      },
+      'ป้ายพื้นสีแดง': {
+        bg: '#e5484d',
+        text: '#111827',
+        border: '#b91c1c',
+      },
+      'ป้ายพื้นสีดำ': {
+        bg: '#111827',
+        text: '#ffffff',
+        border: '#334155',
+      },
+    }
+
+    const theme =
+      themes[vehicle?.plate_type] ||
+      themes['ป้ายพื้นสีขาว']
+
+    return (
+      <div
+        className={`list-plate-preview ${
+          isMotorcycle ? 'motorcycle' : 'standard'
+        }`}
+        style={{
+          backgroundColor: theme.bg,
+          color: theme.text,
+          borderColor: theme.border,
+        }}
+      >
+        {isMotorcycle ? (
+          <>
+            <div className="list-plate-letters">
+              {vehicle?.plate_letters || '-'}
+            </div>
+
+            <div className="list-plate-province">
+              {vehicle?.province || '-'}
+            </div>
+
+            <div className="list-plate-number">
+              {vehicle?.plate_number || '-'}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="list-plate-main">
+              {fullPlate}
+            </div>
+
+            <div className="list-plate-province">
+              {vehicle?.province || '-'}
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="vehicle-list-loading">
@@ -726,7 +819,7 @@ function VehicleList({
               setSearch(e.target.value)
               setCurrentPage(1)
             }}
-            placeholder="ทะเบียน / จังหวัด / ยี่ห้อ / รุ่น / เลขตัวถัง..."
+            placeholder="หมวดอักษร / เลขทะเบียน / จังหวัด..."
           />
         </div>
 
@@ -736,7 +829,7 @@ function VehicleList({
           <select
             value={watchFilter}
             onChange={(e) => {
-              setStatusFilter(e.target.value)
+              setWatchFilter(e.target.value)
               setCurrentPage(1)
             }}
           >
@@ -760,9 +853,10 @@ function VehicleList({
 
           <select
             value={statusFilter}
-            onChange={(e) =>
+            onChange={(e) => {
               setStatusFilter(e.target.value)
-            }
+              setCurrentPage(1)
+            }}
           >
             <option value="">
               ทั้งหมด
@@ -778,12 +872,82 @@ function VehicleList({
           </select>
         </div>
 
+        <div className="filter-item">
+          <label>ประเภทป้าย</label>
+
+          <select
+            value={plateTypeFilter}
+            onChange={(e) => {
+              setPlateTypeFilter(e.target.value)
+              setCurrentPage(1)
+            }}
+          >
+            <option value="">ทุกประเภทป้าย</option>
+            <option value="ป้ายพื้นสีขาว">ป้ายพื้นสีขาว</option>
+            <option value="ป้ายพื้นสีเหลือง">ป้ายพื้นสีเหลือง</option>
+            <option value="ป้ายพื้นสีเขียว">ป้ายพื้นสีเขียว</option>
+            <option value="ป้ายพื้นสีแดง">ป้ายพื้นสีแดง</option>
+            <option value="ป้ายพื้นสีดำ">ป้ายพื้นสีดำ</option>
+          </select>
+        </div>
+
+        <div className="filter-item">
+          <label>หน่วยงาน</label>
+
+          <select
+            value={agencyFilter}
+            onChange={(e) => {
+              setAgencyFilter(e.target.value)
+              setCurrentPage(1)
+            }}
+          >
+            <option value="">ทุกหน่วยงาน</option>
+
+            {agencies.map((agency) => (
+              <option
+                key={agency.id}
+                value={agency.id}
+              >
+                {agency.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-item">
+          <label>ผู้ขอเพิ่ม</label>
+
+          <select
+            value={requesterFilter}
+            onChange={(e) => {
+              setRequesterFilter(e.target.value)
+              setCurrentPage(1)
+            }}
+          >
+            <option value="">ผู้ขอเพิ่มทั้งหมด</option>
+
+            {requesters.map((requester) => (
+              <option
+                key={requester.id}
+                value={requester.id}
+              >
+                {requester.rank
+                  ? `${requester.rank} ${requester.name}`
+                  : requester.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <button
           className="clear-filter-button"
           onClick={() => {
             setSearch('')
             setWatchFilter('')
             setStatusFilter('')
+            setPlateTypeFilter('')
+            setAgencyFilter('')
+            setRequesterFilter('')
             setCurrentPage(1)
           }}
         >
@@ -875,15 +1039,7 @@ function VehicleList({
                       </td>
 
                       <td>
-                        <div className="plate-cell">
-                          <strong>
-                            {formatPlate(vehicle) || '-'}
-                          </strong>
-
-                          <span>
-                            {vehicle.province || '-'}
-                          </span>
-                        </div>
+                        <PlateBadge vehicle={vehicle} />
                       </td>
 
                       <td>
@@ -1014,15 +1170,7 @@ function VehicleList({
 
                   <div className="mobile-card-top">
 
-                    <div>
-                      <strong className="mobile-plate">
-                        {formatPlate(vehicle)}
-                      </strong>
-
-                      <span className="mobile-province">
-                        {vehicle.province}
-                      </span>
-                    </div>
+                    <PlateBadge vehicle={vehicle} />
 
                     {vehicle.case_status ===
                     'closed' ? (
