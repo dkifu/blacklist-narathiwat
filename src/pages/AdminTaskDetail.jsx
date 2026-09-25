@@ -1393,7 +1393,7 @@ function AdminTaskDetail({
                 */
 
                 const fileLinks = []
-
+                /*
                 for (
                 const file
                 of files.slice(0, 3)
@@ -1420,7 +1420,7 @@ function AdminTaskDetail({
                         data.signedUrl,
                     })
                 }
-                }
+                } */
 
 
                 const relatedLinks =
