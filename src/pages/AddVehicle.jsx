@@ -625,6 +625,7 @@ function AddVehicle({
     brand: '',
     model: '',
     color: '',
+    plate_type: '',
     vehicle_description: '',
 
     engine_number: '',
@@ -689,6 +690,7 @@ function AddVehicle({
       brand: data.brand || '',
       model: data.model || '',
       color: data.color || '',
+      plate_type: data.plate_type || '',
       vehicle_description:
         data.vehicle_description || '',
 
@@ -1021,6 +1023,7 @@ function AddVehicle({
       brand: '',
       model: '',
       color: '',
+      plate_type: '',
       vehicle_description: '',
 
       engine_number: '',
@@ -1674,8 +1677,26 @@ function AddVehicle({
               />
             </div>
 
-            <div className="modern-field full">
+            <div className="modern-field">
+              <label>ประเภทป้าย</label>
+
+              <select
+                name="plate_type"
+                value={form.plate_type}
+                onChange={handleChange}
+              >
+                <option value="">-- เลือกประเภทป้าย --</option>
+                <option value="ป้ายพื้นสีขาว">ป้ายพื้นสีขาว</option>
+                <option value="ป้ายพื้นสีเหลือง">ป้ายพื้นสีเหลือง</option>
+                <option value="ป้ายพื้นสีเขียว">ป้ายพื้นสีเขียว</option>
+                <option value="ป้ายพื้นสีแดง">ป้ายพื้นสีแดง</option>
+                <option value="ป้ายพื้นสีดำ">ป้ายพื้นสีดำ</option>
+              </select>
+            </div>
+
+            <div className="modern-field">
               <label>ลักษณะอื่น ๆ</label>
+
               <input
                 name="vehicle_description"
                 value={form.vehicle_description}

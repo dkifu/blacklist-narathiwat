@@ -266,9 +266,7 @@ function VehicleDetail({
     templateImageUrl ||
     vehicleImageUrl
 
-  const canManageTemplate =
-    ['admin', 'supervisor', 'operator', 'center']
-      .includes(profile?.role)
+  const canManageTemplate = Boolean(profile?.id)
 
   const drawRoundedRect = (
     ctx,
@@ -2085,8 +2083,8 @@ function VehicleDetail({
                 />
 
                 <DetailItem
-                    label="ลักษณะอื่น ๆ"
-                    value={vehicle.vehicle_description}
+                  label="ประเภทป้าย"
+                  value={vehicle.plate_type}
                 />
 
                 </div>
@@ -2111,6 +2109,11 @@ function VehicleDetail({
                 <DetailItem
                     label="เลขตัวถัง"
                     value={vehicle.chassis_number}
+                />
+
+                <DetailItem
+                  label="ลักษณะอื่น ๆ"
+                  value={vehicle.vehicle_description}
                 />
 
                 </div>
