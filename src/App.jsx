@@ -8,6 +8,9 @@ import Settings from './pages/Settings'
 import Users from './pages/Users'
 import Dashboard from './pages/Dashboard'
 import ActivityLog from './pages/ActivityLog'
+import AdminTasks from './pages/AdminTasks'
+
+
 
 
 function App() {
@@ -174,6 +177,7 @@ function App() {
     vehicleDetail: 'รายละเอียดรถ',
     editVehicle: 'แก้ไขข้อมูลรถ',
     users: 'ผู้ใช้งาน',
+    adminTasks: 'งาน Admin',
     activityLog: 'Activity Log',
     settings: 'ตั้งค่าระบบ',
   }[currentPage] || 'Blacklist Narathiwat'
@@ -232,6 +236,21 @@ function App() {
                 ผู้ใช้งาน
               </button>
 
+            )}
+
+            {profile?.role === 'admin' && (
+              <button
+                className={`menu-item ${
+                  currentPage === 'adminTasks'
+                    ? 'active'
+                    : ''
+                }`}
+                onClick={() =>
+                  setCurrentPage('adminTasks')
+                }
+              >
+                งาน Admin
+              </button>
             )}
 
             {profile?.role === 'admin' && (
@@ -362,6 +381,10 @@ function App() {
             ) : currentPage === 'users' ? (
 
               <Users profile={profile} />
+
+            ) : currentPage === 'adminTasks' ? (
+
+              <AdminTasks profile={profile} />  
 
             ) : currentPage === 'activityLog' ? (
 
