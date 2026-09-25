@@ -1852,14 +1852,20 @@ function AdminTaskDetail({
             <h3>รายละเอียดงาน</h3>
 
             {task.description ? (
-              <p className="admin-detail-description">
-                {task.description}
-              </p>
-            ) : (
-              <p className="admin-detail-empty">
-                ไม่มีรายละเอียด
-              </p>
-            )}
+                <div className="admin-detail-description-box">
+
+                    <span>รายละเอียด</span>
+
+                    <p className="admin-detail-description">
+                    {task.description}
+                    </p>
+
+                </div>
+                ) : (
+                <p className="admin-detail-empty">
+                    ไม่มีรายละเอียด
+                </p>
+                )}
 
             {task.note && (
               <div className="admin-detail-note">
