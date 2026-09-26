@@ -8660,3 +8660,103 @@ input[type="checkbox"] {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.admin-subtask-scope-card {
+  padding: 14px;
+  margin-bottom: 12px;
+
+  border: 1px solid #2d3545;
+  border-radius: 12px;
+
+  background: #111722;
+}
+
+.admin-subtask-scope-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 12px;
+  align-items: center;
+
+  margin-top: 12px;
+}
+
+.admin-subtask-scope-row label {
+  color: #9ca6b7;
+  font-size: 12px;
+}
+
+.admin-subtask-scope-row select {
+  width: 100%;
+  min-height: 42px;
+
+  padding: 0 12px;
+
+  border: 1px solid #31394b;
+  border-radius: 10px;
+
+  background: #0f131b;
+  color: #ffffff;
+
+  font-family: inherit;
+}
+
+.admin-subtask-center-picker {
+  margin-top: 14px;
+}
+
+.admin-subtask-center-picker > span {
+  display: block;
+
+  margin-bottom: 9px;
+
+  color: #8f98aa;
+  font-size: 12px;
+}
+
+.admin-subtask-center-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 8px;
+}
+
+.admin-subtask-center-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 9px 11px;
+
+  border: 1px solid #2e3748;
+  border-radius: 9px;
+
+  background: #0d121a;
+
+  color: #b8c0cd;
+  font-size: 12px;
+
+  cursor: pointer;
+}
+
+.admin-subtask-center-option.selected {
+  border-color:
+    rgba(197, 31, 71, 0.6);
+
+  background:
+    rgba(197, 31, 71, 0.12);
+
+  color: #ffffff;
+}
+
+@media (max-width: 700px) {
+
+  .admin-subtask-scope-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-subtask-center-grid {
+    grid-template-columns: 1fr;
+  }
+
+}

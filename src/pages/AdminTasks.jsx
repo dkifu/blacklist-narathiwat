@@ -43,7 +43,13 @@ function AdminTasks({ profile }) {
   })
 
   const [selectedCenterIds, setSelectedCenterIds] = useState([])
-  const [subtasks, setSubtasks] = useState([''])
+  const [subtasks, setSubtasks] = useState([
+    {
+      title: '',
+      scope_type: 'all_centers',
+      center_ids: [],
+    },
+  ])
 
   const [links, setLinks] = useState([
     {
@@ -88,7 +94,9 @@ function AdminTasks({ profile }) {
 
       supabase
         .from('admin_task_subtasks')
-        .select('id, task_id'),
+        .select(
+          'id, task_id, scope_type, global_status'
+        ),
 
       supabase
         .from('admin_task_subtask_centers')
@@ -172,16 +180,75 @@ function AdminTasks({ profile }) {
   }
 
   const addSubtask = () => {
-    setSubtasks((prev) => [...prev, ''])
-  }
+      setSubtasks((prev) => [
+        ...prev,
+        {
+          title: '',
+          scope_type: 'all_centers',
+          center_ids: [],
+        },
+      ])
+    }
 
-  const changeSubtask = (index, value) => {
-    setSubtasks((prev) =>
-      prev.map((item, itemIndex) =>
-        itemIndex === index ? value : item
+    const changeSubtask = (
+      index,
+      field,
+      value
+    ) => {
+      setSubtasks((prev) =>
+        prev.map((item, itemIndex) => {
+
+          if (itemIndex !== index) {
+            return item
+          }
+
+          const nextItem = {
+            ...item,
+            [field]: value,
+          }
+
+          if (
+            field === 'scope_type' &&
+            value !== 'specific_centers'
+          ) {
+            nextItem.center_ids = []
+          }
+
+          return nextItem
+        })
       )
-    )
-  }
+    }
+
+    const toggleSubtaskCenter = (
+      index,
+      centerId
+    ) => {
+
+      const value = String(centerId)
+
+      setSubtasks((prev) =>
+        prev.map((item, itemIndex) => {
+
+          if (itemIndex !== index) {
+            return item
+          }
+
+          const ids =
+            item.center_ids || []
+
+          return {
+            ...item,
+
+            center_ids:
+              ids.includes(value)
+                ? ids.filter(
+                    (id) => id !== value
+                  )
+                : [...ids, value],
+          }
+        })
+      )
+    }
 
   const removeSubtask = (index) => {
     setSubtasks((prev) =>
@@ -201,13 +268,19 @@ function AdminTasks({ profile }) {
       
     })
 
-    setSubtasks([''])
+    setSubtasks([
+      {
+        title: '',
+        scope_type: 'all_centers',
+        center_ids: [],
+      },
+    ])
 
     setLinks([
-    {
+      {
         label: '',
         url: '',
-    },
+      },
     ])
 
     setAttachments([])
@@ -465,51 +538,167 @@ function AdminTasks({ profile }) {
         throw centerInsertError
       }
 
-      const cleanSubtasks = subtasks
-        .map((item) => item.trim())
-        .filter(Boolean)
+      const cleanSubtasks =
+        subtasks
+          .map((item) => ({
+            title:
+              String(item.title || '').trim(),
+
+            scope_type:
+              item.scope_type ||
+              'all_centers',
+
+            center_ids:
+              (item.center_ids || [])
+                .map(String)
+                .filter((centerId) =>
+                  selectedCenterIds.includes(
+                    centerId
+                  )
+                ),
+          }))
+          .filter((item) => item.title)
+
+
+      const invalidSpecificSubtask =
+        cleanSubtasks.find(
+          (item) =>
+            item.scope_type ===
+              'specific_centers' &&
+            item.center_ids.length === 0
+        )
+
+      if (invalidSpecificSubtask) {
+        throw new Error(
+          `งานย่อย "${invalidSpecificSubtask.title}" ยังไม่ได้เลือกศูนย์`
+        )
+      }
+
 
       if (cleanSubtasks.length > 0) {
+
         const {
           data: insertedSubtasks,
           error: subtaskError,
         } = await supabase
           .from('admin_task_subtasks')
           .insert(
-            cleanSubtasks.map((title, index) => ({
-              task_id: task.id,
-              title,
-              sort_order: index + 1,
-            }))
+            cleanSubtasks.map(
+              (item, index) => ({
+                task_id: task.id,
+
+                title:
+                  item.title,
+
+                sort_order:
+                  index + 1,
+
+                scope_type:
+                  item.scope_type,
+
+                global_status:
+                  'pending',
+              })
+            )
           )
-          .select('id')
+          .select(
+            'id, sort_order, scope_type'
+          )
 
         if (subtaskError) {
           throw subtaskError
         }
 
+
         const subtaskCenterRows = []
 
-        insertedSubtasks.forEach((subtask) => {
-          selectedCenterIds.forEach((centerId) => {
-            subtaskCenterRows.push({
-              subtask_id: subtask.id,
-              center_id: Number(centerId),
-              status: 'pending',
-            })
-          })
-        })
+        insertedSubtasks.forEach(
+          (subtask) => {
 
-        if (subtaskCenterRows.length > 0) {
+            /*
+            * งานภาพรวม
+            * ไม่สร้าง relation กับศูนย์
+            */
+            if (
+              subtask.scope_type ===
+              'global'
+            ) {
+              return
+            }
+
+
+            const source =
+              cleanSubtasks[
+                subtask.sort_order - 1
+              ]
+
+            let targetCenterIds = []
+
+            /*
+            * ทุกศูนย์
+            */
+            if (
+              subtask.scope_type ===
+              'all_centers'
+            ) {
+
+              targetCenterIds =
+                selectedCenterIds
+
+            }
+
+            /*
+            * เลือกเฉพาะศูนย์
+            */
+            if (
+              subtask.scope_type ===
+              'specific_centers'
+            ) {
+
+              targetCenterIds =
+                source?.center_ids || []
+
+            }
+
+
+            targetCenterIds.forEach(
+              (centerId) => {
+
+                subtaskCenterRows.push({
+                  subtask_id:
+                    subtask.id,
+
+                  center_id:
+                    Number(centerId),
+
+                  status:
+                    'pending',
+                })
+
+              }
+            )
+          }
+        )
+
+
+        if (
+          subtaskCenterRows.length > 0
+        ) {
+
           const {
             error: subtaskCenterError,
           } = await supabase
-            .from('admin_task_subtask_centers')
-            .insert(subtaskCenterRows)
+            .from(
+              'admin_task_subtask_centers'
+            )
+            .insert(
+              subtaskCenterRows
+            )
 
           if (subtaskCenterError) {
             throw subtaskCenterError
           }
+
         }
       }
 
@@ -549,9 +738,6 @@ function AdminTasks({ profile }) {
 
     tasks.forEach((task) => {
 
-      /*
-      * หางานย่อยของงานนี้
-      */
       const currentSubtasks =
         taskSubtasks.filter(
           (item) =>
@@ -559,42 +745,86 @@ function AdminTasks({ profile }) {
             String(task.id)
         )
 
+
       /*
       * ถ้ามีงานย่อย
-      * คำนวณจากงานย่อยของทุกศูนย์
+      * คิดจาก work unit จริง
       */
       if (currentSubtasks.length > 0) {
 
-        const subtaskIds =
-          new Set(
-            currentSubtasks.map(
-              (item) =>
-                String(item.id)
-            )
+        /*
+        * งานภาพรวม
+        * 1 subtask = 1 work unit
+        */
+        const globalSubtasks =
+          currentSubtasks.filter(
+            (item) =>
+              (item.scope_type ||
+                'all_centers') === 'global'
           )
 
-        const rows =
+
+        /*
+        * งานที่ผูกกับศูนย์
+        */
+        const centerSubtaskIds =
+          new Set(
+            currentSubtasks
+              .filter(
+                (item) =>
+                  (item.scope_type ||
+                    'all_centers') !==
+                  'global'
+              )
+              .map(
+                (item) =>
+                  String(item.id)
+              )
+          )
+
+
+        const centerRows =
           taskSubtaskCenters.filter(
             (item) =>
-              subtaskIds.has(
+              centerSubtaskIds.has(
                 String(item.subtask_id)
               )
           )
 
-        const completed =
-          rows.filter(
+
+        const globalCompleted =
+          globalSubtasks.filter(
             (item) =>
-              item.status === 'completed'
+              item.global_status ===
+              'completed'
           ).length
 
+
+        const centerCompleted =
+          centerRows.filter(
+            (item) =>
+              item.status ===
+              'completed'
+          ).length
+
+
+        const total =
+          globalSubtasks.length +
+          centerRows.length
+
+        const completed =
+          globalCompleted +
+          centerCompleted
+
+
         result[task.id] = {
-          total: rows.length,
+          total,
           completed,
 
           percent:
-            rows.length > 0
+            total > 0
               ? Math.round(
-                  (completed / rows.length) *
+                  (completed / total) *
                     100
                 )
               : 0,
@@ -605,9 +835,10 @@ function AdminTasks({ profile }) {
         return
       }
 
+
       /*
       * ไม่มีงานย่อย
-      * ใช้สถานะของศูนย์เหมือนเดิม
+      * ใช้จำนวนศูนย์แบบเดิม
       */
       const rows =
         taskCenters.filter(
@@ -621,6 +852,7 @@ function AdminTasks({ profile }) {
           (item) =>
             item.status === 'completed'
         ).length
+
 
       result[task.id] = {
         total: rows.length,
@@ -638,6 +870,7 @@ function AdminTasks({ profile }) {
       }
 
     })
+
 
     return result
 
@@ -961,33 +1194,141 @@ function AdminTasks({ profile }) {
               </div>
 
               {subtasks.map((subtask, index) => (
+
                 <div
-                  className="admin-subtask-row"
+                  className="admin-subtask-scope-card"
                   key={index}
                 >
-                  <input
-                    value={subtask}
-                    onChange={(e) =>
-                      changeSubtask(
-                        index,
-                        e.target.value
-                      )
-                    }
-                    placeholder={`งานย่อย ${index + 1}`}
-                  />
 
-                  {subtasks.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeSubtask(index)
+                  <div className="admin-subtask-row">
+
+                    <input
+                      value={subtask.title}
+                      onChange={(e) =>
+                        changeSubtask(
+                          index,
+                          'title',
+                          e.target.value
+                        )
+                      }
+                      placeholder={`งานย่อย ${index + 1}`}
+                    />
+
+                    {subtasks.length > 1 && (
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeSubtask(index)
+                        }
+                      >
+                        ลบ
+                      </button>
+
+                    )}
+
+                  </div>
+
+
+                  <div className="admin-subtask-scope-row">
+
+                    <label>
+                      ขอบเขตงาน
+                    </label>
+
+                    <select
+                      value={subtask.scope_type}
+                      onChange={(e) =>
+                        changeSubtask(
+                          index,
+                          'scope_type',
+                          e.target.value
+                        )
                       }
                     >
-                      ลบ
-                    </button>
+
+                      <option value="global">
+                        ภาพรวมของงาน
+                      </option>
+
+                      <option value="all_centers">
+                        ทุกศูนย์ที่ได้รับมอบหมาย
+                      </option>
+
+                      <option value="specific_centers">
+                        เลือกเฉพาะศูนย์
+                      </option>
+
+                    </select>
+
+                  </div>
+
+
+                  {subtask.scope_type ===
+                    'specific_centers' && (
+
+                    <div className="admin-subtask-center-picker">
+
+                      <span>
+                        เลือกศูนย์สำหรับงานย่อยนี้
+                      </span>
+
+                      <div className="admin-subtask-center-grid">
+
+                        {centers
+                          .filter((center) =>
+                            selectedCenterIds.includes(
+                              String(center.id)
+                            )
+                          )
+                          .map((center) => {
+
+                            const checked =
+                              subtask.center_ids.includes(
+                                String(center.id)
+                              )
+
+                            return (
+
+                              <label
+                                className={`admin-subtask-center-option ${
+                                  checked
+                                    ? 'selected'
+                                    : ''
+                                }`}
+                                key={center.id}
+                              >
+
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() =>
+                                    toggleSubtaskCenter(
+                                      index,
+                                      center.id
+                                    )
+                                  }
+                                />
+
+                                <span>
+                                  {center.name}
+                                </span>
+
+                              </label>
+
+                            )
+                          })}
+
+                      </div>
+
+                    </div>
+
                   )}
+
                 </div>
+
               ))}
+
             </div>
 
             <div className="admin-task-section">
