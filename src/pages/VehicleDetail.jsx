@@ -30,6 +30,12 @@ function VehicleDetail({
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState('')
 
+  const [showCloseCaseModal, setShowCloseCaseModal] =
+    useState(false)
+
+  const [closeCaseNote, setCloseCaseNote] =
+    useState('')
+
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('success')
   const createVehicleImageUrl = async (
@@ -1928,38 +1934,79 @@ function VehicleDetail({
   }
 
   const handleCloseCase = async () => {
-    const confirmed = window.confirm(
-      `ยืนยันปิดคดีรถทะเบียน ${fullPlate}?\n\nรถจะถูกนำออกจาก Blacklist แต่ข้อมูลทั้งหมดจะยังถูกเก็บไว้`
-    )
 
-    if (!confirmed) return
+    const noteText =
+      closeCaseNote.trim()
 
-    setProcessing(true)
-
-    const today = new Date()
-      .toISOString()
-      .slice(0, 10)
-
-    const { error } = await supabase
-      .from('vehicles')
-      .update({
-        case_status: 'closed',
-        removed_date: today,
-      })
-      .eq('id', vehicle.id)
-
-    if (error) {
+    if (!noteText) {
       setMessageType('error')
-      setMessage(error.message)
-    } else {
-      setMessageType('success')
-      setMessage('ปิดคดีเรียบร้อยแล้ว')
-      await loadVehicle()
+      setMessage(
+        'กรุณาระบุหมายเหตุก่อนปิดคดี'
+      )
+      return
     }
 
-    setProcessing(false)
-  }
+    setProcessing(true)
+    setMessage('')
 
+    try {
+
+      const today = new Date()
+        .toISOString()
+        .slice(0, 10)
+
+      /*
+      * เก็บหมายเหตุเดิมไว้
+      * แล้วต่อท้ายข้อความปิดคดี
+      */
+      const currentNote =
+        String(vehicle.note || '').trim()
+
+      const nextNote =
+        currentNote
+          ? `${currentNote}\n\n${noteText}`
+          : noteText
+
+      const { error } = await supabase
+        .from('vehicles')
+        .update({
+          case_status: 'closed',
+          removed_date: today,
+          note: nextNote,
+        })
+        .eq('id', vehicle.id)
+
+      if (error) {
+        throw error
+      }
+
+      setShowCloseCaseModal(false)
+      setCloseCaseNote('')
+
+      await loadVehicle()
+
+      setMessageType('success')
+      setMessage(
+        'ปิดคดีและบันทึกหมายเหตุเรียบร้อยแล้ว'
+      )
+
+      await loadVehicle()
+
+    } catch (error) {
+
+      console.error(error)
+
+      setMessageType('error')
+      setMessage(
+        `ปิดคดีไม่สำเร็จ: ${error.message}`
+      )
+
+    } finally {
+
+      setProcessing(false)
+
+    }
+  }
   const handleReopenCase = async () => {
     const confirmed = window.confirm(
       `ยืนยันนำรถ ${fullPlate} กลับเข้าสู่ Blacklist?`
@@ -2620,11 +2667,15 @@ function VehicleDetail({
             {vehicle.case_status === 'open' ? (
 
             <button
-                className="close-case-button"
-                onClick={handleCloseCase}
-                disabled={processing}
+              className="close-case-button"
+              onClick={() => {
+                setCloseCaseNote('')
+                setMessage('')
+                setShowCloseCaseModal(true)
+              }}
+              disabled={processing}
             >
-                ✓ ปิดคดี
+              ✓ ปิดคดี
             </button>
 
             ) : (
@@ -2657,6 +2708,87 @@ function VehicleDetail({
         </div>
 
         </div>
+
+      {showCloseCaseModal && (
+
+        <div className="modal-overlay">
+
+          <div className="delete-modal close-case-modal">
+
+            <div className="close-case-modal-icon">
+              ✓
+            </div>
+
+            <h3>
+              ยืนยันการปิดคดี
+            </h3>
+
+            <p>
+              รถทะเบียน
+              <strong>
+                {' '}
+                {fullPlate}{' '}
+                {vehicle.province}
+              </strong>
+            </p>
+
+            <div className="close-case-info-box">
+              รถจะถูกนำออกจาก Blacklist
+              แต่ข้อมูลทั้งหมดจะยังถูกเก็บไว้
+            </div>
+
+            <label className="delete-confirm-label">
+              ระบุหมายเหตุการปิดคดี
+            </label>
+
+            <textarea
+              className="delete-confirm-input close-case-note-input"
+              rows={4}
+              value={closeCaseNote}
+              onChange={(e) =>
+                setCloseCaseNote(
+                  e.target.value
+                )
+              }
+              placeholder="เช่น ตรวจสอบแล้วไม่พบความเกี่ยวข้อง ยกเลิกการเฝ้าระวัง..."
+              autoFocus
+            />
+
+            <div className="delete-modal-actions">
+
+              <button
+                type="button"
+                className="cancel-modal-button"
+                onClick={() => {
+                  setShowCloseCaseModal(false)
+                  setCloseCaseNote('')
+                }}
+                disabled={processing}
+              >
+                ยกเลิก
+              </button>
+
+              <button
+                type="button"
+                className="confirm-close-case-button"
+                onClick={handleCloseCase}
+                disabled={
+                  processing ||
+                  !closeCaseNote.trim()
+                }
+              >
+                {processing
+                  ? 'กำลังปิดคดี...'
+                  : 'ยืนยันปิดคดี'}
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}  
 
       {showDeleteModal && (
         <div className="modal-overlay">
