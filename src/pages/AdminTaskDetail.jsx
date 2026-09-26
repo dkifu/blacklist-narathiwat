@@ -2523,56 +2523,286 @@ function AdminTaskDetail({
                 }
 
 
-                const centerContents =
-                taskCenters.map(
-                    (centerRow) => {
+                const globalSubtaskContents =
+                  subtasks
+                    .filter(
+                      (item) =>
+                        (
+                          item.scope_type ||
+                          'all_centers'
+                        ) === 'global'
+                    )
+                    .sort(
+                      (a, b) =>
+                        (a.sort_order || 0) -
+                        (b.sort_order || 0)
+                    )
+                    .slice(0, 5)
+                    .map((subtask) => {
 
-                    const center =
-                        centerMap[
-                        String(
-                            centerRow.center_id
-                        )
-                        ]
-
-                    const status =
+                      const status =
                         statusConfig[
-                        centerRow.status
+                          subtask.global_status
                         ] ||
                         statusConfig.pending
 
-                    return {
+                      return {
                         type: 'box',
                         layout: 'horizontal',
                         spacing: 'sm',
+                        margin: 'sm',
 
                         contents: [
-                        {
+                          {
                             type: 'text',
                             text:
-                            center?.name ||
-                            `Center ${centerRow.center_id}`,
-                            size: 'sm',
-                            color: '#333333',
-                            flex: 1,
+                              `${subtask.sort_order}. ${subtask.title}`,
+                            size: 'xs',
+                            color: '#374151',
                             wrap: true,
-                        },
+                            flex: 1,
+                          },
 
-                        {
+                          {
                             type: 'text',
                             text:
-                            `${status.icon} ${status.label}`,
+                              `${status.icon} ${status.label}`,
                             size: 'xs',
                             color:
-                            status.color,
+                              status.color,
                             weight: 'bold',
                             align: 'end',
                             flex: 0,
-                        },
+                          },
                         ],
-                    }
-                    }
-                )
+                      }
+                    })
 
+
+                const globalSubtaskCount =
+                  subtasks.filter(
+                    (item) =>
+                      (
+                        item.scope_type ||
+                        'all_centers'
+                      ) === 'global'
+                  ).length
+
+
+                const centerContents =
+                  taskCenters.map(
+                    (centerRow) => {
+
+                      const centerId =
+                        String(centerRow.center_id)
+
+                      const center =
+                        centerMap[centerId]
+
+                      const centerStatus =
+                        statusConfig[
+                          centerRow.status
+                        ] ||
+                        statusConfig.pending
+
+
+                      /*
+                      * หางานย่อยที่มอบหมาย
+                      * ให้ศูนย์นี้จริง
+                      */
+                      const assignedSubtasks =
+                        subtaskCenters
+                          .filter(
+                            (row) =>
+                              String(row.center_id) ===
+                              centerId
+                          )
+                          .map((row) => {
+
+                            const subtask =
+                              subtasks.find(
+                                (item) =>
+                                  String(item.id) ===
+                                    String(
+                                      row.subtask_id
+                                    ) &&
+                                  (
+                                    item.scope_type ||
+                                    'all_centers'
+                                  ) !== 'global'
+                              )
+
+                            if (!subtask) {
+                              return null
+                            }
+
+                            return {
+                              subtask,
+                              relation: row,
+                            }
+                          })
+                          .filter(Boolean)
+                          .sort(
+                            (a, b) =>
+                              (
+                                a.subtask.sort_order ||
+                                0
+                              ) -
+                              (
+                                b.subtask.sort_order ||
+                                0
+                              )
+                          )
+
+
+                      /*
+                      * LINE ไม่ควรยาวเกินไป
+                      * แสดงสูงสุด 4 งานต่อศูนย์
+                      */
+                      const visibleSubtasks =
+                        assignedSubtasks.slice(0, 4)
+
+                      const hiddenCount =
+                        Math.max(
+                          assignedSubtasks.length -
+                            visibleSubtasks.length,
+                          0
+                        )
+
+
+                      const subtaskContents =
+                        visibleSubtasks.map(
+                          ({
+                            subtask,
+                            relation,
+                          }) => {
+
+                            const status =
+                              statusConfig[
+                                relation.status
+                              ] ||
+                              statusConfig.pending
+
+                            return {
+                              type: 'box',
+                              layout: 'horizontal',
+                              spacing: 'sm',
+                              margin: 'sm',
+
+                              contents: [
+                                {
+                                  type: 'text',
+                                  text:
+                                    `${subtask.sort_order}. ${subtask.title}`,
+                                  size: 'xs',
+                                  color: '#4B5563',
+                                  wrap: true,
+                                  flex: 1,
+                                  maxLines: 2,
+                                },
+
+                                {
+                                  type: 'text',
+                                  text:
+                                    `${status.icon} ${status.label}`,
+                                  size: 'xs',
+                                  color:
+                                    status.color,
+                                  weight: 'bold',
+                                  align: 'end',
+                                  flex: 0,
+                                },
+                              ],
+                            }
+                          }
+                        )
+
+
+                      return {
+                        type: 'box',
+                        layout: 'vertical',
+                        margin: 'md',
+                        paddingAll: '12px',
+
+                        backgroundColor:
+                          '#F8FAFC',
+
+                        cornerRadius:
+                          '10px',
+
+                        contents: [
+
+                          /*
+                          * หัวศูนย์
+                          */
+                          {
+                            type: 'box',
+                            layout: 'horizontal',
+                            spacing: 'sm',
+
+                            contents: [
+                              {
+                                type: 'text',
+                                text:
+                                  center?.name ||
+                                  `Center ${centerId}`,
+                                size: 'sm',
+                                weight: 'bold',
+                                color: '#111827',
+                                flex: 1,
+                                wrap: true,
+                              },
+
+                              {
+                                type: 'text',
+                                text:
+                                  `${centerStatus.icon} ${centerStatus.label}`,
+                                size: 'xs',
+                                color:
+                                  centerStatus.color,
+                                weight: 'bold',
+                                align: 'end',
+                                flex: 0,
+                              },
+                            ],
+                          },
+
+
+                          /*
+                          * งานย่อยของศูนย์
+                          */
+                          ...(subtaskContents.length > 0
+                            ? [
+                                {
+                                  type: 'separator',
+                                  margin: 'sm',
+                                },
+
+                                ...subtaskContents,
+                              ]
+                            : []),
+
+
+                          /*
+                          * ถ้ามีมากกว่า 4 งาน
+                          */
+                          ...(hiddenCount > 0
+                            ? [
+                                {
+                                  type: 'text',
+                                  text:
+                                    `+ อีก ${hiddenCount} งาน`,
+                                  size: 'xs',
+                                  color: '#6B7280',
+                                  margin: 'sm',
+                                  align: 'end',
+                                },
+                              ]
+                            : []),
+                        ],
+                      }
+                    }
+                  )
 
                 /*
                 * สร้าง URL สำหรับไฟล์แนบ
@@ -2722,11 +2952,7 @@ function AdminTaskDetail({
                             {
                             type: 'text',
                             text:
-                              `${progress.completed}/${progress.total} ${
-                                progress.type === 'subtask'
-                                  ? 'งานย่อย'
-                                  : 'ศูนย์'
-                              } (${progress.percent}%)`,
+                              `${progress.completed}/${progress.total} รายการงาน (${progress.percent}%)`,
                             size: 'sm',
                             weight: 'bold',
                             color: '#C51F47',
@@ -2737,14 +2963,62 @@ function AdminTaskDetail({
                         },
 
 
+                        /*
+                        * งานภาพรวม
+                        */
+                        ...(globalSubtaskContents.length > 0
+                          ? [
+                              {
+                                type: 'separator',
+                                margin: 'md',
+                              },
+
+                              {
+                                type: 'text',
+                                text: 'งานภาพรวม',
+                                size: 'sm',
+                                weight: 'bold',
+                                color: '#111827',
+                                margin: 'md',
+                              },
+
+                              ...globalSubtaskContents,
+
+                              ...(globalSubtaskCount > 5
+                                ? [
+                                    {
+                                      type: 'text',
+                                      text:
+                                        `+ อีก ${
+                                          globalSubtaskCount - 5
+                                        } งาน`,
+                                      size: 'xs',
+                                      color: '#6B7280',
+                                      align: 'end',
+                                      margin: 'sm',
+                                    },
+                                  ]
+                                : []),
+                            ]
+                          : []),
+
+
+                        /*
+                        * สถานะแต่ละศูนย์
+                        */
                         {
-                        type: 'text',
-                        text:
+                          type: 'separator',
+                          margin: 'md',
+                        },
+
+                        {
+                          type: 'text',
+                          text:
                             'สถานะแต่ละศูนย์',
-                        size: 'sm',
-                        weight: 'bold',
-                        color: '#222222',
-                        margin: 'md',
+                          size: 'sm',
+                          weight: 'bold',
+                          color: '#111827',
+                          margin: 'md',
                         },
 
                         ...centerContents,
