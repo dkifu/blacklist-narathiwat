@@ -23,6 +23,9 @@ function AdminTasks({ profile }) {
   const [centers, setCenters] = useState([])
   const [taskCenters, setTaskCenters] = useState([])
 
+  const [taskSubtasks, setTaskSubtasks] = useState([])
+  const [taskSubtaskCenters, setTaskSubtaskCenters] = useState([])
+
   const [selectedTaskId, setSelectedTaskId] = useState(null)
 
   const [loading, setLoading] = useState(true)
@@ -62,6 +65,8 @@ function AdminTasks({ profile }) {
       taskResult,
       centerResult,
       taskCenterResult,
+      taskSubtaskResult,
+      taskSubtaskCenterResult,
     ] = await Promise.all([
       supabase
         .from('admin_tasks')
@@ -80,6 +85,14 @@ function AdminTasks({ profile }) {
       supabase
         .from('admin_task_centers')
         .select('task_id, center_id, status'),
+
+      supabase
+        .from('admin_task_subtasks')
+        .select('id, task_id'),
+
+      supabase
+        .from('admin_task_subtask_centers')
+        .select('subtask_id, center_id, status'),  
     ])
 
     if (taskResult.error) {
@@ -96,11 +109,27 @@ function AdminTasks({ profile }) {
       console.error(taskCenterResult.error)
     }
 
+    if (taskSubtaskResult.error) {
+      console.error(taskSubtaskResult.error)
+    }
+
+    if (taskSubtaskCenterResult.error) {
+      console.error(taskSubtaskCenterResult.error)
+}
+
     const centerRows = centerResult.data || []
 
     setTasks(taskResult.data || [])
     setCenters(centerRows)
     setTaskCenters(taskCenterResult.data || [])
+
+    setTaskSubtasks(
+      taskSubtaskResult.data || []
+    )
+
+    setTaskSubtaskCenters(
+      taskSubtaskCenterResult.data || []
+    )
 
     setSelectedCenterIds((prev) =>
       prev.length
@@ -515,33 +544,109 @@ function AdminTasks({ profile }) {
   }
 
   const taskProgress = useMemo(() => {
+
     const result = {}
 
     tasks.forEach((task) => {
-      const rows = taskCenters.filter(
-        (item) =>
-          String(item.task_id) ===
-          String(task.id)
-      )
 
-      const completed = rows.filter(
-        (item) => item.status === 'completed'
-      ).length
+      /*
+      * หางานย่อยของงานนี้
+      */
+      const currentSubtasks =
+        taskSubtasks.filter(
+          (item) =>
+            String(item.task_id) ===
+            String(task.id)
+        )
+
+      /*
+      * ถ้ามีงานย่อย
+      * คำนวณจากงานย่อยของทุกศูนย์
+      */
+      if (currentSubtasks.length > 0) {
+
+        const subtaskIds =
+          new Set(
+            currentSubtasks.map(
+              (item) =>
+                String(item.id)
+            )
+          )
+
+        const rows =
+          taskSubtaskCenters.filter(
+            (item) =>
+              subtaskIds.has(
+                String(item.subtask_id)
+              )
+          )
+
+        const completed =
+          rows.filter(
+            (item) =>
+              item.status === 'completed'
+          ).length
+
+        result[task.id] = {
+          total: rows.length,
+          completed,
+
+          percent:
+            rows.length > 0
+              ? Math.round(
+                  (completed / rows.length) *
+                    100
+                )
+              : 0,
+
+          type: 'subtask',
+        }
+
+        return
+      }
+
+      /*
+      * ไม่มีงานย่อย
+      * ใช้สถานะของศูนย์เหมือนเดิม
+      */
+      const rows =
+        taskCenters.filter(
+          (item) =>
+            String(item.task_id) ===
+            String(task.id)
+        )
+
+      const completed =
+        rows.filter(
+          (item) =>
+            item.status === 'completed'
+        ).length
 
       result[task.id] = {
         total: rows.length,
         completed,
+
         percent:
           rows.length > 0
             ? Math.round(
-                (completed / rows.length) * 100
+                (completed / rows.length) *
+                  100
               )
             : 0,
+
+        type: 'center',
       }
+
     })
 
     return result
-  }, [tasks, taskCenters])
+
+  }, [
+    tasks,
+    taskCenters,
+    taskSubtasks,
+    taskSubtaskCenters,
+  ])
 
   const getCategoryLabel = (value) =>
     TASK_CATEGORIES.find(
@@ -970,6 +1075,7 @@ function AdminTasks({ profile }) {
                     total: 0,
                     completed: 0,
                     percent: 0,
+                    type: 'center',
                   }
 
                 return (
@@ -1006,7 +1112,10 @@ function AdminTasks({ profile }) {
 
                       <strong>
                         {progress.completed} /{' '}
-                        {progress.total} ศูนย์
+                        {progress.total}{' '}
+                        {progress.type === 'subtask'
+                          ? 'งานย่อย'
+                          : 'ศูนย์'}
                       </strong>
                     </div>
 

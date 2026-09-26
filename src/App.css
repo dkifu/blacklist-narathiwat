@@ -6668,48 +6668,30 @@ input[type="checkbox"] {
    CATEGORY BADGE
 ========================================================= */
 
-.admin-task-category {
+.admin-task-category,
+.admin-task-priority {
   display: inline-flex;
-
   align-items: center;
+  justify-content: center;
 
-  min-height: 25px;
-
-  padding: 0 9px;
-
-  border: 1px solid #303a4d;
+  min-height: 36px;
+  padding: 0 14px;
 
   border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+/* สีและกรอบของหมวดงาน */
+.admin-task-category {
+  border: 1px solid #303a4d;
 
   background: #151c27;
 
   color: #adb9ca;
-
-  font-size: 10px;
-
-  font-weight: 700;
-}
-
-
-/* =========================================================
-   PRIORITY
-========================================================= */
-
-.admin-task-priority {
-  flex-shrink: 0;
-
-  display: inline-flex;
-
-  align-items: center;
-
-  min-height: 27px;
-
-  padding: 0 10px;
-
-  border-radius: 999px;
-
-  font-size: 10px;
-  font-weight: 800;
 }
 
 .admin-task-priority.normal {
@@ -7865,21 +7847,29 @@ input[type="checkbox"] {
 }
 
 .admin-task-edit-button {
-  min-height: 34px;
+  height: 44px;
+  min-height: 44px;
 
-  padding: 0 13px;
+  padding: 0 18px;
 
   border: 1px solid #38465c;
-  border-radius: 9px;
+  border-radius: 11px;
 
   background: #151d29;
 
   color: #c9d5e5;
 
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
 
+  font-family: inherit;
   cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  white-space: nowrap;
 
   transition: 0.2s ease;
 }
@@ -8368,7 +8358,8 @@ input[type="checkbox"] {
 ========================================================= */
 
 .admin-line-share-button {
-  min-height: 36px;
+  height: 44px;
+  min-height: 44px;
 
   display: inline-flex;
   align-items: center;
@@ -8376,22 +8367,22 @@ input[type="checkbox"] {
 
   gap: 7px;
 
-  padding: 0 13px;
+  padding: 0 18px;
 
   border: 1px solid rgba(6, 199, 85, 0.5);
-  border-radius: 9px;
+  border-radius: 11px;
 
-  background:
-    rgba(6, 199, 85, 0.08);
+  background: rgba(6, 199, 85, 0.08);
 
-  color: #5ee58b;
+  color: #5ee58c;
 
   font-family: inherit;
-
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
 
   cursor: pointer;
+
+  white-space: nowrap;
 
   transition: 0.2s ease;
 }
@@ -8473,4 +8464,130 @@ input[type="checkbox"] {
   line-height: 1.75;
 
   white-space: pre-line;
+}
+
+.admin-center-status-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 14px;
+
+  margin-left: auto;
+}
+
+.admin-center-status-right
+.admin-center-completed-time {
+  margin: 0;
+  padding: 0;
+
+  border-top: none;
+
+  color: #66b98a;
+
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   ADMIN EDIT SUBTASK
+========================================================= */
+
+.admin-edit-subtask-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-edit-subtask-row {
+  display: grid;
+  grid-template-columns:
+    28px
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-edit-subtask-number {
+  color: #74839a;
+
+  font-size: 11px;
+  text-align: center;
+}
+
+.admin-edit-subtask-row input {
+  width: 100%;
+  height: 42px;
+
+  padding: 0 13px;
+
+  border: 1px solid #30394a;
+  border-radius: 9px;
+
+  background: #0d121a;
+  color: #f4f7fb;
+
+  font-family: inherit;
+  font-size: 12px;
+
+  outline: none;
+}
+
+.admin-edit-subtask-row input:focus {
+  border-color: #c51f47;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(197, 31, 71, 0.1);
+}
+
+.admin-edit-subtask-row button {
+  min-width: 56px;
+  height: 42px;
+
+  padding: 0 12px;
+
+  border: 1px solid #5a2937;
+  border-radius: 9px;
+
+  background: #24131a;
+  color: #e6849d;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.admin-edit-subtask-row button:hover {
+  background: #351922;
+  color: #ff9db4;
+}
+
+.admin-edit-subtask-empty {
+  padding: 14px;
+
+  border: 1px dashed #30394a;
+  border-radius: 9px;
+
+  color: #74839a;
+
+  font-size: 11px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .admin-edit-subtask-row {
+    grid-template-columns:
+      24px
+      minmax(0, 1fr);
+  }
+
+  .admin-edit-subtask-row button {
+    grid-column: 2;
+    width: 100%;
+  }
 }

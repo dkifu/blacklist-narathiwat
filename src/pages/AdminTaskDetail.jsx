@@ -85,6 +85,8 @@ function AdminTaskDetail({
 
   const [editLinks, setEditLinks] = useState([])
   const [editAttachments, setEditAttachments] = useState([])
+  const [editSubtasks, setEditSubtasks] = useState([])
+
   const [deletingFileId, setDeletingFileId] =
     useState(null)
   
@@ -287,6 +289,57 @@ function AdminTaskDetail({
   }, [centers])
 
   const progress = useMemo(() => {
+
+    /*
+    * ถ้ามีงานย่อย
+    * คิด % จากงานย่อยของทุกศูนย์
+    */
+    if (subtasks.length > 0) {
+
+      const subtaskIds =
+        new Set(
+          subtasks.map((item) =>
+            String(item.id)
+          )
+        )
+
+      const rows =
+        subtaskCenters.filter(
+          (item) =>
+            subtaskIds.has(
+              String(item.subtask_id)
+            )
+        )
+
+      const total = rows.length
+
+      const completed =
+        rows.filter(
+          (item) =>
+            item.status === 'completed'
+        ).length
+
+      return {
+        total,
+        completed,
+
+        percent:
+          total > 0
+            ? Math.round(
+                (completed / total) * 100
+              )
+            : 0,
+
+        type: 'subtask',
+      }
+    }
+
+
+    /*
+    * ถ้าไม่มีงานย่อย
+    * ใช้จำนวนศูนย์เหมือนเดิม
+    */
+
     const total = taskCenters.length
 
     const completed =
@@ -305,8 +358,15 @@ function AdminTaskDetail({
               (completed / total) * 100
             )
           : 0,
+
+      type: 'center',
     }
-  }, [taskCenters])
+
+  }, [
+    taskCenters,
+    subtasks,
+    subtaskCenters,
+  ])
 
   const getStatusLabel = (status) =>
     STATUS_OPTIONS.find(
@@ -849,6 +909,13 @@ function AdminTaskDetail({
             ]
     )
 
+    setEditSubtasks(
+      subtasks.map((item) => ({
+        id: item.id,
+        title: item.title || '',
+      }))
+    )
+
     setEditAttachments([])
     setEditMode(true)
     setMessage('')
@@ -891,7 +958,42 @@ function AdminTaskDetail({
         (_, itemIndex) =>
             itemIndex !== index
         )
-    )
+      )
+    }
+
+    const addEditSubtask = () => {
+      setEditSubtasks((prev) => [
+        ...prev,
+        {
+          id: null,
+          title: '',
+        },
+      ])
+    }
+
+    const changeEditSubtask = (
+      index,
+      value
+    ) => {
+      setEditSubtasks((prev) =>
+        prev.map((item, itemIndex) =>
+          itemIndex === index
+            ? {
+                ...item,
+                title: value,
+              }
+            : item
+        )
+      )
+    }
+
+    const removeEditSubtask = (index) => {
+      setEditSubtasks((prev) =>
+        prev.filter(
+          (_, itemIndex) =>
+            itemIndex !== index
+        )
+      )
     }
 
 
@@ -975,6 +1077,282 @@ function AdminTaskDetail({
         if (taskError) {
         throw taskError
         }
+
+        /*
+        * งานย่อย
+        */
+
+        const cleanSubtasks =
+          editSubtasks
+            .map((item, index) => ({
+              id: item.id,
+              title: item.title.trim(),
+              sort_order: index + 1,
+            }))
+            .filter((item) => item.title)
+
+
+        /*
+        * ลบงานย่อยเดิมที่ถูกเอาออกจากฟอร์ม
+        */
+
+        const keptExistingIds =
+          cleanSubtasks
+            .filter((item) => item.id)
+            .map((item) => String(item.id))
+
+        const removedSubtasks =
+          subtasks.filter(
+            (item) =>
+              !keptExistingIds.includes(
+                String(item.id)
+              )
+          )
+
+        for (const item of removedSubtasks) {
+
+          const {
+            error: deleteSubtaskCenterError,
+          } = await supabase
+            .from(
+              'admin_task_subtask_centers'
+            )
+            .delete()
+            .eq(
+              'subtask_id',
+              item.id
+            )
+
+          if (deleteSubtaskCenterError) {
+            throw deleteSubtaskCenterError
+          }
+
+          const {
+            error: deleteSubtaskError,
+          } = await supabase
+            .from('admin_task_subtasks')
+            .delete()
+            .eq(
+              'id',
+              item.id
+            )
+
+          if (deleteSubtaskError) {
+            throw deleteSubtaskError
+          }
+        }
+
+
+        /*
+        * อัปเดตงานย่อยเดิม
+        */
+
+        for (
+          const item
+          of cleanSubtasks.filter(
+            (row) => row.id
+          )
+        ) {
+
+          const {
+            error: updateSubtaskError,
+          } = await supabase
+            .from('admin_task_subtasks')
+            .update({
+              title: item.title,
+              sort_order:
+                item.sort_order,
+            })
+            .eq(
+              'id',
+              item.id
+            )
+
+          if (updateSubtaskError) {
+            throw updateSubtaskError
+          }
+        }
+
+
+        /*
+        * เพิ่มงานย่อยใหม่
+        */
+
+        const newSubtasks =
+          cleanSubtasks.filter(
+            (item) => !item.id
+          )
+
+        if (newSubtasks.length > 0) {
+
+          const {
+            data: insertedSubtasks,
+            error: insertSubtaskError,
+          } = await supabase
+            .from('admin_task_subtasks')
+            .insert(
+              newSubtasks.map(
+                (item) => ({
+                  task_id: taskId,
+                  title: item.title,
+                  sort_order:
+                    item.sort_order,
+                })
+              )
+            )
+            .select('id')
+
+          if (insertSubtaskError) {
+            throw insertSubtaskError
+          }
+
+          /*
+          * ผูกงานย่อยใหม่กับทุกศูนย์
+          */
+
+          const relationRows = []
+
+          insertedSubtasks.forEach(
+            (subtask) => {
+
+              taskCenters.forEach(
+                (centerRow) => {
+
+                  relationRows.push({
+                    subtask_id:
+                      subtask.id,
+
+                    center_id:
+                      centerRow.center_id,
+
+                    status:
+                      'pending',
+                  })
+
+                }
+              )
+
+            }
+          )
+
+          if (relationRows.length > 0) {
+
+            const {
+              error: relationError,
+            } = await supabase
+              .from(
+                'admin_task_subtask_centers'
+              )
+              .insert(
+                relationRows
+              )
+
+            if (relationError) {
+              throw relationError
+            }
+          }
+        }
+
+        if (cleanSubtasks.length > 0) {
+
+          const {
+            data: latestSubtasks,
+            error: latestSubtaskError,
+          } = await supabase
+            .from('admin_task_subtasks')
+            .select('id')
+            .eq('task_id', taskId)
+
+          if (latestSubtaskError) {
+            throw latestSubtaskError
+          }
+
+          const latestIds =
+            (latestSubtasks || [])
+              .map((item) => item.id)
+
+          for (const centerRow of taskCenters) {
+
+            const {
+              data: rows,
+              error: rowsError,
+            } = await supabase
+              .from(
+                'admin_task_subtask_centers'
+              )
+              .select(
+                'subtask_id, status'
+              )
+              .eq(
+                'center_id',
+                centerRow.center_id
+              )
+              .in(
+                'subtask_id',
+                latestIds
+              )
+
+            if (rowsError) {
+              throw rowsError
+            }
+
+            const statuses =
+              (rows || []).map(
+                (item) => item.status
+              )
+
+            const allCompleted =
+              latestIds.length > 0 &&
+              statuses.length ===
+                latestIds.length &&
+              statuses.every(
+                (status) =>
+                  status === 'completed'
+              )
+
+            const hasProgress =
+              statuses.some(
+                (status) =>
+                  status === 'doing' ||
+                  status === 'completed'
+              )
+
+            const nextStatus =
+              allCompleted
+                ? 'completed'
+                : hasProgress
+                  ? 'doing'
+                  : 'pending'
+
+            const completedAt =
+              nextStatus === 'completed'
+                ? centerRow.completed_at ||
+                  new Date().toISOString()
+                : null
+
+            const {
+              error: updateCenterError,
+            } = await supabase
+              .from('admin_task_centers')
+              .update({
+                status:
+                  nextStatus,
+
+                completed_at:
+                  completedAt,
+              })
+              .eq(
+                'id',
+                centerRow.id
+              )
+
+            if (updateCenterError) {
+              throw updateCenterError
+            }
+          }
+        }
+
+        await syncTaskStatus()
 
 
         /*
@@ -1535,7 +1913,11 @@ function AdminTaskDetail({
                             {
                             type: 'text',
                             text:
-                                `${progress.completed}/${progress.total} ศูนย์ (${progress.percent}%)`,
+                              `${progress.completed}/${progress.total} ${
+                                progress.type === 'subtask'
+                                  ? 'งานย่อย'
+                                  : 'ศูนย์'
+                              } (${progress.percent}%)`,
                             size: 'sm',
                             weight: 'bold',
                             color: '#C51F47',
@@ -1782,53 +2164,41 @@ function AdminTaskDetail({
 
         <div className="admin-task-detail-title">
           <div>
-            <span className="admin-task-category">
-              {CATEGORY_LABELS[
-                task.category
-              ] || task.category}
-            </span>
-
             <h2>{task.title}</h2>
           </div>
 
           <div className="admin-task-detail-actions">
 
-            <span
-                className={`admin-task-priority ${task.priority}`}
-            >
-                {PRIORITY_LABELS[
-                task.priority
-                ] || task.priority}
+            <span className="admin-task-category">
+              {CATEGORY_LABELS[task.category] || task.category}
             </span>
 
-
-            <button
-                type="button"
-                className="admin-line-share-button"
-                onClick={handleShareLine}
-                disabled={sharingLine}
-                >
-                <span className="admin-line-share-icon">
-                    L
-                </span>
-
-                <span>
-                    {sharingLine
-                    ? 'กำลังเปิด LINE...'
-                    : 'ส่ง LINE'}
-                </span>
-            </button>
-
-
-            <button
-                type="button"
-                className="admin-task-edit-button"
-                onClick={startEdit}
+            <span
+              className={`admin-task-priority ${task.priority}`}
             >
-                ✎ แก้ไขงาน
+              {PRIORITY_LABELS[task.priority] || task.priority}
+            </span>
+
+            <button
+              type="button"
+              className="admin-line-share-button"
+              onClick={handleShareLine}
+              disabled={sharingLine}
+            >
+              <span className="admin-line-share-icon">L</span>
+              <span>
+                {sharingLine ? 'กำลังเปิด LINE...' : 'ส่ง LINE'}
+              </span>
             </button>
 
-            </div>
+            <button
+              type="button"
+              className="admin-task-edit-button"
+              onClick={startEdit}
+            >
+              ✎ แก้ไขงาน
+            </button>
+          </div>
         </div>
 
       </div>
@@ -2046,60 +2416,59 @@ function AdminTaskDetail({
                           </h4>
 
                           {center?.code && (
-                            <small>
-                              {center.code}
-                            </small>
+                            <small>{center.code}</small>
                           )}
                         </div>
 
+                        <div className="admin-center-status-right">
 
-                        {subtasks.length === 0 ? (
+                          {centerRow.completed_at && (
+                            <div className="admin-center-completed-time">
+                              เสร็จเมื่อ{' '}
+                              {formatDate(centerRow.completed_at)}
+                            </div>
+                          )}
 
-                          <select
-                            className={`admin-status-select ${centerRow.status}`}
-                            value={
-                              centerRow.status
-                            }
-                            disabled={
-                              savingKey ===
-                              `center-${centerRow.center_id}`
-                            }
-                            onChange={(e) =>
-                              updateCenterStatus(
-                                centerRow,
-                                e.target.value
-                              )
-                            }
-                          >
-                            {STATUS_OPTIONS.map(
-                              (item) => (
+                          {subtasks.length === 0 ? (
+                            <select
+                              className={`admin-status-select ${centerRow.status}`}
+                              value={centerRow.status}
+                              disabled={
+                                savingKey ===
+                                `center-${centerRow.center_id}`
+                              }
+                              onChange={(e) =>
+                                updateCenterStatus(
+                                  centerRow,
+                                  e.target.value
+                                )
+                              }
+                            >
+                              {STATUS_OPTIONS.map((item) => (
                                 <option
-                                  key={
-                                    item.value
-                                  }
-                                  value={
-                                    item.value
-                                  }
+                                  key={item.value}
+                                  value={item.value}
                                 >
                                   {item.label}
                                 </option>
-                              )
-                            )}
-                          </select>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`admin-status-badge ${centerRow.status}`}
+                            >
+                              {getStatusLabel(centerRow.status)}
+                            </span>
+                          )}
 
-                        ) : (
-
-                          <span
-                            className={`admin-status-badge ${centerRow.status}`}
-                          >
-                            {getStatusLabel(
-                              centerRow.status
-                            )}
-                          </span>
-
-                        )}
+                        </div>
 
                       </div>
+
+                         
+                           
+
+                        
 
 
                       {subtasks.length > 0 && (
@@ -2181,14 +2550,7 @@ function AdminTaskDetail({
                         </div>
                       )}
 
-                      {centerRow.completed_at && (
-                        <div className="admin-center-completed-time">
-                          เสร็จเมื่อ{' '}
-                          {formatDate(
-                            centerRow.completed_at
-                          )}
-                        </div>
-                      )}
+                      
 
                     </div>
                   )
@@ -2216,7 +2578,10 @@ function AdminTaskDetail({
 
             <small>
               {progress.completed} จาก{' '}
-              {progress.total} ศูนย์
+              {progress.total}{' '}
+              {progress.type === 'subtask'
+                ? 'งานย่อย'
+                : 'ศูนย์'}
             </small>
 
           </div>
@@ -2429,6 +2794,66 @@ function AdminTaskDetail({
                     )
                 }
                 />
+
+            </div>
+
+            <div className="admin-edit-section">
+
+              <div className="admin-edit-section-head">
+                <strong>งานย่อย</strong>
+
+                <button
+                  type="button"
+                  onClick={addEditSubtask}
+                >
+                  + เพิ่มงานย่อย
+                </button>
+              </div>
+
+              <div className="admin-edit-subtask-list">
+
+                {editSubtasks.length === 0 ? (
+                  <div className="admin-edit-subtask-empty">
+                    ไม่มีงานย่อย
+                  </div>
+                ) : (
+                  editSubtasks.map((item, index) => (
+
+                    <div
+                      className="admin-edit-subtask-row"
+                      key={item.id || `new-${index}`}
+                    >
+
+                      <span className="admin-edit-subtask-number">
+                        {index + 1}.
+                      </span>
+
+                      <input
+                        value={item.title}
+                        placeholder={`งานย่อย ${index + 1}`}
+                        onChange={(e) =>
+                          changeEditSubtask(
+                            index,
+                            e.target.value
+                          )
+                        }
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeEditSubtask(index)
+                        }
+                      >
+                        ลบ
+                      </button>
+
+                    </div>
+
+                  ))
+                )}
+
+              </div>
 
             </div>
 
