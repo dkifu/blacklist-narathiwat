@@ -290,53 +290,20 @@ function AdminTaskDetail({
 
   const progress = useMemo(() => {
 
-    if (subtasks.length > 0) {
+    /*
+    * ไม่มีงานย่อยเลย
+    * นับแต่ละศูนย์เป็น 1 งาน
+    */
+    if (subtasks.length === 0) {
 
-      const globalSubtasks =
-        subtasks.filter(
-          (item) =>
-            item.scope_type === 'global'
-        )
+      const total =
+        taskCenters.length
 
-      const centerSubtaskIds =
-        new Set(
-          subtasks
-            .filter(
-              (item) =>
-                item.scope_type !== 'global'
-            )
-            .map((item) =>
-              String(item.id)
-            )
-        )
-
-      const centerRows =
-        subtaskCenters.filter(
-          (item) =>
-            centerSubtaskIds.has(
-              String(item.subtask_id)
-            )
-        )
-
-      const globalCompleted =
-        globalSubtasks.filter(
-          (item) =>
-            item.global_status === 'completed'
-        ).length
-
-      const centerCompleted =
-        centerRows.filter(
+      const completed =
+        taskCenters.filter(
           (item) =>
             item.status === 'completed'
         ).length
-
-      const total =
-        globalSubtasks.length +
-        centerRows.length
-
-      const completed =
-        globalCompleted +
-        centerCompleted
 
       return {
         total,
@@ -349,18 +316,114 @@ function AdminTaskDetail({
               )
             : 0,
 
-        type: 'subtask',
+        type: 'center',
       }
     }
 
 
-    const total = taskCenters.length
+    /*
+    * งานภาพรวม
+    * 1 รายการ = 1 work unit
+    */
+    const globalSubtasks =
+      subtasks.filter(
+        (item) =>
+          (
+            item.scope_type ||
+            'all_centers'
+          ) === 'global'
+      )
+
+
+    /*
+    * งานย่อยที่ผูกกับศูนย์
+    */
+    const centerSubtaskIds =
+      new Set(
+        subtasks
+          .filter(
+            (item) =>
+              (
+                item.scope_type ||
+                'all_centers'
+              ) !== 'global'
+          )
+          .map(
+            (item) =>
+              String(item.id)
+          )
+      )
+
+
+    const centerRows =
+      subtaskCenters.filter(
+        (item) =>
+          centerSubtaskIds.has(
+            String(item.subtask_id)
+          )
+      )
+
+
+    /*
+    * หาว่าศูนย์ไหนมีงานย่อยจริง
+    */
+    const centersWithSubtasks =
+      new Set(
+        centerRows.map(
+          (row) =>
+            String(row.center_id)
+        )
+      )
+
+
+    /*
+    * ศูนย์ที่ไม่มีงานย่อยของตัวเอง
+    * ให้ตัวศูนย์นับเป็น 1 งาน
+    */
+    const standaloneCenters =
+      taskCenters.filter(
+        (centerRow) =>
+          !centersWithSubtasks.has(
+            String(centerRow.center_id)
+          )
+      )
+
+
+    const globalCompleted =
+      globalSubtasks.filter(
+        (item) =>
+          item.global_status ===
+          'completed'
+      ).length
+
+
+    const centerSubtaskCompleted =
+      centerRows.filter(
+        (item) =>
+          item.status ===
+          'completed'
+      ).length
+
+
+    const standaloneCenterCompleted =
+      standaloneCenters.filter(
+        (item) =>
+          item.status ===
+          'completed'
+      ).length
+
+
+    const total =
+      globalSubtasks.length +
+      centerRows.length +
+      standaloneCenters.length
+
 
     const completed =
-      taskCenters.filter(
-        (item) =>
-          item.status === 'completed'
-      ).length
+      globalCompleted +
+      centerSubtaskCompleted +
+      standaloneCenterCompleted
+
 
     return {
       total,
@@ -373,7 +436,7 @@ function AdminTaskDetail({
             )
           : 0,
 
-      type: 'center',
+      type: 'subtask',
     }
 
   }, [

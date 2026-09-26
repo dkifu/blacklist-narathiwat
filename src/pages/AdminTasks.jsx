@@ -745,91 +745,43 @@ function AdminTasks({ profile }) {
             String(task.id)
         )
 
+      const currentTaskCenters =
+        taskCenters.filter(
+          (item) =>
+            String(item.task_id) ===
+            String(task.id)
+        )
+
 
       /*
-      * ถ้ามีงานย่อย
-      * คิดจาก work unit จริง
+      * ไม่มีงานย่อย
+      * นับแต่ละศูนย์เป็น 1 งาน
       */
-      if (currentSubtasks.length > 0) {
-
-        /*
-        * งานภาพรวม
-        * 1 subtask = 1 work unit
-        */
-        const globalSubtasks =
-          currentSubtasks.filter(
-            (item) =>
-              (item.scope_type ||
-                'all_centers') === 'global'
-          )
-
-
-        /*
-        * งานที่ผูกกับศูนย์
-        */
-        const centerSubtaskIds =
-          new Set(
-            currentSubtasks
-              .filter(
-                (item) =>
-                  (item.scope_type ||
-                    'all_centers') !==
-                  'global'
-              )
-              .map(
-                (item) =>
-                  String(item.id)
-              )
-          )
-
-
-        const centerRows =
-          taskSubtaskCenters.filter(
-            (item) =>
-              centerSubtaskIds.has(
-                String(item.subtask_id)
-              )
-          )
-
-
-        const globalCompleted =
-          globalSubtasks.filter(
-            (item) =>
-              item.global_status ===
-              'completed'
-          ).length
-
-
-        const centerCompleted =
-          centerRows.filter(
-            (item) =>
-              item.status ===
-              'completed'
-          ).length
-
-
-        const total =
-          globalSubtasks.length +
-          centerRows.length
+      if (currentSubtasks.length === 0) {
 
         const completed =
-          globalCompleted +
-          centerCompleted
-
+          currentTaskCenters.filter(
+            (item) =>
+              item.status === 'completed'
+          ).length
 
         result[task.id] = {
-          total,
+          total:
+            currentTaskCenters.length,
+
           completed,
 
           percent:
-            total > 0
+            currentTaskCenters.length > 0
               ? Math.round(
-                  (completed / total) *
-                    100
+                  (
+                    completed /
+                    currentTaskCenters.length
+                  ) * 100
                 )
               : 0,
 
-          type: 'subtask',
+          type: 'center',
         }
 
         return
@@ -837,36 +789,120 @@ function AdminTasks({ profile }) {
 
 
       /*
-      * ไม่มีงานย่อย
-      * ใช้จำนวนศูนย์แบบเดิม
+      * งานภาพรวม
       */
-      const rows =
-        taskCenters.filter(
+      const globalSubtasks =
+        currentSubtasks.filter(
           (item) =>
-            String(item.task_id) ===
-            String(task.id)
+            (
+              item.scope_type ||
+              'all_centers'
+            ) === 'global'
         )
 
-      const completed =
-        rows.filter(
+
+      /*
+      * งานย่อยที่ผูกศูนย์
+      */
+      const centerSubtaskIds =
+        new Set(
+          currentSubtasks
+            .filter(
+              (item) =>
+                (
+                  item.scope_type ||
+                  'all_centers'
+                ) !== 'global'
+            )
+            .map(
+              (item) =>
+                String(item.id)
+            )
+        )
+
+
+      const centerRows =
+        taskSubtaskCenters.filter(
           (item) =>
-            item.status === 'completed'
+            centerSubtaskIds.has(
+              String(item.subtask_id)
+            )
+        )
+
+
+      /*
+      * ศูนย์ที่มีงานย่อยจริง
+      */
+      const centersWithSubtasks =
+        new Set(
+          centerRows.map(
+            (row) =>
+              String(row.center_id)
+          )
+        )
+
+
+      /*
+      * ศูนย์ที่ไม่มีงานย่อย
+      * ให้ตัวศูนย์เป็น 1 งาน
+      */
+      const standaloneCenters =
+        currentTaskCenters.filter(
+          (centerRow) =>
+            !centersWithSubtasks.has(
+              String(centerRow.center_id)
+            )
+        )
+
+
+      const globalCompleted =
+        globalSubtasks.filter(
+          (item) =>
+            item.global_status ===
+            'completed'
         ).length
 
 
+      const centerSubtaskCompleted =
+        centerRows.filter(
+          (item) =>
+            item.status ===
+            'completed'
+        ).length
+
+
+      const standaloneCenterCompleted =
+        standaloneCenters.filter(
+          (item) =>
+            item.status ===
+            'completed'
+        ).length
+
+
+      const total =
+        globalSubtasks.length +
+        centerRows.length +
+        standaloneCenters.length
+
+
+      const completed =
+        globalCompleted +
+        centerSubtaskCompleted +
+        standaloneCenterCompleted
+
+
       result[task.id] = {
-        total: rows.length,
+        total,
         completed,
 
         percent:
-          rows.length > 0
+          total > 0
             ? Math.round(
-                (completed / rows.length) *
-                  100
+                (completed / total) * 100
               )
             : 0,
 
-        type: 'center',
+        type: 'subtask',
       }
 
     })

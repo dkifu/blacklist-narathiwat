@@ -8760,3 +8760,79 @@ input[type="checkbox"] {
   }
 
 }
+
+/* หัวข้อกล่อง เช่น งานภาพรวม / สถานะแต่ละศูนย์ */
+.admin-detail-section-title h3 {
+  font-size: 18px;
+}
+
+/* คำอธิบายใต้หัวข้อ */
+.admin-detail-section-title p {
+  font-size: 12px;
+}
+
+/* ชื่อศูนย์ */
+.admin-center-status-card h4 {
+  font-size: 16px;
+}
+
+/* รหัสศูนย์ เช่น TKB / NRW */
+.admin-center-status-card small {
+  font-size: 11px;
+}
+
+/* ข้อความงานย่อย */
+.admin-center-subtask-name strong {
+  font-size: 14px;
+}
+
+/* เลขลำดับงานย่อย 1. 2. 3. */
+.admin-center-subtask-name span {
+  font-size: 13px;
+}
+
+/* ข้อความในงานภาพรวม */
+.admin-center-subtasks .admin-center-subtask-name strong {
+  font-size: 14px;
+}
+
+/* ข้อความ 25% เสร็จแล้ว */
+.admin-progress-caption,
+.admin-progress-text {
+  font-size: 12px;
+}
+
+/* ชื่อหน้างานด้านบน */
+.admin-task-detail-title h2,
+.admin-task-header h2 {
+  font-size: 22px;
+}
+
+/* หัวข้อกล่อง เช่น รายละเอียดงาน */
+.admin-detail-card > h3,
+.admin-detail-card .admin-detail-section-title h3 {
+  font-size: 18px;
+}
+
+/* ป้ายหัวข้อเล็ก ๆ เช่น รายละเอียด / สร้างเมื่อ / งานย่อย / ศูนย์ */
+.admin-detail-field-label,
+.admin-detail-meta label,
+.admin-detail-meta small,
+.admin-detail-card small {
+  font-size: 12px;
+}
+
+/* ข้อความรายละเอียดงาน */
+.admin-detail-field-value,
+.admin-detail-description,
+.admin-detail-card p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ตัวเลข/ค่าหลักในกล่องล่าง เช่น 26 ก.ย. 2569 10:53 / 6 รายการ / 2 ศูนย์ */
+.admin-detail-meta strong,
+.admin-detail-meta-value,
+.admin-detail-card strong {
+  font-size: 15px;
+}
