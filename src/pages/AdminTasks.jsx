@@ -376,6 +376,29 @@ function AdminTasks({ profile }) {
         ).toFixed(2)} MB`
         }
 
+        const logTaskActivity = async ({
+          taskId,
+          action,
+          description,
+          oldData = null,
+          newData = null,
+        }) => {
+          const { error } = await supabase.rpc(
+            'admin_log_task_activity',
+            {
+              p_task_id: taskId,
+              p_action: action,
+              p_description: description,
+              p_old_data: oldData,
+              p_new_data: newData,
+            }
+          )
+
+          if (error) {
+            throw error
+          }
+        }
+
   const createTask = async (e) => {
     e.preventDefault()
 
@@ -703,6 +726,39 @@ function AdminTasks({ profile }) {
         }
       }
 
+      await logTaskActivity({
+        taskId: task.id,
+
+        action: 'admin_task_created',
+
+        description:
+          `สร้างงาน Admin: ${title}`,
+
+        newData: {
+          title,
+          category: form.category,
+          priority: form.priority,
+
+          description:
+            form.description.trim() || null,
+
+          note:
+            form.note.trim() || null,
+
+          center_count:
+            selectedCenterIds.length,
+
+          subtask_count:
+            cleanSubtasks.length,
+
+          link_count:
+            cleanLinks.length,
+
+          attachment_count:
+            attachments.length,
+        },
+      })
+
       setMessageType('success')
       setMessage('สร้างงานเรียบร้อยแล้ว')
 
@@ -744,6 +800,9 @@ function AdminTasks({ profile }) {
       setDeletingTaskId(task.id)
       setMessage('')
 
+      const oldStatus =
+        task.status || 'active'
+
       const { error } = await supabase
         .from('admin_tasks')
         .update({
@@ -755,17 +814,42 @@ function AdminTasks({ profile }) {
         throw error
       }
 
+      await logTaskActivity({
+        taskId: task.id,
+
+        action: 'admin_task_deleted',
+
+        description:
+          `ลบงาน Admin: ${task.title}`,
+
+        oldData: {
+          title: task.title,
+          status: oldStatus,
+        },
+
+        newData: {
+          title: task.title,
+          status: 'archived',
+        },
+      })
+
       setMessageType('success')
-      setMessage(`ลบงาน "${task.title}" เรียบร้อยแล้ว`)
+
+      setMessage(
+        `ลบงาน "${task.title}" เรียบร้อยแล้ว`
+      )
 
       await loadData()
+
     } catch (error) {
       console.error(error)
 
       setMessageType('error')
+
       setMessage(
         `ลบงานไม่สำเร็จ: ${error.message}`
       )
+
     } finally {
       setDeletingTaskId(null)
     }

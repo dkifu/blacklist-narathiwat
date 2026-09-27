@@ -497,6 +497,28 @@ function AdminTaskDetail({
     }
   }
 
+  const logTaskActivity = async ({
+    action,
+    description,
+    oldData = null,
+    newData = null,
+  }) => {
+    const { error } = await supabase.rpc(
+      'admin_log_task_activity',
+      {
+        p_task_id: taskId,
+        p_action: action,
+        p_description: description,
+        p_old_data: oldData,
+        p_new_data: newData,
+      }
+    )
+
+    if (error) {
+      throw error
+    }
+  }
+
   const syncTaskStatus = async () => {
 
     const [
@@ -630,15 +652,39 @@ function AdminTaskDetail({
         throw error
       }
 
-      await writeHistory({
-        centerId:
-          centerRow.center_id,
+      const centerName =
+        centerMap[
+          String(centerRow.center_id)
+        ]?.name || `ศูนย์ ID ${centerRow.center_id}`
 
+      await logTaskActivity({
         action:
-          'center_status_updated',
+          'admin_task_center_status_updated',
 
-        oldStatus,
-        newStatus,
+        description:
+          `เปลี่ยนสถานะศูนย์ในงาน Admin: ${centerName} / ${task?.title || '-'}`,
+
+        oldData: {
+          center_id:
+            centerRow.center_id,
+
+          center_name:
+            centerName,
+
+          status:
+            oldStatus,
+        },
+
+        newData: {
+          center_id:
+            centerRow.center_id,
+
+          center_name:
+            centerName,
+
+          status:
+            newStatus,
+        },
       })
 
       await syncTaskStatus()
@@ -703,17 +749,24 @@ function AdminTaskDetail({
         throw error
       }
 
-      await writeHistory({
-        subtaskId: subtask.id,
-
+      await logTaskActivity({
         action:
-          'global_subtask_status_updated',
+          'admin_task_global_status_updated',
 
-        oldStatus,
-        newStatus,
+        description:
+          `เปลี่ยนสถานะงานภาพรวม: ${subtask.title} / ${task?.title || '-'}`,
 
-        note:
-          'อัปเดตสถานะงานย่อยภาพรวม',
+        oldData: {
+          subtask_id: subtask.id,
+          subtask_title: subtask.title,
+          status: oldStatus,
+        },
+
+        newData: {
+          subtask_id: subtask.id,
+          subtask_title: subtask.title,
+          status: newStatus,
+        },
       })
 
       await syncTaskStatus()
@@ -816,17 +869,36 @@ function AdminTaskDetail({
         }
       }
 
-      await writeHistory({
-        centerId,
+      const centerName =
+        centerMap[String(centerId)]?.name ||
+        `ศูนย์ ID ${centerId}`
 
-        subtaskId:
-          subtask.id,
-
+      await logTaskActivity({
         action:
-          'subtask_status_updated',
+          'admin_task_subtask_status_updated',
 
-        oldStatus,
-        newStatus,
+        description:
+          `เปลี่ยนสถานะงานย่อย: ${subtask.title} / ${centerName} / ${task?.title || '-'}`,
+
+        oldData: {
+          center_id: centerId,
+          center_name: centerName,
+
+          subtask_id: subtask.id,
+          subtask_title: subtask.title,
+
+          status: oldStatus,
+        },
+
+        newData: {
+          center_id: centerId,
+          center_name: centerName,
+
+          subtask_id: subtask.id,
+          subtask_title: subtask.title,
+
+          status: newStatus,
+        },
       })
 
             /*
@@ -944,20 +1016,28 @@ function AdminTaskDetail({
           throw parentError
         }
 
-        await writeHistory({
-          centerId,
+        const centerName =
+          centerMap[String(centerId)]?.name ||
+          `ศูนย์ ID ${centerId}`
 
+        await logTaskActivity({
           action:
-            'center_status_auto_updated',
+            'admin_task_center_status_updated',
 
-          oldStatus:
-            oldParentStatus,
+          description:
+            `อัปเดตสถานะศูนย์อัตโนมัติจากงานย่อย: ${centerName} / ${task?.title || '-'}`,
 
-          newStatus:
-            parentStatus,
+          oldData: {
+            center_id: centerId,
+            center_name: centerName,
+            status: oldParentStatus,
+          },
 
-          note:
-            'อัปเดตอัตโนมัติจากสถานะงานย่อย',
+          newData: {
+            center_id: centerId,
+            center_name: centerName,
+            status: parentStatus,
+          },
         })
       }
 
@@ -1062,9 +1142,20 @@ function AdminTaskDetail({
             )
             }
 
-            await writeHistory({
-            action: 'file_deleted',
-            note: `ลบไฟล์ ${file.file_name}`,
+            await logTaskActivity({
+              action:
+                'admin_task_file_deleted',
+
+              description:
+                `ลบไฟล์แนบงาน Admin: ${file.file_name} / ${task?.title || '-'}`,
+
+              oldData: {
+                file_name: file.file_name,
+                file_size: file.file_size,
+                mime_type: file.mime_type,
+              },
+
+              newData: null,
             })
 
             await loadData()
@@ -1437,6 +1528,43 @@ function AdminTaskDetail({
     setEditMessage('')
 
     try {
+
+        const oldTaskData = {
+          title: task?.title || null,
+          category: task?.category || null,
+          priority: task?.priority || null,
+          description: task?.description || null,
+          note: task?.note || null,
+
+          links: links.map(
+            (item) =>
+              `${item.label || ''} | ${item.url || ''}`
+          ),
+
+          subtasks: subtasks.map((item) => {
+            const centerIds =
+              subtaskCenters
+                .filter(
+                  (row) =>
+                    String(row.subtask_id) ===
+                    String(item.id)
+                )
+                .map((row) =>
+                  String(row.center_id)
+                )
+                .sort()
+
+            return [
+              item.title || '',
+              item.scope_type || 'all_centers',
+              centerIds.join(','),
+            ].join(' | ')
+          }),
+
+          attachments:
+            files.map((item) => item.file_name),
+        }
+
 
         /*
         * งานย่อย
@@ -2295,9 +2423,68 @@ function AdminTaskDetail({
         }
 
 
-        await writeHistory({
-        action: 'task_updated',
-        note: 'แก้ไขรายละเอียดงาน',
+        const newTaskData = {
+          title,
+          category: editForm.category,
+          priority: editForm.priority,
+
+          description:
+            editForm.description.trim() || null,
+
+          note:
+            editForm.note.trim() || null,
+
+          links: cleanLinks.map(
+            (item) =>
+              `${item.label} | ${item.url}`
+          ),
+
+          subtasks: cleanSubtasks.map((item) => {
+            let centerIds = []
+
+            if (
+              item.scope_type === 'all_centers'
+            ) {
+              centerIds = assignedCenterIds
+            }
+
+            if (
+              item.scope_type ===
+              'specific_centers'
+            ) {
+              centerIds = item.center_ids || []
+            }
+
+            return [
+              item.title,
+              item.scope_type,
+              centerIds
+                .map(String)
+                .sort()
+                .join(','),
+            ].join(' | ')
+          }),
+
+          attachments: [
+            ...files.map(
+              (item) => item.file_name
+            ),
+
+            ...editAttachments.map(
+              (file) => file.name
+            ),
+          ],
+        }
+
+
+        await logTaskActivity({
+          action: 'admin_task_updated',
+
+          description:
+            `แก้ไขงาน Admin: ${title}`,
+
+          oldData: oldTaskData,
+          newData: newTaskData,
         })
 
 

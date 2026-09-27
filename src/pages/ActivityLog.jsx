@@ -182,7 +182,41 @@ function ActivityLog({ profile }) {
         requester_enabled: 'เปิดใช้งานผู้ขอเพิ่มรถ',
         requester_disabled: 'ปิดใช้งานผู้ขอเพิ่มรถ',
         requester_deleted: 'ลบผู้ขอเพิ่มรถ',
-    }
+
+        // =========================
+        // ADMIN / CENTER TASK
+        // =========================
+
+        center_task_status_updated:
+          'เปลี่ยนสถานะงานศูนย์',
+
+        center_subtask_status_updated:
+          'เปลี่ยนสถานะงานย่อย',
+
+        admin_task_created:
+          'สร้างงาน Admin',
+
+        admin_task_updated:
+          'แก้ไขงาน Admin',
+
+        admin_task_deleted:
+          'ลบงาน Admin',
+
+        admin_task_center_status_updated:
+          'เปลี่ยนสถานะศูนย์',
+
+        admin_task_subtask_status_updated:
+          'เปลี่ยนสถานะงานย่อย',
+
+        admin_task_global_status_updated:
+          'เปลี่ยนสถานะงานภาพรวม',
+
+        admin_task_file_deleted:
+          'ลบไฟล์แนบ',  
+
+
+
+      }
 
     return labels[action] || action
     }
@@ -196,6 +230,7 @@ function ActivityLog({ profile }) {
         case 'member_created':
         case 'agency_created':
         case 'requester_created':
+        case 'admin_task_created':
         return 'created'
 
         // แก้ไข
@@ -206,6 +241,15 @@ function ActivityLog({ profile }) {
         case 'agency_updated':
         case 'requester_updated':
         case 'center_user_password_changed':
+
+        case 'center_task_status_updated':
+        case 'center_subtask_status_updated':  
+
+        case 'admin_task_updated':
+        case 'admin_task_center_status_updated':
+        case 'admin_task_subtask_status_updated':
+        case 'admin_task_global_status_updated':
+
         return 'updated'
 
         // เปิดใช้งาน / เปิดคดี
@@ -233,6 +277,9 @@ function ActivityLog({ profile }) {
         case 'member_deleted':
         case 'agency_deleted':
         case 'requester_deleted':
+
+        case 'admin_task_deleted':
+        case 'admin_task_file_deleted':
         return 'deleted'
 
         default:
@@ -241,6 +288,8 @@ function ActivityLog({ profile }) {
     }
 
     const fieldLabels = {
+        template_image_path: 'Template รถ',
+
         plate_number: 'ทะเบียนรถ',
         province: 'จังหวัด',
         brand: 'ยี่ห้อ',
@@ -293,6 +342,31 @@ function ActivityLog({ profile }) {
         center_id: 'ศูนย์',
 
         password_changed: 'เปลี่ยน Password',
+
+        status: 'สถานะงาน',
+        center_status: 'สถานะงานศูนย์',
+
+        title: 'ชื่องาน',
+        category: 'หมวดงาน',
+        priority: 'ความสำคัญ',
+        description: 'รายละเอียดงาน',
+
+        links: 'ลิงก์',
+        subtasks: 'งานย่อย',
+        attachments: 'ไฟล์แนบ',
+
+        center_count: 'จำนวนศูนย์',
+        subtask_count: 'จำนวนงานย่อย',
+        link_count: 'จำนวนลิงก์',
+        attachment_count: 'จำนวนไฟล์แนบ',
+
+        subtask_id: 'รหัสงานย่อย',
+        subtask_title: 'ชื่องานย่อย',
+
+        file_name: 'ชื่อไฟล์',
+        file_size: 'ขนาดไฟล์',
+        mime_type: 'ชนิดไฟล์',
+
         }
 
         const ignoredLogFields = [
@@ -303,6 +377,8 @@ function ActivityLog({ profile }) {
         'created_by',
         'created_by_user_id',
         'center_name',
+
+        'thumbnail_path',
         ]
 
         const formatLogValue = (value) => {
@@ -346,6 +422,13 @@ function ActivityLog({ profile }) {
             value,
             data = {}
             ) => {
+
+            if (key === 'template_image_path') {
+              return value
+                ? 'มี Template'
+                : 'ไม่มี Template'
+            }
+              
             if (
                 value === null ||
                 value === undefined ||
@@ -397,8 +480,169 @@ function ActivityLog({ profile }) {
                 )
             }
 
+            if (
+              key === 'status' ||
+              key === 'center_status'
+            ) {
+              const statusLabels = {
+                pending: 'รอดำเนินการ',
+                doing: 'กำลังดำเนินการ',
+                completed: 'เสร็จแล้ว',
+                active: 'กำลังดำเนินการ',
+                archived: 'นำออกจากรายการ',
+              }
+
+              return statusLabels[value] || value
+            }
+
+            // =========================
+            // ADMIN TASK
+            // =========================
+
+            if (key === 'category') {
+              const labels = {
+                station: 'งานประจำ สภ.',
+                south_project: 'โครงการงานใต้',
+                phuket_project: 'โครงการงานภูเก็ต',
+                pik: 'งานพี่ปิ๊ก',
+                por: 'งานพี่ปอ',
+                ood: 'งานพี่อู๊ด',
+                other: 'งานอื่น ๆ',
+              }
+
+              return labels[value] || value
+            }
+
+
+            if (key === 'priority') {
+              const labels = {
+                normal: 'ปกติ',
+                urgent: 'เร่งด่วน',
+                critical: 'ด่วนมาก',
+              }
+
+              return labels[value] || value
+            }
+
+
+            if (key === 'center_count') {
+              return `${value} ศูนย์`
+            }
+
+
+            if (
+              key === 'subtask_count' ||
+              key === 'link_count' ||
+              key === 'attachment_count'
+            ) {
+              return `${value} รายการ`
+            }
+
+
+            if (key === 'file_size') {
+              const bytes = Number(value)
+
+              if (!Number.isFinite(bytes)) {
+                return value
+              }
+
+              if (bytes < 1024) {
+                return `${bytes} B`
+              }
+
+              if (bytes < 1024 * 1024) {
+                return `${(bytes / 1024).toFixed(2)} KB`
+              }
+
+              return `${(
+                bytes /
+                1024 /
+                1024
+              ).toFixed(2)} MB`
+            }
+
+
+            if (key === 'mime_type') {
+              const labels = {
+                'image/jpeg': 'รูปภาพ JPEG',
+                'image/png': 'รูปภาพ PNG',
+                'image/webp': 'รูปภาพ WebP',
+                'application/pdf': 'ไฟล์ PDF',
+                'application/zip': 'ไฟล์ ZIP',
+              }
+
+              return labels[value] || value
+            }
+
+
+            if (
+              key === 'links' &&
+              Array.isArray(value)
+            ) {
+              return value.length
+                ? value.join(' • ')
+                : '-'
+            }
+
+
+            if (
+              key === 'attachments' &&
+              Array.isArray(value)
+            ) {
+              return value.length
+                ? value.join(', ')
+                : '-'
+            }
+
+
+            if (
+              key === 'subtasks' &&
+              Array.isArray(value)
+            ) {
+              const scopeLabels = {
+                global: 'งานภาพรวม',
+                all_centers: 'ทุกศูนย์',
+                specific_centers: 'เฉพาะศูนย์',
+              }
+
+              return value
+                .map((raw) => {
+                  const [
+                    title = '',
+                    scope = '',
+                    centerIds = '',
+                  ] = String(raw).split(' | ')
+
+                  const scopeLabel =
+                    scopeLabels[scope] || scope
+
+                  const centerNames =
+                    centerIds
+                      .split(',')
+                      .filter(Boolean)
+                      .map(
+                        (id) =>
+                          referenceNames.centers[
+                            String(id)
+                          ] || `ID ${id}`
+                      )
+
+                  if (scope === 'global') {
+                    return `${title} (${scopeLabel})`
+                  }
+
+                  if (centerNames.length > 0) {
+                    return `${title} (${scopeLabel}: ${centerNames.join(', ')})`
+                  }
+
+                  return `${title} (${scopeLabel})`
+                })
+                .join(' • ')
+            }
+
             return formatLogValue(value)
-        }
+
+          }
 
         const getChangedFields = (log) => {
         const oldData = log?.old_data || {}
@@ -819,6 +1063,51 @@ function ActivityLog({ profile }) {
                 ลบผู้ขอเพิ่มรถ
                 </option>
             </optgroup>
+
+            <optgroup label="งานศูนย์">
+
+              <option value="center_task_status_updated">
+                เปลี่ยนสถานะงานศูนย์
+              </option>
+
+              <option value="center_subtask_status_updated">
+                เปลี่ยนสถานะงานย่อย
+              </option>
+
+            </optgroup>  
+
+            <optgroup label="งาน Admin">
+
+              <option value="admin_task_created">
+                สร้างงาน Admin
+              </option>
+
+              <option value="admin_task_updated">
+                แก้ไขงาน Admin
+              </option>
+
+              <option value="admin_task_deleted">
+                ลบงาน Admin
+              </option>
+
+              <option value="admin_task_center_status_updated">
+                เปลี่ยนสถานะศูนย์
+              </option>
+
+              <option value="admin_task_subtask_status_updated">
+                เปลี่ยนสถานะงานย่อย
+              </option>
+
+              <option value="admin_task_global_status_updated">
+                เปลี่ยนสถานะงานภาพรวม
+              </option>
+
+              <option value="admin_task_file_deleted">
+                ลบไฟล์แนบ
+              </option>
+
+            </optgroup>
+
             </select>
         </div>
 
