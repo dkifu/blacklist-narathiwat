@@ -286,214 +286,103 @@ function CenterTaskDetail({
   }
 
   const updateCenterStatus = async (
-  newStatus
-) => {
-  if (
-    !taskCenter ||
-    taskCenter.status === newStatus
-  ) {
-    return
-  }
-
-  setSavingKey('center')
-  setMessage('')
-
-  try {
-    const completedAt =
-      newStatus === 'completed'
-        ? new Date().toISOString()
-        : null
-
-    const { error } = await supabase
-      .from('admin_task_centers')
-      .update({
-        status: newStatus,
-        completed_at: completedAt,
-      })
-      .eq('id', taskCenter.id)
-      .eq(
-        'center_id',
-        Number(profile.center_id)
-      )
-
-    if (error) {
-      throw error
+    newStatus
+    ) => {
+    if (
+        !taskCenter ||
+        taskCenter.status === newStatus
+    ) {
+        return
     }
 
-    await loadData()
+    setSavingKey('center')
+    setMessage('')
 
-  } catch (error) {
-    console.error(error)
+    try {
+        const { error } = await supabase.rpc(
+        'center_update_task_status',
+        {
+            p_task_id: taskId,
+            p_new_status: newStatus,
+        }
+        )
 
-    setMessage(
-      `อัปเดตสถานะไม่สำเร็จ: ${error.message}`
-    )
+        if (error) {
+        throw error
+        }
 
-  } finally {
-    setSavingKey('')
-  }
-}
+        await loadData()
 
+    } catch (error) {
+        console.error(error)
 
-const updateSubtaskStatus = async (
-  subtask,
-  newStatus
-) => {
-  const relation =
-    subtaskCenters.find(
-      (item) =>
-        String(item.subtask_id) ===
-        String(subtask.id)
-    )
+        setMessage(
+        `อัปเดตสถานะไม่สำเร็จ: ${error.message}`
+        )
 
-  if (!relation) {
-    setMessage(
-      'ไม่พบงานย่อยที่ผูกกับศูนย์นี้'
-    )
-    return
-  }
-
-  if (
-    relation.status === newStatus
-  ) {
-    return
-  }
-
-  const key =
-    `subtask-${subtask.id}`
-
-  setSavingKey(key)
-  setMessage('')
-
-  try {
-    const completedAt =
-      newStatus === 'completed'
-        ? new Date().toISOString()
-        : null
-
-    const { error } = await supabase
-      .from(
-        'admin_task_subtask_centers'
-      )
-      .update({
-        status: newStatus,
-        completed_at: completedAt,
-      })
-      .eq('id', relation.id)
-      .eq(
-        'center_id',
-        Number(profile.center_id)
-      )
-
-    if (error) {
-      throw error
+    } finally {
+        setSavingKey('')
+    }
     }
 
-    /*
-     * คำนวณสถานะงานหลักของศูนย์ใหม่
-     * โดยใช้เฉพาะงานย่อยที่ผูกกับศูนย์
-     * ไม่รวมงาน global
-     */
 
-    const centerScopedIds =
-      subtasks
-        .filter(
-          (item) =>
-            item.scope_type !== 'global'
-        )
-        .map(
-          (item) => item.id
-        )
+    const updateSubtaskStatus = async (
+        subtask,
+        newStatus
+        ) => {
+        const relation =
+            subtaskCenters.find(
+            (item) =>
+                String(item.subtask_id) ===
+                String(subtask.id)
+            )
 
-    if (centerScopedIds.length > 0) {
-      const {
-        data: statusRows,
-        error: statusError,
-      } = await supabase
-        .from(
-          'admin_task_subtask_centers'
-        )
-        .select(
-          'subtask_id, status'
-        )
-        .eq(
-          'center_id',
-          Number(profile.center_id)
-        )
-        .in(
-          'subtask_id',
-          centerScopedIds
-        )
+        if (!relation) {
+            setMessage(
+            'ไม่พบงานย่อยที่ผูกกับศูนย์นี้'
+            )
+            return
+        }
 
-      if (statusError) {
-        throw statusError
-      }
+        if (
+            relation.status === newStatus
+        ) {
+            return
+        }
 
-      const statuses =
-        (statusRows || []).map(
-          (item) => item.status
-        )
+        const key =
+            `subtask-${subtask.id}`
 
-      let parentStatus =
-        'pending'
+        setSavingKey(key)
+        setMessage('')
 
-      const allCompleted =
-        statuses.length > 0 &&
-        statuses.every(
-          (status) =>
-            status === 'completed'
-        )
+        try {
+            const { error } = await supabase.rpc(
+            'center_update_subtask_status',
+            {
+                p_task_id: taskId,
+                p_subtask_id: subtask.id,
+                p_new_status: newStatus,
+            }
+            )
 
-      const hasProgress =
-        statuses.some(
-          (status) =>
-            status === 'doing' ||
-            status === 'completed'
-        )
+            if (error) {
+            throw error
+            }
 
-      if (allCompleted) {
-        parentStatus = 'completed'
-      } else if (hasProgress) {
-        parentStatus = 'doing'
-      }
+            await loadData()
 
-      const parentCompletedAt =
-        parentStatus === 'completed'
-          ? new Date().toISOString()
-          : null
+        } catch (error) {
+            console.error(error)
 
-      const { error: parentError } =
-        await supabase
-          .from('admin_task_centers')
-          .update({
-            status: parentStatus,
-            completed_at:
-              parentCompletedAt,
-          })
-          .eq('id', taskCenter.id)
-          .eq(
-            'center_id',
-            Number(profile.center_id)
-          )
+            setMessage(
+            `อัปเดตงานย่อยไม่สำเร็จ: ${error.message}`
+            )
 
-      if (parentError) {
-        throw parentError
-      }
-    }
-
-    await loadData()
-
-  } catch (error) {
-    console.error(error)
-
-    setMessage(
-      `อัปเดตงานย่อยไม่สำเร็จ: ${error.message}`
-    )
-
-  } finally {
-    setSavingKey('')
-  }
-}
+        } finally {
+            setSavingKey('')
+        }
+        }
 
   if (loading) {
     return (
