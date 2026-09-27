@@ -30,6 +30,7 @@ function AdminTasks({ profile }) {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deletingTaskId, setDeletingTaskId] = useState(null)
 
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('success')
@@ -729,6 +730,44 @@ function AdminTasks({ profile }) {
         ])
     } finally {
       setSaving(false)
+    }
+  }
+
+  const deleteTask = async (task) => {
+    const confirmed = window.confirm(
+      `ต้องการลบงาน "${task.title}" ใช่หรือไม่?\n\nงานนี้จะถูกนำออกจากรายการงาน`
+    )
+
+    if (!confirmed) return
+
+    try {
+      setDeletingTaskId(task.id)
+      setMessage('')
+
+      const { error } = await supabase
+        .from('admin_tasks')
+        .update({
+          status: 'archived',
+        })
+        .eq('id', task.id)
+
+      if (error) {
+        throw error
+      }
+
+      setMessageType('success')
+      setMessage(`ลบงาน "${task.title}" เรียบร้อยแล้ว`)
+
+      await loadData()
+    } catch (error) {
+      console.error(error)
+
+      setMessageType('error')
+      setMessage(
+        `ลบงานไม่สำเร็จ: ${error.message}`
+      )
+    } finally {
+      setDeletingTaskId(null)
     }
   }
 
@@ -1510,15 +1549,26 @@ function AdminTasks({ profile }) {
 
                     <div className="admin-task-card-actions">
 
-                        <button
-                            type="button"
-                            className="admin-task-open-button"
-                            onClick={() =>
-                            setSelectedTaskId(task.id)
-                            }
-                        >
-                            ดูรายละเอียดงาน
-                        </button>
+                      <button
+                        type="button"
+                        className="admin-task-delete-button"
+                        disabled={deletingTaskId === task.id}
+                        onClick={() => deleteTask(task)}
+                      >
+                        {deletingTaskId === task.id
+                          ? 'กำลังลบ...'
+                          : 'ลบงาน'}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="admin-task-open-button"
+                        onClick={() =>
+                          setSelectedTaskId(task.id)
+                        }
+                      >
+                        ดูรายละเอียดงาน
+                      </button>
 
                     </div>
 
