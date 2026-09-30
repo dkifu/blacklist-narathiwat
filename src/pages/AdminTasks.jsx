@@ -1050,7 +1050,10 @@ function AdminTasks({ profile }) {
       (item) => item.value === value
     )?.label || value
 
-  if (profile?.role !== 'admin') {
+  if (
+    profile?.role !== 'admin' &&
+    profile?.role !== 'supervisor'
+  ) {
     return (
       <div className="settings-denied">
         ไม่มีสิทธิ์เข้าถึงหน้านี้

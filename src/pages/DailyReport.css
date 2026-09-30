@@ -986,6 +986,3 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   margin: 0;
 }
 
-.daily-form-section input[type="number"] {
-  -moz-appearance: textfield;
-}

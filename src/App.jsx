@@ -6,6 +6,7 @@ import VehicleList from './pages/VehicleList'
 import VehicleDetail from './pages/VehicleDetail'
 import Settings from './pages/Settings'
 import Users from './pages/Users'
+import SystemUsers from './pages/SystemUsers'
 import Dashboard from './pages/Dashboard'
 import ActivityLog from './pages/ActivityLog'
 import AdminTasks from './pages/AdminTasks'
@@ -179,12 +180,28 @@ function App() {
     vehicleDetail: 'รายละเอียดรถ',
     editVehicle: 'แก้ไขข้อมูลรถ',
     users: 'ผู้ใช้งาน',
+    systemUsers: 'ผู้ใช้งานระบบ',
     adminTasks: 'งาน Admin',
     centerTasks: 'งานศูนย์',
     dailyReport: 'รายงานประจำวัน',
     activityLog: 'Activity Log',
     settings: 'ตั้งค่าระบบ',
   }[currentPage] || 'Blacklist Narathiwat'
+
+  const isAdmin =
+    profile?.role === 'admin'
+
+  const isSupervisor =
+    profile?.role === 'supervisor'
+
+  const isOperator =
+    profile?.role === 'operator'
+
+  const isCenter =
+    profile?.role === 'center'
+
+  const canUseAdminPages =
+    isAdmin || isSupervisor
 
   // =========================
   // DASHBOARD
@@ -228,8 +245,12 @@ function App() {
               เพิ่มรถ
             </button>
 
-            {(profile?.role === 'admin' ||
-              profile?.role === 'center') && (
+            {(
+              profile?.role === 'admin' ||
+              profile?.role === 'supervisor' ||
+              profile?.role === 'operator' ||
+              profile?.role === 'center'
+            ) && (
 
               <button
                 className={`menu-item ${
@@ -242,7 +263,24 @@ function App() {
 
             )}
 
-            {profile?.role === 'admin' && (
+            {isAdmin && (
+
+              <button
+                className={`menu-item ${
+                  currentPage === 'systemUsers'
+                    ? 'active'
+                    : ''
+                }`}
+                onClick={() =>
+                  setCurrentPage('systemUsers')
+                }
+              >
+                ผู้ใช้งานระบบ
+              </button>
+
+            )}
+
+            {canUseAdminPages && (
               <button
                 className={`menu-item ${
                   currentPage === 'adminTasks'
@@ -257,7 +295,7 @@ function App() {
               </button>
             )}
 
-            {profile?.role === 'center' && (
+            {isCenter && (
               <button
                 className={`menu-item ${
                   currentPage === 'centerTasks'
@@ -272,8 +310,7 @@ function App() {
               </button>
             )}
 
-            {(profile?.role === 'admin' ||
-              profile?.role === 'center') && (
+            {(canUseAdminPages || isCenter) && (
 
               <button
                 className={`menu-item ${
@@ -290,7 +327,7 @@ function App() {
 
             )}
 
-            {profile?.role === 'admin' && (
+            {canUseAdminPages && (
               <button
                 className={`menu-item ${
                   currentPage === 'activityLog' ? 'active' : ''
@@ -301,15 +338,14 @@ function App() {
               </button>
             )}
 
-            {(profile?.role === 'admin' ||
-              profile?.role === 'center') && (
+            {(canUseAdminPages || isCenter) && (
               <button
                 className={`menu-item ${
                   currentPage === 'settings' ? 'active' : ''
                 }`}
                 onClick={() => setCurrentPage('settings')}
               >
-                ⚙ ตั้งค่าระบบ
+                ตั้งค่าระบบ
               </button>
             )}
 
@@ -418,6 +454,10 @@ function App() {
             ) : currentPage === 'users' ? (
 
               <Users profile={profile} />
+
+            ) : currentPage === 'systemUsers' && isAdmin ? (
+
+              <SystemUsers profile={profile} />
 
             ) : currentPage === 'adminTasks' ? (
 

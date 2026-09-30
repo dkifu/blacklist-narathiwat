@@ -50,8 +50,51 @@ function Users({ profile }) {
     position: '',
   })
 
-  const isAdmin = profile?.role === 'admin'
-  const isCenterUser = profile?.role === 'center'
+  const isAdmin =
+  profile?.role === 'admin'
+
+  const isSupervisor =
+    profile?.role === 'supervisor'
+
+  const isOperator =
+    profile?.role === 'operator'
+
+  const isCenterUser =
+    profile?.role === 'center'
+
+
+  // เห็นข้อมูลทุกศูนย์
+  const canViewAllCenters =
+    isAdmin ||
+    isSupervisor ||
+    (
+      isOperator &&
+      !profile?.center_id
+    )
+
+
+  // ผูกศูนย์ = จำกัดศูนย์
+  const isCenterScoped =
+    isCenterUser ||
+    (
+      isOperator &&
+      Boolean(profile?.center_id)
+    )
+
+
+  // จัดการบัญชี Login ของศูนย์
+  const canManageCenterUsers =
+    isAdmin ||
+    isSupervisor
+
+  const canManageMembers =
+    isAdmin ||
+    isSupervisor ||
+    isCenterUser
+
+  const canDeleteMembers =
+    isAdmin ||
+    isSupervisor
 
   // =========================================
   // LOAD
@@ -61,8 +104,8 @@ function Users({ profile }) {
     const start = async () => {
         await loadData()
 
-        if (profile?.role === 'admin') {
-        await loadCenterUsers()
+        if (canManageCenterUsers) {
+          await loadCenterUsers()
         }
     }
 
@@ -130,16 +173,22 @@ function Users({ profile }) {
     setVehicles(vehicleResult.data || [])
     setWatchLevels(levelResult.data || [])
 
-    // User ศูนย์ = ใช้ศูนย์ตัวเองทันที
-    if (isCenterUser && profile?.center_id) {
+    // Center หรือ Operator ที่ผูกศูนย์
+    // = ใช้ได้เฉพาะศูนย์ของตัวเอง
+    if (
+      isCenterScoped &&
+      profile?.center_id
+    ) {
       setSelectedCenterId(
         String(profile.center_id)
       )
     }
 
-    // Admin = เลือกศูนย์แรกเป็นค่าเริ่มต้น
+
+    // Admin / Supervisor / Operator ที่ไม่ผูกศูนย์
+    // = เลือกดูได้ทุกศูนย์
     if (
-      isAdmin &&
+      canViewAllCenters &&
       !selectedCenterId &&
       centerData.length > 0
     ) {
@@ -152,7 +201,7 @@ function Users({ profile }) {
   }
 
   const loadCenterUsers = async () => {
-    if (profile?.role !== 'admin') return
+    if (!canManageCenterUsers) return
 
     setLoadingCenterUsers(true)
 
@@ -624,7 +673,7 @@ function Users({ profile }) {
         }
 
         const deleteCenterUser = async (center) => {
-            if (!isAdmin) return
+            if (!canManageCenterUsers) return
 
             const input = window.prompt(
                 `ต้องการลบ "${center.center_name}" ถาวร\n\n` +
@@ -781,6 +830,13 @@ function Users({ profile }) {
   }
 
   const openAddMember = () => {
+
+    if (!canManageMembers) {
+      return
+    }
+
+    
+
     if (!selectedCenterId) {
       showMessage(
         'error',
@@ -801,13 +857,18 @@ function Users({ profile }) {
   }
 
   const editMember = (member) => {
-    setMemberForm({
+     if (!canManageMembers) {
+      return
+     }
+
+      setMemberForm({
       id: member.id,
       center_id: String(member.center_id),
       name: member.name || '',
       rank: member.rank || '',
       position: member.position || '',
     })
+    
 
     setShowForm(true)
 
@@ -824,6 +885,10 @@ function Users({ profile }) {
 
   const saveMember = async (e) => {
     e.preventDefault()
+
+    if (!canManageMembers) {
+      return
+    }
 
     const name = memberForm.name.trim()
 
@@ -910,6 +975,10 @@ function Users({ profile }) {
   // =========================================
 
   const toggleMember = async (member) => {
+    if (!canManageMembers) {
+      return
+    }
+
     const newActive = !member.active
 
     const confirmText = newActive
@@ -948,7 +1017,7 @@ function Users({ profile }) {
   // =========================================
 
   const deleteMember = async (member) => {
-    if (!isAdmin) return
+    if (!canDeleteMembers) return
 
     const input = window.prompt(
       `หากต้องการลบ "${member.name}" ถาวร\n\nพิมพ์ชื่อสมาชิกเพื่อยืนยัน`
@@ -1027,8 +1096,8 @@ function Users({ profile }) {
           onClick={async () => {
             await loadData()
 
-            if (isAdmin) {
-                await loadCenterUsers()
+            if (canManageCenterUsers) {
+              await loadCenterUsers()
             }
             }}
         >
@@ -1046,7 +1115,7 @@ function Users({ profile }) {
         )}
 
 
-        {isAdmin && (
+        {canManageCenterUsers && (
         <div className="settings-tabs">
 
             <button
@@ -1078,7 +1147,8 @@ function Users({ profile }) {
         </div>
         )}
 
-{isAdmin && activeTab === 'centerUsers' && (
+{canManageCenterUsers &&
+  activeTab === 'centerUsers' && (
   <div className="users-member-card">
 
     <div className="users-member-heading">
@@ -1222,7 +1292,6 @@ function Users({ profile }) {
                     }))
                 }
                 placeholder="เช่น pattani@naracctv.co.th"
-                required
                 autoComplete="off"
                 />
             </div>
@@ -1549,7 +1618,7 @@ function Users({ profile }) {
 
           <span>ศูนย์ที่กำลังจัดการ</span>
 
-          {isAdmin ? (
+          {canViewAllCenters ? (
 
             <select
               value={selectedCenterId}
@@ -1588,13 +1657,15 @@ function Users({ profile }) {
         </div>
 
 
-        <button
-          className="primary-button"
-          onClick={openAddMember}
-          disabled={!selectedCenterId}
-        >
-          + เพิ่มสมาชิก
-        </button>
+        {canManageMembers && (
+          <button
+            className="primary-button"
+            onClick={openAddMember}
+            disabled={!selectedCenterId}
+          >
+            + เพิ่มสมาชิก
+          </button>
+        )}
 
       </div>
       
@@ -1884,45 +1955,46 @@ function Users({ profile }) {
 
                   {/* ACTIONS */}
 
-                  <div className="member-actions">
+                    {canManageMembers && (
+                      <div className="member-actions">
 
-                    <button
-                      className="settings-edit-button"
-                      onClick={() =>
-                        editMember(member)
-                      }
-                    >
-                      แก้ไข
-                    </button>
+                        <button
+                          className="settings-edit-button"
+                          onClick={() =>
+                            editMember(member)
+                          }
+                        >
+                          แก้ไข
+                        </button>
 
-                    <button
-                      className={
-                        member.active
-                          ? 'settings-disable-button'
-                          : 'settings-enable-button'
-                      }
-                      onClick={() =>
-                        toggleMember(member)
-                      }
-                    >
-                      {member.active
-                        ? 'ปิดใช้งาน'
-                        : 'เปิดใช้งาน'}
-                    </button>
+                        <button
+                          className={
+                            member.active
+                              ? 'settings-disable-button'
+                              : 'settings-enable-button'
+                          }
+                          onClick={() =>
+                            toggleMember(member)
+                          }
+                        >
+                          {member.active
+                            ? 'ปิดใช้งาน'
+                            : 'เปิดใช้งาน'}
+                        </button>
 
+                        {canDeleteMembers && (
+                          <button
+                            className="member-delete-button"
+                            onClick={() =>
+                              deleteMember(member)
+                            }
+                          >
+                            ลบถาวร
+                          </button>
+                        )}
 
-                    {isAdmin && (
-                      <button
-                        className="member-delete-button"
-                        onClick={() =>
-                          deleteMember(member)
-                        }
-                      >
-                        ลบถาวร
-                      </button>
+                      </div>
                     )}
-
-                  </div>
 
                 </div>
               )

@@ -39,8 +39,14 @@ function DailyReport({ profile }) {
   const isAdmin =
     profile?.role === 'admin'
 
-  const isCenter =
+    const isSupervisor =
+    profile?.role === 'supervisor'
+
+    const isCenter =
     profile?.role === 'center'
+
+    const canManageAllCenters =
+    isAdmin || isSupervisor
 
   const [centers, setCenters] =
     useState([])
@@ -1577,7 +1583,7 @@ function DailyReport({ profile }) {
                 </div>
 
 
-                {isAdmin && (
+                {canManageAllCenters && (
 
                 <label>
                     ศูนย์ที่จัดทำรายงาน

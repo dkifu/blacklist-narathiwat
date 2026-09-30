@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 function Settings({ profile }) {
-  const isAdmin = profile?.role === 'admin'
+  const isAdmin =
+    profile?.role === 'admin' ||
+    profile?.role === 'supervisor'
   const isCenter = profile?.role === 'center'
 
   const [activeTab, setActiveTab] = useState('agencies')
@@ -665,8 +667,8 @@ function Settings({ profile }) {
   // =========================
 
   if (
-    profile?.role !== 'admin' &&
-    profile?.role !== 'center'
+    !isAdmin &&
+    !isCenter
   ) {
     return (
       <div className="settings-denied">

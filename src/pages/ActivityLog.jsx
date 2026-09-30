@@ -829,7 +829,10 @@ function ActivityLog({ profile }) {
     return users.size
     }, [logs])
 
-  if (profile?.role !== 'admin') {
+  if (
+    profile?.role !== 'admin' &&
+    profile?.role !== 'supervisor'
+  ) {
     return (
       <div className="settings-denied">
         ไม่มีสิทธิ์เข้าถึง Activity Log
