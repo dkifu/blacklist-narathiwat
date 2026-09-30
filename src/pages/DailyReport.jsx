@@ -16,6 +16,26 @@ import liff from '@line/liff'
 
 function DailyReport({ profile }) {
 
+  const getLocalToday = () => {
+
+    const now = new Date()
+
+    const year =
+        now.getFullYear()
+
+    const month =
+        String(
+        now.getMonth() + 1
+        ).padStart(2, '0')
+
+    const day =
+        String(
+        now.getDate()
+        ).padStart(2, '0')
+
+    return `${year}-${month}-${day}`
+    }  
+
   const isAdmin =
     profile?.role === 'admin'
 
@@ -40,7 +60,8 @@ function DailyReport({ profile }) {
   const [form, setForm] = useState({
     reportTitle: 'รายงานประจำวัน',
     unitName: 'สภ.เมืองนราธิวาส',
-    reportDate: new Date().toISOString().slice(0, 10),
+    reportDate:
+        getLocalToday(),
 
     cameraReady: 312,
     cameraBroken: 0,
@@ -118,14 +139,7 @@ function DailyReport({ profile }) {
     const [savedImageSize, setSavedImageSize] =
     useState(0)
 
-    useEffect(() => {
-        setIsReportSaved(false)
-        setSavedImageSize(0)
-    }, [
-        form,
-        logo,
-        selectedCenterId,
-    ])
+    
 
 
     useEffect(() => {
@@ -483,12 +497,136 @@ function DailyReport({ profile }) {
 
     }, [selectedCenterId])
 
-  const changeField = (field, value) => {
+    useEffect(() => {
+
+        let cancelled = false
+
+
+        const loadSavedDailyReport =
+            async () => {
+
+            if (
+                !selectedCenterId ||
+                !form.reportDate
+            ) {
+                return
+            }
+
+
+            try {
+
+                const {
+                data,
+                error,
+                } = await supabase
+                .from('daily_reports')
+                .select(`
+                    report_data,
+                    image_path,
+                    image_size_bytes
+                `)
+                .eq(
+                    'center_id',
+                    String(
+                    selectedCenterId
+                    )
+                )
+                .eq(
+                    'report_date',
+                    form.reportDate
+                )
+                .maybeSingle()
+
+
+                if (error) {
+                throw error
+                }
+
+
+                /*
+                * วันนี้ยังไม่เคยบันทึก
+                */
+                if (!data) {
+
+                if (!cancelled) {
+                    setIsReportSaved(false)
+                    setSavedImageSize(0)
+                }
+
+                return
+                }
+
+
+                /*
+                * โหลดข้อมูลเดิมกลับเข้าฟอร์ม
+                */
+                if (
+                !cancelled &&
+                data.report_data
+                ) {
+
+                setForm((prev) => ({
+                    ...prev,
+                    ...data.report_data,
+
+                    /*
+                    * ป้องกันวันที่จาก JSON
+                    * ไปเปลี่ยนวันที่ที่กำลังเปิดอยู่
+                    */
+                    reportDate:
+                    prev.reportDate,
+                }))
+
+
+                setSavedImageSize(
+                    data.image_size_bytes ||
+                    0
+                )
+
+
+                setIsReportSaved(
+                    Boolean(
+                    data.image_path
+                    )
+                )
+                }
+
+
+            } catch (error) {
+
+                console.error(
+                'Load saved daily report error:',
+                error
+                )
+            }
+            }
+
+
+        loadSavedDailyReport()
+
+
+        return () => {
+            cancelled = true
+        }
+
+        }, [
+        selectedCenterId,
+        form.reportDate,
+        ])
+
+  const changeField = (
+    field,
+    value
+    ) => {
+
+    setIsReportSaved(false)
+    setSavedImageSize(0)
+
     setForm((prev) => ({
-      ...prev,
-      [field]: value,
+        ...prev,
+        [field]: value,
     }))
-  }
+    }
 
   const changeNumber = (field, value) => {
     const number = Number(value)
