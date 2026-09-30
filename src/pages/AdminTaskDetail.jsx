@@ -86,6 +86,7 @@ function AdminTaskDetail({
   const [editLinks, setEditLinks] = useState([])
   const [editAttachments, setEditAttachments] = useState([])
   const [editSubtasks, setEditSubtasks] = useState([])
+  const [editCenterIds, setEditCenterIds] = useState([])
 
   const [deletingFileId, setDeletingFileId] =
     useState(null)
@@ -1202,6 +1203,13 @@ function AdminTaskDetail({
             ]
     )
 
+    const assignedCenterIds =
+      taskCenters.map((centerRow) =>
+        String(centerRow.center_id)
+      )
+
+    setEditCenterIds(assignedCenterIds)
+
     setEditSubtasks(
       subtasks.map((item) => {
 
@@ -1286,6 +1294,59 @@ function AdminTaskDetail({
       )
     }
 
+    const toggleEditCenter = (centerId) => {
+      const value = String(centerId)
+
+      const removing =
+        editCenterIds.includes(value)
+
+      setEditCenterIds((prev) =>
+        removing
+          ? prev.filter((id) => id !== value)
+          : [...prev, value]
+      )
+
+      /*
+      * ถ้าลบศูนย์ออกจากงานหลัก
+      * เอาศูนย์นั้นออกจากงานย่อยด้วย
+      *
+      * ถ้าเพิ่มศูนย์ใหม่
+      * งานย่อยแบบ all_centers
+      * ให้รับศูนย์ใหม่อัตโนมัติ
+      */
+      setEditSubtasks((prev) =>
+        prev.map((item) => {
+          const ids =
+            (item.center_ids || []).map(String)
+
+          if (removing) {
+            return {
+              ...item,
+              center_ids:
+                ids.filter(
+                  (id) => id !== value
+                ),
+            }
+          }
+
+          if (
+            item.scope_type === 'all_centers' &&
+            !ids.includes(value)
+          ) {
+            return {
+              ...item,
+              center_ids: [
+                ...ids,
+                value,
+              ],
+            }
+          }
+
+          return item
+        })
+      )
+    }
+
     const addEditSubtask = () => {
 
       setEditSubtasks((prev) => [
@@ -1302,12 +1363,7 @@ function AdminTaskDetail({
             null,
 
           center_ids:
-            taskCenters.map(
-              (centerRow) =>
-                String(
-                  centerRow.center_id
-                )
-            ),
+            [...editCenterIds],
         },
       ])
     }
@@ -1373,12 +1429,7 @@ function AdminTaskDetail({
                   'all_centers',
 
                 center_ids:
-                  taskCenters.map(
-                    (centerRow) =>
-                      String(
-                        centerRow.center_id
-                      )
-                  ),
+                  [...editCenterIds],
               }
 
             }
@@ -1571,11 +1622,36 @@ function AdminTaskDetail({
         * รองรับ global / all_centers / specific_centers
         */
 
-        const assignedCenterIds =
+        const oldAssignedCenterIds =
           taskCenters.map(
             (centerRow) =>
               String(centerRow.center_id)
-            )
+          )
+
+        const assignedCenterIds =
+          editCenterIds.map(String)
+
+        if (assignedCenterIds.length === 0) {
+          throw new Error(
+            'กรุณาเลือกอย่างน้อย 1 ศูนย์'
+          )
+        }
+
+        const addedCenterIds =
+          assignedCenterIds.filter(
+            (centerId) =>
+              !oldAssignedCenterIds.includes(
+                centerId
+              )
+          )
+
+        const removedCenterRows =
+          taskCenters.filter(
+            (centerRow) =>
+              !assignedCenterIds.includes(
+                String(centerRow.center_id)
+              )
+          )
 
 
         const cleanSubtasks =
@@ -1662,7 +1738,33 @@ function AdminTaskDetail({
         .eq('id', taskId)
 
         if (taskError) {
-        throw taskError
+          throw taskError
+        }
+
+        /*
+        * เพิ่มศูนย์ใหม่
+        */
+        if (addedCenterIds.length > 0) {
+
+          const {
+            error: addCenterError,
+          } = await supabase
+            .from('admin_task_centers')
+            .insert(
+              addedCenterIds.map(
+                (centerId) => ({
+                  task_id: taskId,
+                  center_id:
+                    Number(centerId),
+                  status: 'pending',
+                  completed_at: null,
+                })
+              )
+            )
+
+          if (addCenterError) {
+            throw addCenterError
+          }
         }
 
 
@@ -2099,6 +2201,45 @@ function AdminTaskDetail({
                   }
                 }
 
+                /*
+                * ลบศูนย์ที่ถูกเอาออก
+                */
+                for (
+                  const centerRow
+                  of removedCenterRows
+                ) {
+
+                  const {
+                    error: removeCenterError,
+                  } = await supabase
+                    .from('admin_task_centers')
+                    .delete()
+                    .eq(
+                      'id',
+                      centerRow.id
+                    )
+
+                  if (removeCenterError) {
+                    throw removeCenterError
+                  }
+                }
+
+
+                /*
+                * โหลดศูนย์ล่าสุด
+                */
+                const {
+                  data: latestTaskCenters,
+                  error: latestTaskCenterError,
+                } = await supabase
+                  .from('admin_task_centers')
+                  .select('*')
+                  .eq('task_id', taskId)
+
+                if (latestTaskCenterError) {
+                  throw latestTaskCenterError
+                }
+
 
                 /*
                 * อ่านงานย่อยล่าสุด
@@ -2155,7 +2296,7 @@ function AdminTaskDetail({
                 */
                 for (
                   const centerRow
-                  of taskCenters
+                  of (latestTaskCenters || [])
                 ) {
 
                   let statuses = []
@@ -4187,6 +4328,73 @@ function AdminTaskDetail({
             <div className="admin-edit-section">
 
               <div className="admin-edit-section-head">
+                <strong>ศูนย์ที่ได้รับมอบหมาย</strong>
+
+                <span>
+                  {editCenterIds.length} ศูนย์
+                </span>
+              </div>
+
+              <div className="admin-subtask-center-grid">
+
+                {centers
+                  .filter(
+                    (center) =>
+                      center.active ||
+                      editCenterIds.includes(
+                        String(center.id)
+                      )
+                  )
+                  .map((center) => {
+
+                    const centerId =
+                      String(center.id)
+
+                    const checked =
+                      editCenterIds.includes(
+                        centerId
+                      )
+
+                    return (
+                      <label
+                        key={centerId}
+                        className={
+                          `admin-subtask-center-option ${
+                            checked
+                              ? 'selected'
+                              : ''
+                          }`
+                        }
+                      >
+
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            toggleEditCenter(
+                              centerId
+                            )
+                          }
+                        />
+
+                        <span>
+                          {center.name}
+                          {center.code
+                            ? ` (${center.code})`
+                            : ''}
+                        </span>
+
+                      </label>
+                    )
+                  })}
+
+              </div>
+
+            </div>
+
+            <div className="admin-edit-section">
+
+              <div className="admin-edit-section-head">
                 <strong>งานย่อย</strong>
 
                 <button
@@ -4288,18 +4496,16 @@ function AdminTaskDetail({
 
                         <div className="admin-subtask-center-grid">
 
-                          {taskCenters.map(
-                            (centerRow) => {
+                          {centers
+                            .filter((center) =>
+                              editCenterIds.includes(
+                                String(center.id)
+                              )
+                            )
+                            .map((center) => {
 
                               const centerId =
-                                String(
-                                  centerRow.center_id
-                                )
-
-                              const center =
-                                centerMap[
-                                  centerId
-                                ]
+                                String(center.id)
 
                               const checked =
                                 (
