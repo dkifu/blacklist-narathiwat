@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard'
 import ActivityLog from './pages/ActivityLog'
 import AdminTasks from './pages/AdminTasks'
 import CenterTasks from './pages/CenterTasks'
+import DailyReport from './pages/DailyReport'
 
 
 
@@ -180,6 +181,7 @@ function App() {
     users: 'ผู้ใช้งาน',
     adminTasks: 'งาน Admin',
     centerTasks: 'งานศูนย์',
+    dailyReport: 'รายงานประจำวัน',
     activityLog: 'Activity Log',
     settings: 'ตั้งค่าระบบ',
   }[currentPage] || 'Blacklist Narathiwat'
@@ -268,6 +270,24 @@ function App() {
               >
                 งานศูนย์
               </button>
+            )}
+
+            {(profile?.role === 'admin' ||
+              profile?.role === 'center') && (
+
+              <button
+                className={`menu-item ${
+                  currentPage === 'dailyReport'
+                    ? 'active'
+                    : ''
+                }`}
+                onClick={() =>
+                  setCurrentPage('dailyReport')
+                }
+              >
+                รายงานประจำวัน
+              </button>
+
             )}
 
             {profile?.role === 'admin' && (
@@ -406,6 +426,10 @@ function App() {
             ) : currentPage === 'centerTasks' ? (
 
               <CenterTasks profile={profile} />  
+
+            ) : currentPage === 'dailyReport' ? (
+
+              <DailyReport profile={profile} />  
 
             ) : currentPage === 'activityLog' ? (
 
