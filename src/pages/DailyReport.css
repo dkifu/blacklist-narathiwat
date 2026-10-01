@@ -406,7 +406,7 @@
   position: absolute;
 
   right: 14px;
-  top: 28px;
+  top: 16px;
 
   width: 135px;
   height: 135px;
@@ -585,8 +585,7 @@
 
   gap: 12px;
 
-  border-bottom:
-    1px solid #becbd8;
+  
 }
 
 .daily-bar-item {
@@ -986,3 +985,796 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   margin: 0;
 }
 
+/* =====================================
+   INFOGRAPHIC V2
+===================================== */
+
+.daily-report-canvas {
+  position: relative;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 8% 12%,
+      rgba(38, 147, 225, 0.14),
+      transparent 17%
+    ),
+    radial-gradient(
+      circle at 92% 82%,
+      rgba(38, 147, 225, 0.11),
+      transparent 22%
+    ),
+    linear-gradient(
+      135deg,
+      #ffffff 0%,
+      #eef8ff 100%
+    );
+}
+
+.daily-preview-card,
+.daily-event-card {
+  box-shadow:
+    0 6px 16px
+    rgba(25, 91, 145, 0.10);
+}
+
+/* ---------- STAT ---------- */
+
+.daily-stat-row {
+  width: 55%;
+  min-height: 63px;
+
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  gap: 9px;
+
+  padding: 8px 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #f7fbff,
+      #edf4fb
+    );
+
+  border:
+    1px solid #e3edf6;
+}
+
+.daily-stat-icon {
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background: #e7f2ff;
+
+  color: #075bb0;
+}
+
+.daily-stat-row--ready
+.daily-stat-icon {
+  background: #eaf7ff;
+  color: #075bb0;
+}
+
+.daily-stat-row--danger
+.daily-stat-icon {
+  background: #fff0f1;
+  color: #ef1b2d;
+}
+
+.daily-stat-row--primary
+.daily-stat-icon {
+  background: #eaf2ff;
+  color: #074ea2;
+}
+
+.daily-stat-copy {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.daily-stat-copy span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5e6774;
+}
+
+.daily-stat-copy strong {
+  font-size: 25px;
+  line-height: 1.08;
+  color: #46515e;
+}
+
+.daily-stat-copy small {
+  font-size: 11px;
+  color: #727c88;
+}
+
+/* ---------- DONUT ---------- */
+
+.daily-donut {
+  box-shadow:
+    0 7px 15px
+    rgba(0, 109, 78, 0.16);
+}
+
+.daily-donut::before {
+  box-shadow:
+    inset 0 0 15px
+    rgba(21, 79, 125, 0.08);
+}
+
+/* ---------- REPAIR ---------- */
+
+.daily-repair-row {
+  min-height: 48px;
+
+  display: grid;
+  grid-template-columns:
+    38px 1fr auto;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 6px 8px;
+}
+
+.daily-repair-icon {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  color: #13a154;
+  background: #ebf9f1;
+}
+
+.daily-repair-row--warning
+.daily-repair-icon {
+  color: #efa400;
+  background: #fff7df;
+}
+
+.daily-repair-row--orange
+.daily-repair-icon {
+  color: #ff7000;
+  background: #fff0e3;
+}
+
+.daily-repair-copy {
+  display: flex !important;
+  flex-direction: column;
+  align-items: flex-start !important;
+  gap: 0 !important;
+}
+
+.daily-repair-copy strong {
+  font-size: 19px;
+}
+
+.daily-repair-copy span {
+  font-size: 10px;
+  color: #66717d;
+}
+
+.daily-repair-row b {
+  font-size: 13px;
+}
+
+/* ---------- EVENT GRAPH ---------- */
+
+.daily-bar-chart {
+  position: relative;
+
+  background:
+    repeating-linear-gradient(
+      to top,
+      transparent 0,
+      transparent 35px,
+      #e8eff6 36px
+    );
+}
+
+.daily-bar {
+  width: 46%;
+
+  box-shadow:
+    0 -2px 8px
+    rgba(0, 0, 0, 0.08);
+
+  transition:
+    height 0.2s ease;
+}
+
+.daily-bar-value {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.daily-event-summary > div {
+  min-height: 39px;
+
+  display: flex;
+  align-items: center;
+
+  background: #f7fbff;
+
+  border-left:
+    3px solid var(--event-color);
+
+  padding: 6px 8px;
+}
+
+.daily-event-summary-label {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+}
+
+.daily-event-summary-label i {
+  width: 28px;
+  height: 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  color: var(--event-color);
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 6px
+    rgba(0, 0, 0, 0.08);
+}
+
+.daily-event-summary > div > strong {
+  color: var(--event-color);
+  font-size: 16px;
+}
+
+/* ---------- HEADER ---------- */
+
+.daily-infographic-header {
+  box-shadow:
+    0 6px 14px
+    rgba(7, 82, 156, 0.16);
+}
+
+/* =====================================
+   INFOGRAPHIC HEADER V2
+===================================== */
+
+.daily-infographic-header {
+  position: relative;
+
+  display: grid;
+  grid-template-columns:
+    76px minmax(0, 1fr) 210px;
+
+  align-items: center;
+  gap: 14px;
+
+  padding: 14px 16px;
+
+  background:
+    radial-gradient(
+      circle at 6% 50%,
+      rgba(59, 164, 230, 0.18),
+      transparent 17%
+    ),
+    linear-gradient(
+      90deg,
+      #eaf6ff 0%,
+      #ffffff 55%,
+      #e9f6ff 100%
+    );
+
+  border:
+    1px solid #b9dcf3;
+
+  border-radius: 20px;
+
+  color: #174e78;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 5px 14px
+    rgba(26, 111, 171, 0.12);
+}
+
+
+/* ---------- LOGO ---------- */
+
+.daily-logo-box {
+  width: 72px;
+  height: 72px;
+
+  border-radius: 15px;
+
+  background: #ffffff;
+
+  border:
+    2px solid #9ed0ef;
+
+  color: #657a8e;
+
+  box-shadow:
+    0 4px 10px
+    rgba(23, 104, 164, 0.10);
+}
+
+
+/* ---------- TITLE ---------- */
+
+.daily-title-area {
+  min-width: 0;
+
+  padding: 12px 20px;
+
+  background:
+    linear-gradient(
+      100deg,
+      #07539c 0%,
+      #147bbd 52%,
+      #55b7eb 100%
+    );
+
+  border-radius:
+    28px 8px 8px 28px;
+
+  box-shadow:
+    0 5px 12px
+    rgba(6, 83, 154, 0.18);
+}
+
+.daily-title-area h2 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 31px;
+  font-weight: 800;
+
+  line-height: 1.15;
+
+  white-space: nowrap;
+}
+
+.daily-title-line {
+  width: 78%;
+  height: 2px;
+
+  margin-top: 9px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.72
+    );
+}
+
+
+/* ---------- DATE ---------- */
+
+.daily-report-date {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: row;
+
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  text-align: right;
+
+  color: #174f79;
+}
+
+.daily-report-date-icon {
+  width: 58px;
+  height: 58px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.92
+    );
+
+  border:
+    2px solid #78bce8;
+
+  color: #0874bb;
+
+  box-shadow:
+    0 4px 10px
+    rgba(31, 126, 189, 0.12);
+}
+
+.daily-report-date-text {
+  display: flex;
+  flex-direction: column;
+
+  align-items: flex-end;
+
+  gap: 2px;
+}
+
+.daily-report-date-text strong {
+  color: #516776;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.daily-report-date-text span {
+  color: #314d63;
+
+  font-size: 16px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+/* ดึงกราฟ 4 และ 5 ลงชิดด้านล่าง */
+.daily-event-body .daily-bar-chart {
+  align-self: end;
+  margin-bottom: 4px;
+}
+
+.daily-event-body .daily-bar-chart {
+  align-self: end;
+  margin-bottom: -4px;
+}
+
+/* เส้นฐานกราฟใหม่ */
+.daily-bar-chart::after {
+  content: '';
+  position: absolute;
+
+  left: 0;
+  right: 0;
+
+  bottom: 33px;   /* ปรับขึ้น-ลงได้ */
+  height: 1px;
+
+  background: #cfd8e3;
+}
+
+.daily-bar-chart {
+  border-bottom: none;
+}
+
+/* =========================
+   REPAIR DONUT CHART
+========================= */
+
+.daily-repair-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 0.9fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.daily-repair-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.daily-repair-chart-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.daily-repair-donut-chart {
+  width: 135px;
+  height: 135px;
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 0 8px 18px rgba(18, 101, 157, 0.12);
+}
+
+.daily-repair-donut-hole {
+  position: absolute;
+  inset: 26.5px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: inset 0 0 16px rgba(22, 77, 122, 0.08);
+}
+
+.daily-repair-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  align-items: flex-start;
+
+  width: 130px;
+  box-sizing: border-box;
+
+  padding: 8px 10px;
+
+  border-radius: 10px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.92
+    );
+
+  box-shadow:
+    0 4px 10px
+    rgba(16, 76, 128, 0.10);
+
+  transform: translateX(0px);
+}
+
+.daily-repair-legend div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #425466;
+  font-weight: 700;
+}
+
+.daily-repair-legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.legend-green {
+  background: #08b850;
+}
+
+.legend-yellow {
+  background: #f4b400;
+}
+
+.legend-orange {
+  background: #ff7a00;
+}
+
+.daily-repair-left .daily-stat-row {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* บีบข้อมูลฝั่งซ้ายของการ์ด 3 ให้สั้นลง */
+.daily-repair-left {
+  gap: 4px;
+}
+
+.daily-repair-left .daily-stat-row {
+  min-height: 54px;
+  padding: 5px 7px;
+  margin-bottom: 0;
+}
+
+.daily-repair-left .daily-repair-row {
+  min-height: 34px;
+  padding: 3px 6px;
+  margin-bottom: 0;
+}
+
+.daily-repair-left .daily-repair-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.daily-repair-left .daily-repair-copy strong {
+  font-size: 17px;
+}
+
+.daily-repair-left .daily-repair-copy span {
+  font-size: 9px;
+}
+
+/* Legend ของกราฟวงกลมการ์ด 1 และ 2 */
+.daily-camera-donut-legend {
+  position: absolute;
+  right: 15px;
+  bottom: 10px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  align-items: flex-start;
+
+  width: 130px;
+  box-sizing: border-box;
+
+  padding: 8px 10px;
+
+  border-radius: 10px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.92
+    );
+
+  box-shadow:
+    0 4px 10px
+    rgba(16, 76, 128, 0.10);
+}
+
+.daily-camera-donut-legend div {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  font-size: 12px;
+  font-weight: 700;
+  color: #425466;
+}
+
+.daily-camera-donut-legend i {
+  width: 12px;
+  height: 12px;
+
+  border-radius: 3px;
+
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.legend-red {
+  background: #ef3340;
+}
+
+.daily-camera-donut-legend i,
+.daily-repair-legend i {
+  width: 12px;
+  height: 12px;
+
+  border-radius: 3px;
+}
+
+/* =====================================
+   INFO BOX CARD 1 - 2
+===================================== */
+
+.daily-info-box {
+  position: relative;
+
+  width: 55%;
+  min-height: 63px;
+
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  gap: 9px;
+
+  padding: 8px 10px;
+
+  margin-bottom: 10px;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #f7fbff,
+      #edf4fb
+    );
+
+  border:
+    1px solid #e3edf6;
+}
+
+
+/* icon */
+
+.daily-info-box-icon {
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background: #e9f4ff;
+  color: #0872c1;
+}
+
+
+/* text */
+
+.daily-info-box-text {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.daily-info-box-text span {
+  font-size: 9px;
+  font-weight: 700;
+
+  color: #647484;
+
+  white-space: nowrap;
+}
+
+.daily-info-box-text strong {
+  font-size: 12px;
+  font-weight: 800;
+
+  line-height: 1.2;
+
+  color: #24435c;
+
+  white-space: nowrap;
+}
+
+
+/* การ์ดวันที่ */
+
+.daily-info-box--date
+.daily-info-box-icon {
+  color: #0878c9;
+  background: #e9f5ff;
+}
+
+
+/* การ์ดระยะเวลา */
+
+.daily-info-box--duration
+.daily-info-box-icon {
+  color: #178a52;
+  background: #eaf8f0;
+}

@@ -14,6 +14,17 @@ import {
 import './DailyReport.css'
 import liff from '@line/liff'
 
+import {
+  Cctv,
+  Wrench,
+  Clock3,
+  ShieldAlert,
+  Car,
+  Fingerprint,
+  ScanLine,
+  CalendarDays,
+} from 'lucide-react'
+
 function DailyReport({ profile }) {
 
   const getLocalToday = () => {
@@ -877,6 +888,15 @@ function DailyReport({ profile }) {
     )
   }
 
+  const repair24Pct = repairPercent(form.repair24)
+    const repair48Pct = repairPercent(form.repair48)
+    const repair72Pct = repairPercent(form.repair72)
+
+    const repairDonutEnd1 = repair24Pct
+    const repairDonutEnd2 = repair24Pct + repair48Pct
+    const repairDonutEnd3 =
+    repair24Pct + repair48Pct + repair72Pct
+
   const dailyEventTotal =
     Number(form.dailyUnrest || 0) +
     Number(form.dailyAccident || 0) +
@@ -905,6 +925,67 @@ function DailyReport({ profile }) {
       }
     ).format(date)
   }
+
+  const currentDate = new Date()
+
+const currentDateText =
+  new Intl.DateTimeFormat(
+    'th-TH-u-ca-buddhist',
+    {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }
+  ).format(currentDate)
+
+const getProjectDuration = () => {
+  const start = new Date(2023, 0, 1)
+
+  const end = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    currentDate.getDate()
+  )
+
+  let years =
+    end.getFullYear() -
+    start.getFullYear()
+
+  let months =
+    end.getMonth() -
+    start.getMonth()
+
+  let days =
+    end.getDate() -
+    start.getDate()
+
+  if (days < 0) {
+    months -= 1
+
+    const previousMonthDays =
+      new Date(
+        end.getFullYear(),
+        end.getMonth(),
+        0
+      ).getDate()
+
+    days += previousMonthDays
+  }
+
+  if (months < 0) {
+    years -= 1
+    months += 12
+  }
+
+  return {
+    years,
+    months,
+    days,
+  }
+}
+
+const projectDuration =
+  getProjectDuration()
 
   const MAX_REPORT_IMAGE_BYTES =
     200 * 1024
@@ -1831,7 +1912,7 @@ function DailyReport({ profile }) {
           <section className="daily-form-section">
 
             <div className="daily-section-title">
-              2. ค่าเฉลี่ยเดือนนี้
+              2. ค่าเฉลี่ยตลอดโครงการ
             </div>
 
             <div className="daily-two-column">
@@ -2122,17 +2203,28 @@ function DailyReport({ profile }) {
 
               <div className="daily-report-date">
 
-                <strong>
-                  ประจำวันที่
-                </strong>
+                <div className="daily-report-date-icon">
+                    <InfoIcon
+                    type="calendar"
+                    size={36}
+                    />
+                </div>
 
-                <span>
-                  {formatThaiDate(
-                    form.reportDate
-                  )}
-                </span>
+                <div className="daily-report-date-text">
 
-              </div>
+                    <strong>
+                    ประจำวันที่
+                    </strong>
+
+                    <span>
+                    {formatThaiDate(
+                        form.reportDate
+                    )}
+                    </span>
+
+                </div>
+
+                </div>
 
               
 
@@ -2147,132 +2239,235 @@ function DailyReport({ profile }) {
               >
 
                 <StatRow
-                  label="กล้องพร้อมใช้งาน"
-                  value={form.cameraReady}
-                  suffix="ตัว"
+                    icon="camera"
+                    tone="ready"
+                    label="กล้องพร้อมใช้งาน"
+                    value={form.cameraReady}
+                    suffix="ตัว"
                 />
 
                 <StatRow
-                  label="กล้องเสีย"
-                  value={form.cameraBroken}
-                  suffix="ตัว"
+                    icon="camera"
+                    tone="danger"
+                    label="กล้องเสีย"
+                    value={form.cameraBroken}
+                    suffix="ตัว"
                 />
 
+                <div className="daily-info-box daily-info-box--date">
+
+                <div className="daily-info-box-icon">
+                    <InfoIcon
+                    type="calendar"
+                    size={27}
+                    />
+                </div>
+
+                <div className="daily-info-box-text">
+                    <span>วันที่ปัจจุบัน</span>
+
+                    <strong>
+                    {currentDateText}
+                    </strong>
+                </div>
+
+                </div>
+
                 <Donut
-                  percent={
-                    cameraReadyPercent
-                  }
+                  percent={cameraReadyPercent}
                 />
+
+                <CameraDonutLegend />
 
               </ReportCard>
 
 
               <ReportCard
                 number="2"
-                title="ค่าเฉลี่ยเดือนนี้"
+                title="ค่าเฉลี่ยตลอดโครงการ"
               >
 
                 <StatRow
-                  label="พร้อมใช้งานเฉลี่ย"
-                  value={
-                    form.avgCameraReady
-                  }
-                  suffix="ตัว"
+                    icon="camera"
+                    tone="ready"
+                    label="พร้อมใช้งานเฉลี่ย"
+                    value={form.avgCameraReady}
+                    suffix="ตัว"
                 />
 
                 <StatRow
-                  label="กล้องเสียเฉลี่ย"
-                  value={
-                    form.avgCameraBroken
-                  }
-                  suffix="ตัว"
+                    icon="camera"
+                    tone="danger"
+                    label="กล้องเสียเฉลี่ย"
+                    value={form.avgCameraBroken}
+                    suffix="ตัว"
                 />
+
+                <div className="daily-info-box daily-info-box--duration">
+
+                    <div className="daily-info-box-icon">
+                        <InfoIcon
+                        type="clock"
+                        size={27}
+                        />
+                    </div>
+
+                    <div className="daily-info-box-text">
+                        <span>
+                        ระยะเวลาดำเนินโครงการ
+                        </span>
+
+                        <strong>
+                        {projectDuration.years} ปี{' '}
+                        {projectDuration.months} เดือน{' '}
+                        {projectDuration.days} วัน
+                        </strong>
+                    </div>
+
+                    </div>
 
                 <Donut
-                  percent={
-                    averageReadyPercent
-                  }
+                  percent={averageReadyPercent}
                 />
 
-              </ReportCard>
+                <CameraDonutLegend />
 
+              </ReportCard>
 
               <ReportCard
                 number="3"
                 title="สถิติงานซ่อมทั้งหมด"
               >
 
-                <StatRow
-                  label="งานซ่อมสะสม"
-                  value={form.repairTotal}
-                  suffix="รายการ"
-                />
+            <div className="daily-repair-layout">
 
-                <MiniRepair
-                  label="ภายใน 24 ชม."
-                  value={form.repair24}
-                  percent={
-                    repairPercent(
-                      form.repair24
-                    )
-                  }
-                />
+                <div className="daily-repair-left">
 
-                <MiniRepair
-                  label="ภายใน 24-48 ชม."
-                  value={form.repair48}
-                  percent={
-                    repairPercent(
-                      form.repair48
-                    )
-                  }
-                />
+                    <div className="daily-stat-row daily-stat-row--primary">
+                    <div className="daily-stat-icon">
+                        <InfoIcon type="repair" size={38} />
+                    </div>
 
-                <MiniRepair
-                  label="ภายใน 48-72 ชม."
-                  value={form.repair72}
-                  percent={
-                    repairPercent(
-                      form.repair72
-                    )
-                  }
-                />
+                    <div className="daily-stat-copy">
+                        <span>งานซ่อมสะสม</span>
+                        <strong>{form.repairTotal}</strong>
+                        <small>รายการ</small>
+                    </div>
+                    </div>
 
-              </ReportCard>
+                    <div className="daily-repair-row">
+                    <div className="daily-repair-icon">
+                        <InfoIcon type="clock" size={20} />
+                    </div>
+
+                    <div className="daily-repair-copy">
+                        <strong>{form.repair24}</strong>
+                        <span>ภายใน 24 ชม.</span>
+                    </div>
+
+                    <b>{repair24Pct}%</b>
+                    </div>
+
+                    <div className="daily-repair-row daily-repair-row--warning">
+                    <div className="daily-repair-icon">
+                        <InfoIcon type="clock" size={20} />
+                    </div>
+
+                    <div className="daily-repair-copy">
+                        <strong>{form.repair48}</strong>
+                        <span>ภายใน 24-48 ชม.</span>
+                    </div>
+
+                    <b>{repair48Pct}%</b>
+                    </div>
+
+                    <div className="daily-repair-row daily-repair-row--orange">
+                    <div className="daily-repair-icon">
+                        <InfoIcon type="clock" size={20} />
+                    </div>
+
+                    <div className="daily-repair-copy">
+                        <strong>{form.repair72}</strong>
+                        <span>ภายใน 48-72 ชม.</span>
+                    </div>
+
+                    <b>{repair72Pct}%</b>
+                    </div>
+
+                </div>
+
+                <div className="daily-repair-chart-side">
+
+                    <div
+                    className="daily-repair-donut-chart"
+                    style={{
+                        background: `conic-gradient(
+                        #08b850 0 ${repairDonutEnd1}%,
+                        #f4b400 ${repairDonutEnd1}% ${repairDonutEnd2}%,
+                        #ff7a00 ${repairDonutEnd2}% ${repairDonutEnd3}%,
+                        #edf2f7 ${repairDonutEnd3}% 100%
+                        )`,
+                    }}
+                    >
+                    <div className="daily-repair-donut-hole" />
+                    </div>
+
+                    <div className="daily-repair-legend">
+                    <div>
+                        <i className="legend-green" />
+                        <span>ภายใน 24 ชม.</span>
+                    </div>
+
+                    <div>
+                        <i className="legend-yellow" />
+                        <span>ภายใน 24-48 ชม.</span>
+                    </div>
+
+                    <div>
+                        <i className="legend-orange" />
+                        <span>ภายใน 48-72 ชม.</span>
+                    </div>
+                    </div>
+
+                </div>
+
+                </div>
+
+                </ReportCard>
 
             </div>
 
-
             <div className="daily-bottom-grid">
-
               <EventCard
                 number="4"
                 title="สถิติเหตุการณ์ประจำวัน"
                 total={dailyEventTotal}
                 values={[
-                  {
-                    label:
-                      'เหตุก่อความไม่สงบ',
-                    value:
-                      form.dailyUnrest,
-                  },
-                  {
-                    label: 'อุบัติเหตุ',
-                    value:
-                      form.dailyAccident,
-                  },
-                  {
-                    label: 'อาชญากรรม',
-                    value:
-                      form.dailyCrime,
-                  },
-                  {
-                    label:
-                      'เหตุจากระบบ (LPR, AI)',
-                    value:
-                      form.dailySystem,
-                  },
-                ]}
+                    {
+                        label: 'เหตุก่อความไม่สงบ',
+                        value: form.dailyUnrest,
+                        icon: 'unrest',
+                        color: '#e31937',
+                    },
+                    {
+                        label: 'อุบัติเหตุ',
+                        value: form.dailyAccident,
+                        icon: 'accident',
+                        color: '#f5b400',
+                    },
+                    {
+                        label: 'อาชญากรรม',
+                        value: form.dailyCrime,
+                        icon: 'crime',
+                        color: '#ff6b00',
+                    },
+                    {
+                        label: 'เหตุจากระบบ (LPR, AI)',
+                        value: form.dailySystem,
+                        icon: 'ai',
+                        color: '#0877bd',
+                    },
+                  ]}
               />
 
 
@@ -2283,28 +2478,30 @@ function DailyReport({ profile }) {
                   cumulativeEventTotal
                 }
                 values={[
-                  {
-                    label:
-                      'เหตุก่อความไม่สงบ',
-                    value:
-                      form.totalUnrest,
-                  },
-                  {
+                {
+                    label: 'เหตุก่อความไม่สงบ',
+                    value: form.totalUnrest,
+                    icon: 'unrest',
+                    color: '#e31937',
+                },
+                {
                     label: 'อุบัติเหตุ',
-                    value:
-                      form.totalAccident,
-                  },
-                  {
+                    value: form.totalAccident,
+                    icon: 'accident',
+                    color: '#f5b400',
+                },
+                {
                     label: 'อาชญากรรม',
-                    value:
-                      form.totalCrime,
-                  },
-                  {
-                    label:
-                      'เหตุจากระบบ (LPR, AI)',
-                    value:
-                      form.totalSystem,
-                  },
+                    value: form.totalCrime,
+                    icon: 'crime',
+                    color: '#ff6b00',
+                },
+                {
+                    label: 'เหตุจากระบบ (LPR, AI)',
+                    value: form.totalSystem,
+                    icon: 'ai',
+                    color: '#0877bd',
+                },
                 ]}
               />
 
@@ -2350,6 +2547,34 @@ function NumberInput({
   )
 }
 
+const INFO_ICONS = {
+  camera: Cctv,
+  repair: Wrench,
+  clock: Clock3,
+  unrest: ShieldAlert,
+  accident: Car,
+  crime: Fingerprint,
+  ai: ScanLine,
+  calendar: CalendarDays,
+}
+
+function InfoIcon({
+  type,
+  size = 28,
+}) {
+  const Icon =
+    INFO_ICONS[type] ||
+    ScanLine
+
+  return (
+    <Icon
+      size={size}
+      strokeWidth={2.4}
+      aria-hidden="true"
+    />
+  )
+}
+
 
 function ReportCard({
   number,
@@ -2384,22 +2609,47 @@ function StatRow({
   label,
   value,
   suffix,
+  icon = 'camera',
+  tone = 'primary',
 }) {
   return (
-    <div className="daily-stat-row">
+    <div
+      className={
+        `daily-stat-row daily-stat-row--${tone}`
+      }
+    >
+      <div className="daily-stat-icon">
+        <InfoIcon
+          type={icon}
+          size={38}
+        />
+      </div>
 
-      <span>
-        {label}
-      </span>
+      <div className="daily-stat-copy">
+        <span>{label}</span>
 
-      <strong>
-        {value}
-        {' '}
-        <small>
-          {suffix}
-        </small>
-      </strong>
+        <strong>
+          {value}
+          {' '}
+          <small>{suffix}</small>
+        </strong>
+      </div>
+    </div>
+  )
+}
 
+function CameraDonutLegend() {
+  return (
+    <div className="daily-camera-donut-legend">
+      <div>
+        <i className="legend-green" />
+        <span>พร้อมใช้งาน</span>
+      </div>
+
+      <div>
+        <i className="legend-red" />
+        <span>กล้องเสีย</span>
+      </div>
     </div>
   )
 }
@@ -2443,24 +2693,27 @@ function MiniRepair({
   label,
   value,
   percent,
+  tone = 'success',
 }) {
   return (
-    <div className="daily-repair-row">
-
-      <div>
-        <strong>
-          {value}
-        </strong>
-
-        <span>
-          {label}
-        </span>
+    <div
+      className={
+        `daily-repair-row daily-repair-row--${tone}`
+      }
+    >
+      <div className="daily-repair-icon">
+        <InfoIcon
+          type="clock"
+          size={27}
+        />
       </div>
 
-      <b>
-        {percent}%
-      </b>
+      <div className="daily-repair-copy">
+        <strong>{value}</strong>
+        <span>{label}</span>
+      </div>
 
+      <b>{percent}%</b>
     </div>
   )
 }
@@ -2531,13 +2784,24 @@ function EventCard({
                   key={item.label}
                 >
 
-                  <div
+                  <strong
+                    className="daily-bar-value"
+                    style={{
+                        color:
+                        item.color || '#0877bd',
+                    }}
+                    >
+                    {item.value}
+                    </strong>
+
+                    <div
                     className="daily-bar"
                     style={{
-                      height:
-                        `${height}%`,
+                        height: `${height}%`,
+                        background:
+                        item.color || '#0877bd',
                     }}
-                  />
+                    />
 
                   <span>
                     {item.label}
@@ -2553,23 +2817,42 @@ function EventCard({
 
         <div className="daily-event-summary">
 
-          {values.map(
-            (item) => (
-              <div key={item.label}>
+            {values.map(
+                (item) => (
 
-                <span>
-                  {item.label}
-                </span>
+                <div
+                    key={item.label}
+                    style={{
+                    '--event-color':
+                        item.color || '#0877bd',
+                    }}
+                >
 
-                <strong>
-                  {item.value}
-                </strong>
+                    <span className="daily-event-summary-label">
 
-              </div>
-            )
-          )}
+                    <i>
+                        <InfoIcon
+                        type={item.icon}
+                        size={23}
+                        />
+                    </i>
 
-        </div>
+                    <span>
+                        {item.label}
+                    </span>
+
+                    </span>
+
+                    <strong>
+                    {item.value}
+                    </strong>
+
+                </div>
+
+                )
+            )}
+
+            </div>
 
       </div>
 
