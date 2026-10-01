@@ -2314,7 +2314,7 @@ const projectDuration =
 
                     <div className="daily-info-box-text">
                         <span>
-                        ระยะเวลาดำเนินโครงการ
+                        ระยะเวลาดำเนินงาน
                         </span>
 
                         <strong>
