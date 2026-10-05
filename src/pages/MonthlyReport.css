@@ -1,0 +1,1371 @@
+/* =========================================================
+   MONTHLY REPORT
+========================================================= */
+
+.monthly-report-page {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.monthly-report-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 22px;
+}
+
+.monthly-report-eyebrow {
+  display: inline-block;
+
+  margin-bottom: 8px;
+
+  color: #e34b73;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+}
+
+.monthly-report-header h2 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 30px;
+}
+
+.monthly-report-header p {
+  margin: 7px 0 0;
+
+  color: #858d9e;
+
+  font-size: 13px;
+}
+
+.monthly-permission-badge {
+  padding: 8px 13px;
+
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.monthly-permission-badge.edit {
+  color: #70e0a7;
+
+  background:
+    rgba(42, 167, 105, 0.12);
+
+  border:
+    1px solid rgba(65, 193, 126, 0.3);
+}
+
+.monthly-permission-badge.view {
+  color: #ffca69;
+
+  background:
+    rgba(207, 145, 38, 0.12);
+
+  border:
+    1px solid rgba(224, 168, 64, 0.28);
+}
+
+
+/* FILTER */
+
+.monthly-report-filter {
+  display: grid;
+
+  grid-template-columns:
+    minmax(260px, 1.5fr)
+    minmax(180px, 0.8fr)
+    minmax(160px, 0.7fr);
+
+  gap: 14px;
+
+  padding: 18px;
+  margin-bottom: 18px;
+
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #171b24,
+      #141820
+    );
+
+  border: 1px solid #29303e;
+}
+
+.monthly-filter-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.monthly-filter-item label {
+  margin-bottom: 7px;
+
+  color: #8992a3;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.monthly-filter-item select,
+.monthly-fixed-value {
+  width: 100%;
+  height: 44px;
+
+  padding: 0 13px;
+
+  border-radius: 10px;
+
+  border: 1px solid #31394a;
+
+  background: #0f141c;
+
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 13px;
+
+  outline: none;
+}
+
+.monthly-filter-item select:focus {
+  border-color: #c51f47;
+
+  box-shadow:
+    0 0 0 3px rgba(197, 31, 71, 0.12);
+}
+
+.monthly-fixed-value {
+  display: flex;
+  align-items: center;
+}
+
+.monthly-readonly-notice {
+  margin-bottom: 18px;
+  padding: 12px 15px;
+
+  border-radius: 11px;
+
+  background:
+    rgba(219, 156, 53, 0.08);
+
+  border:
+    1px solid rgba(219, 156, 53, 0.24);
+
+  color: #e8c47d;
+
+  font-size: 12px;
+}
+
+
+/* MAIN LAYOUT */
+
+.monthly-report-layout {
+  display: grid;
+
+  grid-template-columns:
+    minmax(320px, 0.9fr)
+    minmax(0, 2fr);
+
+  gap: 18px;
+}
+
+.monthly-section-list,
+.monthly-report-workspace {
+  overflow: hidden;
+
+  border-radius: 16px;
+
+  background: #151922;
+
+  border: 1px solid #29303e;
+}
+
+.monthly-section-list-head {
+  padding: 18px;
+
+  border-bottom: 1px solid #29303e;
+}
+
+.monthly-section-list-head strong {
+  display: block;
+
+  color: #ffffff;
+
+  font-size: 14px;
+}
+
+.monthly-section-list-head span {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #737d8f;
+
+  font-size: 11px;
+}
+
+.monthly-section-item {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    38px minmax(0, 1fr) 20px;
+
+  align-items: center;
+
+  gap: 11px;
+
+  padding: 13px 15px;
+
+  border: 0;
+  border-bottom: 1px solid #242b37;
+
+  background: transparent;
+
+  color: #ffffff;
+
+  text-align: left;
+
+  font-family: inherit;
+
+  cursor: pointer;
+
+  transition: 0.15s ease;
+}
+
+.monthly-section-item:hover {
+  background: #191f2a;
+}
+
+.monthly-section-item.active {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(197, 31, 71, 0.17),
+      rgba(197, 31, 71, 0.04)
+    );
+
+  box-shadow:
+    inset 3px 0 0 #d52655;
+}
+
+.monthly-section-number {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  background: #202633;
+
+  color: #9aa5b8;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.monthly-section-item.active
+.monthly-section-number {
+  background:
+    rgba(197, 31, 71, 0.2);
+
+  color: #ff648c;
+}
+
+.monthly-section-item strong {
+  display: block;
+
+  color: #e8ebf1;
+
+  font-size: 12px;
+}
+
+.monthly-section-item small {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #707b8e;
+
+  font-size: 10px;
+
+  line-height: 1.45;
+}
+
+.monthly-section-arrow {
+  color: #626d7d;
+
+  font-size: 21px;
+}
+
+
+/* WORKSPACE */
+
+.monthly-report-workspace {
+  min-height: 610px;
+}
+
+.monthly-workspace-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  padding: 22px;
+
+  border-bottom: 1px solid #29303e;
+}
+
+.monthly-workspace-head > div:first-child > span {
+  color: #d72b58;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 1px;
+}
+
+.monthly-workspace-head h3 {
+  margin: 5px 0 0;
+
+  color: #ffffff;
+
+  font-size: 20px;
+}
+
+.monthly-workspace-head p {
+  margin: 6px 0 0;
+
+  color: #7d8798;
+
+  font-size: 12px;
+}
+
+.monthly-workspace-actions {
+  display: flex;
+
+  gap: 9px;
+}
+
+.monthly-workspace-actions
+.primary-button,
+.monthly-workspace-actions
+.secondary-button {
+  min-width: 120px;
+}
+
+.monthly-workspace-empty {
+  min-height: 470px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 40px;
+
+  text-align: center;
+}
+
+.monthly-empty-icon {
+  width: 68px;
+  height: 68px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 15px;
+
+  border-radius: 18px;
+
+  background:
+    rgba(197, 31, 71, 0.1);
+
+  border:
+    1px solid rgba(197, 31, 71, 0.22);
+
+  font-size: 30px;
+}
+
+.monthly-workspace-empty h4 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 18px;
+}
+
+.monthly-workspace-empty p {
+  max-width: 500px;
+
+  margin: 8px 0 0;
+
+  color: #798395;
+
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.monthly-empty-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+
+  gap: 7px;
+
+  margin-top: 20px;
+}
+
+.monthly-empty-tags span {
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  background: #1d2430;
+
+  border: 1px solid #303949;
+
+  color: #9aa5b6;
+
+  font-size: 10px;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 1100px) {
+
+  .monthly-report-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .monthly-section-list {
+    max-height: 480px;
+    overflow-y: auto;
+  }
+
+}
+
+@media (max-width: 750px) {
+
+  .monthly-report-header {
+    flex-direction: column;
+  }
+
+  .monthly-report-filter {
+    grid-template-columns: 1fr;
+  }
+
+  .monthly-workspace-head {
+    flex-direction: column;
+  }
+
+  .monthly-workspace-actions {
+    width: 100%;
+  }
+
+  .monthly-workspace-actions
+  .primary-button,
+  .monthly-workspace-actions
+  .secondary-button {
+    flex: 1;
+  }
+
+}
+
+/* =========================================================
+   MONTHLY REPORT STATUS
+========================================================= */
+
+.monthly-report-message {
+  margin: 16px 22px 0;
+  padding: 11px 14px;
+
+  border-radius: 10px;
+
+  background:
+    rgba(197, 31, 71, 0.08);
+
+  border:
+    1px solid rgba(197, 31, 71, 0.22);
+
+  color: #e8a0b4;
+
+  font-size: 12px;
+}
+
+/* สำเร็จ */
+.monthly-report-message.success {
+  color: #79d9a7;
+
+  background:
+    rgba(55, 168, 109, 0.08);
+
+  border:
+    1px solid rgba(69, 187, 126, 0.35);
+}
+
+
+/* ผิดพลาด */
+.monthly-report-message.error {
+  color: #ff718f;
+
+  background:
+    rgba(215, 43, 88, 0.1);
+
+  border:
+    1px solid rgba(231, 76, 101, 0.38);
+}
+
+
+/* แจ้งเตือน */
+.monthly-report-message.warning {
+  color: #e8c47d;
+
+  background:
+    rgba(219, 156, 53, 0.08);
+
+  border:
+    1px solid rgba(219, 156, 53, 0.28);
+}
+
+.monthly-report-status {
+  display: flex;
+  gap: 12px;
+
+  padding: 16px 22px 0;
+}
+
+.monthly-report-status > div {
+  min-width: 150px;
+
+  padding: 12px 14px;
+
+  border-radius: 11px;
+
+  background: #11161f;
+
+  border: 1px solid #293241;
+}
+
+.monthly-report-status span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #798496;
+
+  font-size: 10px;
+}
+
+.monthly-report-status strong {
+  color: #ffffff;
+
+  font-size: 13px;
+}
+
+@media (max-width: 750px) {
+  .monthly-report-status {
+    flex-direction: column;
+  }
+}
+
+/* =========================================================
+   MONTHLY EDITOR
+========================================================= */
+
+.monthly-editor {
+  min-height: 470px;
+}
+
+.monthly-editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+
+  padding: 16px 22px;
+
+  border-bottom: 1px solid #29303e;
+
+  background: #121720;
+}
+
+.monthly-editor-toolbar span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #d72b58;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.monthly-editor-toolbar strong {
+  display: block;
+
+  color: #ffffff;
+
+  font-size: 14px;
+}
+
+.monthly-editor-toolbar .secondary-button {
+  min-width: 90px;
+}
+
+.monthly-editor-body {
+  min-height: 390px;
+
+  padding: 22px;
+}
+
+.monthly-editor-placeholder {
+  min-height: 340px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  border: 1px dashed #354052;
+  border-radius: 14px;
+
+  background: #11161f;
+
+  text-align: center;
+}
+
+.monthly-editor-placeholder > span {
+  color: #d72b58;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.monthly-editor-placeholder h3 {
+  margin: 8px 0 0;
+
+  color: #ffffff;
+
+  font-size: 22px;
+}
+
+.monthly-editor-placeholder p {
+  margin: 7px 0 0;
+
+  color: #7d8798;
+
+  font-size: 12px;
+}
+
+.monthly-editor-placeholder small {
+  margin-top: 14px;
+
+  color: #657184;
+
+  font-size: 10px;
+}
+
+.collapse-toggle-button {
+  width: 32px;
+  height: 32px;
+
+  border: 1px solid #313a49;
+  border-radius: 8px;
+
+  background: #1a212c;
+  color: #ffffff;
+
+  cursor: pointer;
+}
+
+.monthly-section-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.monthly-report-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 2fr);
+  gap: 18px;
+}
+
+.monthly-report-layout.collapsed-left {
+  grid-template-columns: 82px minmax(0, 1fr);
+}
+
+.monthly-report-layout.collapsed-left .monthly-section-list-head strong,
+.monthly-report-layout.collapsed-left .monthly-section-list-head span,
+.monthly-report-layout.collapsed-left .monthly-section-item strong,
+.monthly-report-layout.collapsed-left .monthly-section-item small,
+.monthly-report-layout.collapsed-left .monthly-section-arrow {
+  display: none;
+}
+
+.monthly-report-layout.collapsed-left .monthly-section-item {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 14px 8px;
+}
+
+.monthly-report-layout.collapsed-left .monthly-section-number {
+  width: 38px;
+  height: 38px;
+}
+
+/* =========================================
+   PDF FULL REPORT
+========================================= */
+
+.monthly-report-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.monthly-pdf-button {
+  min-height: 40px;
+
+  padding: 0 18px;
+
+  border: 1px solid
+    rgba(213, 38, 85, 0.5);
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #a7183d,
+      #df2859
+    );
+
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 24px
+    rgba(197, 31, 71, 0.18);
+
+  transition: 0.15s ease;
+}
+
+.monthly-pdf-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.monthly-pdf-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+
+/* ตัว Render สำหรับสร้าง PDF
+   ต้องอยู่นอกจอ แต่ห้าม display:none */
+
+.monthly-pdf-export-host {
+  position: fixed;
+
+  top: 0;
+  left: -20000px;
+
+  width: 1600px;
+  height: 1000px;
+
+  overflow: hidden;
+
+  pointer-events: none;
+
+  z-index: -9999;
+}
+
+
+@media (max-width: 750px) {
+  .monthly-report-header-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .monthly-pdf-button {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   SECTION 02 - COMPACT TOP CARDS V2
+   จัด 2 กรอบบนใหม่ให้พอดี A4
+========================================================= */
+
+/* =========================================================
+   GRID หลัก
+========================================================= */
+
+.section02-infographic {
+  grid-template-rows:
+    205px
+    minmax(210px, 1fr)
+    76px;
+
+  gap: 10px;
+  margin-top: 14px;
+}
+
+
+/* =========================================================
+   CARD COMMON
+========================================================= */
+
+.section02-infographic > div {
+  min-width: 0;
+  min-height: 0;
+
+  padding: 12px 14px;
+}
+
+.section02-card-label {
+  margin-bottom: 5px;
+
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+
+/* =========================================================
+   ซ้ายบน — ภาพรวมเหตุการณ์
+========================================================= */
+
+.section02-overview-card {
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+.section02-total-number {
+  font-size: 56px;
+  line-height: 0.9;
+}
+
+.section02-total-label {
+  margin-top: 3px;
+
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+
+/* กล่องเล็กด้านล่าง
+   เอา margin-top:auto ออกเพื่อไม่ให้เกิดช่องว่างใหญ่ */
+
+.section02-overview-mini {
+  margin-top: 10px;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 6px;
+}
+
+.section02-overview-mini > div {
+  min-width: 0;
+
+  padding: 6px 7px;
+
+  border-radius: 7px;
+}
+
+.section02-overview-mini small {
+  font-size: 10px;
+  line-height: 1.1;
+
+  white-space: nowrap;
+}
+
+.section02-overview-mini strong {
+  margin-top: 2px;
+
+  font-size: 12px;
+  line-height: 1.15;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   ขวาบน — ประเภทเหตุการณ์
+========================================================= */
+
+.section02-category-card {
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+
+/* Donut + Legend */
+
+.section02-category-chart {
+  flex: 1;
+  min-height: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    118px minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 10px;
+
+  overflow: hidden;
+}
+
+
+/* ---------- DONUT ---------- */
+
+.section02-donut {
+  width: 112px;
+  height: 112px;
+
+  justify-self: center;
+}
+
+.section02-donut-center {
+  width: 68px;
+  height: 68px;
+}
+
+.section02-donut-center strong {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.section02-donut-center span {
+  margin-top: 2px;
+
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   LEGEND
+   สำคัญ: เปลี่ยนเป็น 2 คอลัมน์ × 2 แถว
+========================================================= */
+
+.section02-donut-legend {
+  min-width: 0;
+
+  display: grid !important;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr)) !important;
+
+  grid-template-rows:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 5px;
+
+  align-self: stretch;
+}
+
+
+/* แต่ละประเภท */
+
+.section02-donut-legend-row {
+  width: auto !important;
+  min-width: 0;
+  min-height: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    9px minmax(0, 1fr);
+
+  grid-template-areas:
+    "dot name"
+    "dot percent";
+
+  column-gap: 6px;
+  row-gap: 2px;
+
+  align-content: center;
+
+  padding: 5px 6px;
+
+  border-radius: 7px;
+}
+
+
+/* จุดสี */
+
+.section02-donut-dot {
+  grid-area: dot;
+
+  width: 8px;
+  height: 8px;
+
+  align-self: center;
+}
+
+
+/* ชื่อ */
+
+.section02-donut-name {
+  grid-area: name;
+
+  min-width: 0;
+}
+
+.section02-donut-name strong {
+  display: block;
+
+  font-size: 11px;
+  line-height: 1.12;
+
+  white-space: normal;
+
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.section02-donut-name small {
+  display: block;
+
+  margin-top: 1px;
+
+  font-size: 9px;
+  line-height: 1.1;
+}
+
+
+/* % */
+
+.section02-donut-percent {
+  grid-area: percent;
+
+  font-size: 11px;
+  line-height: 1.1;
+
+  text-align: left;
+}
+
+
+/* =========================================================
+   แถวกลาง
+========================================================= */
+
+.section02-time-card,
+.section02-calendar-card {
+  min-height: 0;
+}
+
+
+/* =========================================================
+   สรุปประเด็นสำคัญ
+========================================================= */
+
+.section02-insight-card {
+  min-height: 0;
+
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+}
+
+.section02-insight-card
+.section02-card-label {
+  margin-bottom: 4px;
+}
+
+.section02-insight-grid {
+  gap: 10px;
+}
+
+.section02-insight-grid
+.section02-insight-row {
+  align-items: center;
+}
+
+.section02-insight-grid
+.section02-insight-row > span {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.section02-insight-grid
+.section02-insight-row > strong {
+  flex-shrink: 0;
+}
+
+
+/* =========================================================
+   CARD COMMON
+========================================================= */
+
+.section02-infographic > div {
+  padding: 13px 15px;
+}
+
+.section02-card-label {
+  margin-bottom: 6px;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+
+/* =========================================================
+   ซ้ายบน — ภาพรวมเหตุการณ์
+========================================================= */
+
+.section02-overview-card {
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+
+/* เลข 31 ยังใหญ่ แต่อย่าใหญ่จนกินความสูง */
+.section02-total-number {
+  font-size: 60px;
+  line-height: 0.92;
+}
+
+.section02-total-label {
+  margin-top: 2px;
+
+  font-size: 17px;
+  line-height: 1.15;
+}
+
+
+/* สำคัญ:
+   ยกเลิก margin-top:auto เดิม
+   เพราะตัวนี้ทำให้มีช่องว่างมหาศาล */
+.section02-overview-mini {
+  margin-top: 9px;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 6px;
+}
+
+.section02-overview-mini > div {
+  min-width: 0;
+
+  padding: 6px 8px;
+
+  border-radius: 7px;
+}
+
+.section02-overview-mini small {
+  font-size: 10px;
+  line-height: 1.15;
+
+  white-space: nowrap;
+}
+
+.section02-overview-mini strong {
+  margin-top: 2px;
+
+  font-size: 13px;
+  line-height: 1.15;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   ขวาบน — ประเภทเหตุการณ์
+========================================================= */
+
+.section02-category-card {
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+
+/* Donut ซ้าย + Legend ขวา */
+.section02-category-chart {
+  flex: 1;
+  min-height: 0;
+
+  grid-template-columns:
+    140px minmax(0, 1fr);
+
+  gap: 12px;
+
+  align-items: center;
+}
+
+
+/* Donut บีบลง แต่ยังเห็นชัดตอนพิมพ์ */
+.section02-donut {
+  width: 132px;
+  height: 132px;
+}
+
+.section02-donut-center {
+  width: 78px;
+  height: 78px;
+}
+
+.section02-donut-center strong {
+  font-size: 25px;
+}
+
+.section02-donut-center span {
+  margin-top: 2px;
+  font-size: 9px;
+}
+
+
+/* จากเดิม Legend เรียงลง 4 กล่อง
+   เปลี่ยนเป็น 2 คอลัมน์ × 2 แถว */
+.section02-donut-legend {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 6px;
+
+  align-content: center;
+}
+
+
+/* แต่ละประเภทเตี้ยลง */
+.section02-donut-legend-row {
+  min-width: 0;
+
+  grid-template-columns:
+    10px minmax(0, 1fr);
+
+  grid-template-areas:
+    "dot name"
+    "dot percent";
+
+  column-gap: 6px;
+  row-gap: 1px;
+
+  padding: 6px 7px;
+
+  border-radius: 7px;
+}
+
+.section02-donut-dot {
+  grid-area: dot;
+
+  width: 9px;
+  height: 9px;
+
+  align-self: center;
+}
+
+.section02-donut-name {
+  grid-area: name;
+}
+
+.section02-donut-name strong {
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.section02-donut-name small {
+  margin-top: 1px;
+
+  font-size: 10px;
+  line-height: 1.1;
+}
+
+
+/* เปอร์เซ็นต์ย้ายลงมาใต้ชื่อ
+   ทำให้แต่ละ legend ไม่ต้องกว้างมาก */
+.section02-donut-percent {
+  grid-area: percent;
+
+  font-size: 13px;
+  line-height: 1.1;
+
+  text-align: left;
+}
+
+
+/* =========================================================
+   แถวล่าง
+   เก็บพื้นที่ไว้ให้ Time + Calendar
+========================================================= */
+
+.section02-time-card,
+.section02-calendar-card {
+  min-height: 0;
+}
+
+
+/* Insight เตี้ยและกระชับ */
+.section02-insight-card {
+  min-height: 0;
+
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+.section02-insight-card
+.section02-card-label {
+  margin-bottom: 5px;
+}
+
+.section02-insight-grid {
+  gap: 10px;
+}
+
+.section02-insight-grid
+.section02-insight-row > span {
+  font-size: 11px;
+  line-height: 1.35;
+}

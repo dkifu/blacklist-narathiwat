@@ -12,6 +12,8 @@ import ActivityLog from './pages/ActivityLog'
 import AdminTasks from './pages/AdminTasks'
 import CenterTasks from './pages/CenterTasks'
 import DailyReport from './pages/DailyReport'
+import MonthlyReport from './pages/MonthlyReport'
+
 
 
 
@@ -30,6 +32,7 @@ function App() {
   const [vehicleListPage, setVehicleListPage] = useState(1)
 
   const [currentPage, setCurrentPage] = useState('dashboard')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [selectedVehicleId, setSelectedVehicleId] = useState(null)
 
   useEffect(() => {
@@ -184,6 +187,7 @@ function App() {
     adminTasks: 'งาน Admin',
     centerTasks: 'งานศูนย์',
     dailyReport: 'รายงานประจำวัน',
+    monthlyReport: 'รายงานประจำเดือน',
     activityLog: 'Activity Log',
     settings: 'ตั้งค่าระบบ',
   }[currentPage] || 'Blacklist Narathiwat'
@@ -211,7 +215,28 @@ function App() {
     return (
       <div className="app-layout">
 
-        <aside className="sidebar">
+        <aside
+          className={
+            sidebarCollapsed
+              ? 'sidebar collapsed'
+              : 'sidebar'
+          }
+        >
+
+        <button
+          type="button"
+          className="sidebar-collapse-button"
+          onClick={() =>
+            setSidebarCollapsed(!sidebarCollapsed)
+          }
+          title={
+            sidebarCollapsed
+              ? 'ขยายเมนู'
+              : 'ย่อเมนู'
+          }
+        >
+          {sidebarCollapsed ? '›' : '‹'}
+        </button>  
 
           <div className="sidebar-brand">
             <div className="sidebar-logo">B</div>
@@ -323,6 +348,23 @@ function App() {
                 }
               >
                 รายงานประจำวัน
+              </button>
+
+            )}
+
+            {(canUseAdminPages || isOperator || isCenter) && (
+
+              <button
+                className={`menu-item ${
+                  currentPage === 'monthlyReport'
+                    ? 'active'
+                    : ''
+                }`}
+                onClick={() =>
+                  setCurrentPage('monthlyReport')
+                }
+              >
+                รายงานประจำเดือน
               </button>
 
             )}
@@ -470,6 +512,10 @@ function App() {
             ) : currentPage === 'dailyReport' ? (
 
               <DailyReport profile={profile} />  
+
+            ) : currentPage === 'monthlyReport' ? (
+
+              <MonthlyReport profile={profile} />  
 
             ) : currentPage === 'activityLog' ? (
 

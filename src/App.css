@@ -8870,3 +8870,90 @@ input[type="checkbox"] {
 .admin-detail-card strong {
   font-size: 15px;
 }
+
+/* =========================================================
+   COLLAPSIBLE MAIN SIDEBAR
+========================================================= */
+
+.sidebar {
+  position: relative;
+
+  transition:
+    width 0.2s ease,
+    padding 0.2s ease;
+}
+
+
+/* ปุ่มย่อ / ขยาย */
+
+.sidebar-collapse-button {
+  position: absolute;
+
+  top: 16px;
+  right: 10px;
+
+  width: 30px;
+  height: 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid #343b49;
+  border-radius: 8px;
+
+  background: #1b202a;
+
+  color: #ffffff;
+
+  font-size: 20px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  z-index: 5;
+
+  transition: 0.15s ease;
+}
+
+.sidebar-collapse-button:hover {
+  background: #252c38;
+  border-color: #4a5569;
+}
+
+
+/* =========================================================
+   SIDEBAR COLLAPSED
+========================================================= */
+
+.sidebar.collapsed {
+  width: 58px;
+  min-width: 58px;
+
+  padding:
+    58px 8px
+    16px 8px;
+}
+
+
+/* ซ่อนของด้านใน */
+
+.sidebar.collapsed .sidebar-brand,
+.sidebar.collapsed .sidebar-menu,
+.sidebar.collapsed .sidebar-bottom {
+  display: none;
+}
+
+
+/* ปุ่มตอน Sidebar ถูกย่อ */
+
+.sidebar.collapsed
+.sidebar-collapse-button {
+  top: 16px;
+  left: 50%;
+  right: auto;
+
+  transform: translateX(-50%);
+}

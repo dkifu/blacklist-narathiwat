@@ -1,0 +1,2269 @@
+/* =========================================================
+   SECTION 02 - MONTHLY HEAT MAP EDITOR
+========================================================= */
+
+.section02-editor {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 18px;
+
+  min-height: 620px;
+}
+
+/* =========================================================
+   LEFT PANEL
+========================================================= */
+
+.section02-panel {
+  align-self: start;
+
+  overflow: hidden;
+
+  border: 1px solid #293241;
+  border-radius: 14px;
+
+  background: #11161f;
+}
+
+.section02-panel-head {
+  padding: 18px;
+
+  border-bottom: 1px solid #293241;
+
+  background:
+    linear-gradient(
+      180deg,
+      #171d27,
+      #131821
+    );
+}
+
+.section02-panel-head > span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #e33761;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.section02-panel-head h3 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 17px;
+}
+
+.section02-panel-head p {
+  margin: 6px 0 0;
+
+  color: #788397;
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+
+/* BLOCK */
+
+.section02-panel-block {
+  padding: 16px 18px;
+
+  border-bottom: 1px solid #242c39;
+}
+
+.section02-panel-block > label {
+  display: block;
+
+  margin-bottom: 10px;
+
+  color: #a0a9b9;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.section02-panel-block > small {
+  display: block;
+
+  margin-top: 7px;
+
+  color: #687487;
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+
+/* BUTTON */
+
+.section02-button {
+  width: 100%;
+  min-height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-top: 8px;
+  padding: 0 12px;
+
+  border: 1px solid #354053;
+  border-radius: 9px;
+
+  background: #171d27;
+
+  color: #dce2eb;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.15s ease;
+}
+
+.section02-button:first-of-type {
+  margin-top: 0;
+}
+
+.section02-button:hover {
+  border-color: #536076;
+
+  background: #1b222e;
+}
+
+.section02-button.primary {
+  border-color:
+    rgba(213, 38, 85, 0.45);
+
+  background:
+    linear-gradient(
+      135deg,
+      #a7183d,
+      #d52655
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 7px 20px rgba(197, 31, 71, 0.15);
+}
+
+.section02-button.primary:hover {
+  filter: brightness(1.08);
+}
+
+
+/* MESSAGE */
+
+.section02-message {
+  margin: 14px 18px 0;
+  padding: 10px 12px;
+
+  border-radius: 9px;
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+/* สำเร็จ = เขียว */
+.section02-message.success {
+  border:
+    1px solid rgba(69, 187, 126, 0.35);
+
+  background:
+    rgba(55, 168, 109, 0.08);
+
+  color: #79d9a7;
+}
+
+/* ผิดพลาด = แดง */
+.section02-message.error {
+  border:
+    1px solid rgba(231, 76, 101, 0.38);
+
+  background:
+    rgba(215, 43, 88, 0.1);
+
+  color: #ff718f;
+}
+
+
+/* BIG NUMBER */
+
+.section02-big-value {
+  display: block;
+
+  color: #ffffff;
+
+  font-size: 30px;
+  line-height: 1;
+}
+
+
+/* SELECT */
+
+.section02-panel select {
+  width: 100%;
+  height: 40px;
+
+  padding: 0 11px;
+
+  border: 1px solid #323d4f;
+  border-radius: 9px;
+
+  background: #0d121a;
+
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 11px;
+
+  outline: none;
+}
+
+.section02-panel select:focus {
+  border-color: #c51f47;
+
+  box-shadow:
+    0 0 0 3px rgba(197, 31, 71, 0.1);
+}
+
+
+/* PAGE BUTTON */
+
+.section02-page-button {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  margin-top: 7px;
+  padding: 10px 11px;
+
+  border: 1px solid transparent;
+  border-radius: 8px;
+
+  background: #171d27;
+
+  color: #9ca7b9;
+
+  font-family: inherit;
+  font-size: 10px;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition: 0.15s ease;
+}
+
+.section02-page-button:first-of-type {
+  margin-top: 0;
+}
+
+.section02-page-button:hover {
+  border-color: #344054;
+
+  color: #ffffff;
+}
+
+.section02-page-button.active {
+  border-color:
+    rgba(213, 38, 85, 0.35);
+
+  background:
+    rgba(197, 31, 71, 0.13);
+
+  color: #ff668d;
+
+  box-shadow:
+    inset 3px 0 0 #d52655;
+}
+
+
+/* PAGE SUMMARY */
+
+.section02-page-summary {
+  padding: 14px 18px;
+
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  background: #0e131b;
+}
+
+.section02-page-summary small {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #667386;
+
+  font-size: 9px;
+  font-weight: 400;
+}
+
+
+/* =========================================================
+   RIGHT PREVIEW AREA
+========================================================= */
+
+.section02-preview {
+  min-width: 0;
+
+  overflow: auto;
+
+  padding: 20px;
+
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  border: 1px solid #293241;
+  border-radius: 14px;
+
+  background: #0f141c;
+}
+
+
+/* =========================================================
+   SUMMARY PREVIEW
+========================================================= */
+
+.section02-summary-preview {
+  width: 100%;
+  max-width: 1120px;
+
+  aspect-ratio: 297 / 210;
+
+  display: flex;
+  flex-direction: column;
+
+  box-sizing: border-box;
+
+  padding: 26px;
+  margin: 0 auto;
+
+  border-radius: 8px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #f7f7f8
+    );
+
+  color: #24262b;
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.section02-summary-preview > span {
+  color: #94172e;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 1.2px;
+}
+
+.section02-summary-preview h2 {
+  margin: 7px 0 0;
+
+  color: #7f1024;
+
+  font-size: 26px;
+}
+
+.section02-summary-preview > p {
+  margin: 7px 0 0;
+
+  color: #6b6e75;
+
+  font-size: 12px;
+}
+
+
+/* TEMP SUMMARY CARD */
+
+.section02-preview-placeholder {
+  min-height: 0;
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  margin-top: 22px;
+
+  border: 1px dashed #d9dadd;
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  box-sizing: border-box;
+}
+
+.section02-preview-placeholder strong {
+  color: #8f132a;
+
+  font-size: 70px;
+  line-height: 1;
+}
+
+.section02-preview-placeholder span {
+  margin-top: 8px;
+
+  color: #272a30;
+
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.section02-preview-placeholder small {
+  margin-top: 10px;
+
+  color: #999ca3;
+
+  font-size: 11px;
+}
+
+
+/* =========================================================
+   TABLE PREVIEW
+========================================================= */
+
+.section02-table-preview {
+  
+  aspect-ratio: 297 / 210;
+
+  overflow: hidden;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  color: #272a30;
+
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.section02-table-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 16px 20px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #821127,
+      #ad1d38
+    );
+
+  color: #ffffff;
+}
+
+.section02-table-title span {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.section02-table-title strong {
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  background:
+    rgba(255, 255, 255, 0.14);
+
+  font-size: 9px;
+}
+
+
+/* TABLE */
+
+.section02-table-wrap {
+  width: 100%;
+
+  overflow: auto;
+
+  padding: 15px;
+
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.section02-table-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+.section02-table-wrap table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  font-size: 9px;
+}
+
+.section02-table-wrap th {
+  padding: 9px 6px;
+
+  border: 1px solid #d8dade;
+
+  background: #f0e2e5;
+
+  color: #651225;
+
+  font-weight: 800;
+
+  text-align: center;
+
+  white-space: nowrap;
+}
+
+.section02-table-wrap td {
+  padding: 8px 6px;
+
+  border: 1px solid #e0e1e4;
+
+  color: #33373d;
+
+  text-align: center;
+
+  vertical-align: middle;
+}
+
+.section02-table-wrap tbody tr:nth-child(even) {
+  background: #faf7f8;
+}
+
+.section02-table-wrap tbody tr:hover {
+  background: #f8ecef;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1200px) {
+
+  .section02-editor {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+}
+
+@media (max-width: 900px) {
+
+  .section02-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .section02-panel {
+    max-height: none;
+  }
+
+}
+
+@media (max-width: 650px) {
+
+  .section02-preview {
+    padding: 10px;
+  }
+
+  
+
+}
+
+/* =========================================================
+   A4 LANDSCAPE PREVIEW
+========================================================= */
+
+.section02-summary-preview,
+.section02-table-preview,
+.section02-map-preview {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 1120px;
+  height: 792px;
+
+  min-width: 1120px;
+  min-height: 792px;
+
+  max-width: none;
+
+  margin: 0;
+
+  box-sizing: border-box;
+
+  transform-origin: top left;
+
+  background: #ffffff;
+
+  border-radius: 8px;
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+
+/* พื้นที่จริงของ A4 หลังถูก Scale */
+
+.section02-paper-stage {
+  position: relative;
+
+  flex: 0 0 auto;
+
+  overflow: visible;
+
+  transition:
+    width 0.18s ease,
+    height 0.18s ease;
+}
+
+
+/* กรอบ Preview */
+
+.section02-preview {
+  min-width: 0;
+
+  overflow: hidden;
+
+  padding: 20px;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  border: 1px solid #293241;
+  border-radius: 14px;
+
+  background: #0f141c;
+}
+
+/* =========================================================
+   INFOGRAPHIC SUMMARY
+========================================================= */
+
+.section02-infographic {
+  flex: 1;
+
+  min-height: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  grid-template-rows:
+    1fr 1fr 95px;
+
+  gap: 14px;
+
+  margin-top: 20px;
+}
+
+.section02-infographic > div {
+  min-width: 0;
+
+  padding: 18px;
+
+  border: 1px solid #e0e1e4;
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 3px 10px
+    rgba(0, 0, 0, 0.05);
+}
+
+.section02-card-label {
+  display: block;
+
+  margin-bottom: 12px;
+
+  color: #8f132a;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+
+/* OVERVIEW */
+
+.section02-overview-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.section02-total-number {
+  color: #98172f;
+
+  font-size: 58px;
+  line-height: 1;
+}
+
+.section02-total-label {
+  margin-top: 4px;
+
+  color: #272a30;
+
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.section02-overview-mini {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 8px;
+
+  margin-top: auto;
+}
+
+.section02-overview-mini > div {
+  padding: 10px;
+
+  border-radius: 8px;
+
+  background: #f7f7f8;
+}
+
+.section02-overview-mini small {
+  display: block;
+
+  color: #8b8e95;
+
+  font-size: 8px;
+}
+
+.section02-overview-mini strong {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #34363b;
+
+  font-size: 10px;
+}
+
+
+/* CATEGORY */
+
+.section02-category-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.section02-category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding: 8px 10px;
+
+  border-radius: 8px;
+
+  background: #f8f6f7;
+}
+
+.section02-category-row strong {
+  display: block;
+
+  color: #34363b;
+
+  font-size: 10px;
+}
+
+.section02-category-row small {
+  display: block;
+
+  margin-top: 2px;
+
+  color: #989ba2;
+
+  font-size: 8px;
+}
+
+.section02-category-row > span {
+  color: #98172f;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* =========================================================
+   CATEGORY DONUT
+========================================================= */
+
+.section02-category-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.section02-category-chart {
+  flex: 1;
+
+  min-height: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    180px minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 20px;
+}
+
+
+/* DONUT */
+
+.section02-donut {
+  width: 170px;
+  height: 170px;
+
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 auto;
+
+  border-radius: 50%;
+
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(0, 0, 0, 0.04);
+}
+
+.section02-donut-center {
+  width: 102px;
+  height: 102px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 8px
+    rgba(0, 0, 0, 0.08);
+}
+
+.section02-donut-center strong {
+  color: #8f132a;
+
+  font-size: 31px;
+  line-height: 1;
+}
+
+.section02-donut-center span {
+  margin-top: 5px;
+
+  color: #555a63;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+
+/* LEGEND */
+
+.section02-donut-legend {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.section02-donut-legend-row {
+  min-width: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    12px minmax(0, 1fr) auto;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 8px 10px;
+
+  border-radius: 9px;
+
+  background: #f7f7f8;
+
+  border:
+    1px solid #eeeeef;
+}
+
+.section02-donut-dot {
+  width: 10px;
+  height: 10px;
+
+  border-radius: 3px;
+}
+
+.section02-donut-name {
+  min-width: 0;
+}
+
+.section02-donut-name strong {
+  display: block;
+
+  overflow: hidden;
+
+  color: #33363c;
+
+  font-size: 10px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.section02-donut-name small {
+  display: block;
+
+  margin-top: 2px;
+
+  color: #989ca4;
+
+  font-size: 8px;
+}
+
+.section02-donut-percent {
+  color: #8f132a;
+
+  font-size: 12px;
+
+  white-space: nowrap;
+}
+
+.section02-donut-empty {
+  color: #999da5;
+
+  font-size: 10px;
+
+  text-align: center;
+}
+
+
+/* TIME */
+
+.section02-time-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 9px 0;
+
+  border-bottom:
+    1px solid #ececef;
+}
+
+.section02-time-row:last-child {
+  border-bottom: 0;
+}
+
+.section02-time-row div strong {
+  display: block;
+
+  color: #33363b;
+
+  font-size: 10px;
+}
+
+.section02-time-row small {
+  display: block;
+
+  margin-top: 2px;
+
+  color: #989ba2;
+
+  font-size: 8px;
+}
+
+.section02-time-row > strong {
+  color: #98172f;
+
+  font-size: 20px;
+}
+
+/* =========================================================
+   TIME BAR CHART
+========================================================= */
+
+.section02-time-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.section02-time-chart {
+  display: flex;
+  flex-direction: column;
+
+  gap: 18px;
+
+  margin-top: 4px;
+}
+
+.section02-time-bar-row {
+  display: grid;
+
+  grid-template-columns:
+    105px minmax(0, 1fr) 34px;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+.section02-time-info strong {
+  display: block;
+
+  color: #33363b;
+
+  font-size: 11px;
+}
+
+.section02-time-info small {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #999da5;
+
+  font-size: 8px;
+}
+
+
+/* TRACK */
+
+.section02-time-track {
+  width: 100%;
+  height: 20px;
+
+  overflow: hidden;
+
+  border-radius: 6px;
+
+  background: #eef0f2;
+}
+
+.section02-time-fill {
+  height: 100%;
+
+  min-width: 3px;
+
+  border-radius: 6px;
+
+  transition: width 0.25s ease;
+}
+
+
+/* กะ 1 */
+
+.section02-time-fill.time-1 {
+  background:
+    linear-gradient(
+      90deg,
+      #e4a914,
+      #f5c52a
+    );
+}
+
+
+/* กะ 2 */
+
+.section02-time-fill.time-2 {
+  background:
+    linear-gradient(
+      90deg,
+      #3272bd,
+      #5592d8
+    );
+}
+
+
+/* กะ 3 */
+
+.section02-time-fill.time-3 {
+  background:
+    linear-gradient(
+      90deg,
+      #555b65,
+      #777e88
+    );
+}
+
+
+.section02-time-count {
+  color: #98172f;
+
+  font-size: 20px;
+
+  text-align: right;
+}
+
+
+/* HIGHLIGHT */
+
+.section02-time-highlight {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  margin-top: auto;
+  padding: 10px 12px;
+
+  border-radius: 9px;
+
+  background: #fff2f3;
+
+  border:
+    1px solid #f2d9dd;
+}
+
+.section02-time-highlight span {
+  color: #777b83;
+
+  font-size: 9px;
+}
+
+.section02-time-highlight strong {
+  color: #8f132a;
+
+  font-size: 10px;
+}
+
+
+/* INSIGHT */
+
+.section02-insight-row {
+  display: grid;
+
+  grid-template-columns:
+    30px 1fr;
+
+  align-items: start;
+
+  gap: 9px;
+
+  padding: 8px 0;
+
+  border-bottom:
+    1px solid #ececef;
+}
+
+.section02-insight-row:last-child {
+  border-bottom: 0;
+}
+
+.section02-insight-row > strong {
+  width: 30px;
+  height: 30px;
+
+  font-size: 14px;
+
+  flex: 0 0 30px;
+}
+
+.section02-insight-row > span {
+  color: #404349;
+
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   CALENDAR HEATMAP
+========================================================= */
+
+.section02-calendar-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.section02-calendar-weekdays {
+  display: grid;
+
+  grid-template-columns:
+    repeat(7, 1fr);
+
+  gap: 4px;
+
+  margin-bottom: 5px;
+}
+
+.section02-calendar-weekdays span {
+  color: #8f9299;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  text-align: center;
+}
+
+.section02-calendar-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(7, 1fr);
+
+  grid-auto-rows: 27px;
+
+  gap: 3px;
+}
+
+.section02-calendar-cell {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 6px;
+
+  background: #f6f7f8;
+
+  color: #34373c;
+
+  font-size: 9px;
+}
+
+.section02-calendar-cell.empty {
+  background: transparent;
+}
+
+.section02-calendar-cell.active {
+  color: #ffffff;
+
+  font-weight: 800;
+}
+
+.section02-calendar-cell small {
+  position: absolute;
+
+  right: 3px;
+  bottom: 2px;
+
+  min-width: 12px;
+  height: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 3px;
+
+  border-radius: 999px;
+
+  background:
+    rgba(255, 255, 255, 0.9);
+
+  color: #8f132a;
+
+  font-size: 6px;
+  font-weight: 800;
+}
+
+.section02-calendar-note {
+  display: flex;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-top: auto;
+  padding-top: 3px;
+
+  border-top:
+    1px solid #eeeeef;
+}
+
+.section02-calendar-note span {
+  color: #6b6e74;
+
+  font-size: 12px;
+}
+
+.section02-calendar-note strong {
+  color: #8f132a;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   INSIGHT FULL WIDTH
+========================================================= */
+
+.section02-insight-card {
+  grid-column: 1 / -1;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.section02-insight-card
+.section02-card-label {
+  margin-bottom: 10px;
+
+  font-size: 18px;
+}
+
+.section02-insight-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+.section02-insight-grid
+.section02-insight-row {
+  border: 0;
+
+  padding: 0;
+}
+
+.section02-insight-grid
+.section02-insight-row > span {
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+/* =========================================================
+   SECTION 02 - LARGE PRINT READABILITY
+========================================================= */
+
+/* หัวข้อหลัก */
+.section02-summary-preview h2 {
+  font-size: 34px;
+}
+
+.section02-summary-preview > p {
+  font-size: 16px;
+}
+
+/* หัวข้อบน Card */
+.section02-card-label {
+  font-size: 17px;
+}
+
+/* ตัวเลขรวม */
+.section02-total-number {
+  font-size: 72px;
+}
+
+.section02-total-label {
+  font-size: 20px;
+}
+
+/* กล่องข้อมูลย่อย */
+.section02-overview-mini small {
+  font-size: 12px;
+}
+
+.section02-overview-mini strong {
+  font-size: 15px;
+}
+
+/* Donut legend */
+.section02-donut-name strong {
+  font-size: 14px;
+}
+
+.section02-donut-name small {
+  font-size: 12px;
+}
+
+.section02-donut-percent {
+  font-size: 15px;
+}
+
+/* ช่วงเวลา */
+.section02-time-info strong {
+  font-size: 14px;
+}
+
+.section02-time-info small {
+  font-size: 12px;
+}
+
+.section02-time-count {
+  font-size: 16px;
+}
+
+.section02-time-highlight span {
+  font-size: 12px;
+}
+
+.section02-time-highlight strong {
+  font-size: 13px;
+}
+
+/* Calendar */
+.section02-calendar-weekdays span {
+  font-size: 12px;
+}
+
+.section02-calendar-cell {
+  font-size: 13px;
+}
+
+.section02-calendar-cell small {
+  font-size: 9px;
+}
+
+.section02-calendar-note {
+  font-size: 11px;
+}
+
+/* Key Insight */
+.section02-insight-grid
+.section02-insight-row > span {
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.section02-insight-row > strong {
+  font-size: 13px;
+}
+
+/* ตาราง */
+.section02-table-title span {
+  font-size: 21px;
+}
+
+.section02-table-title strong {
+  font-size: 13px;
+}
+
+.section02-table-wrap table {
+  font-size: 13px;
+}
+
+.section02-table-wrap th {
+  font-size: 13px;
+  padding: 11px 7px;
+}
+
+.section02-table-wrap td {
+  font-size: 12px;
+  padding: 10px 7px;
+}
+
+/* =========================================================
+   DONUT LEGEND - FINAL FLEX LAYOUT
+   จุดสี | ชื่อ | จำนวนเหตุการณ์ | %
+========================================================= */
+
+.section02-category-chart {
+  grid-template-columns:
+    170px minmax(0, 1fr) !important;
+
+  gap: 25px !important;
+}
+
+
+/* Donut */
+.section02-donut {
+  width: 155px !important;
+  height: 155px !important;
+
+  justify-self: center;
+}
+
+.section02-donut-center {
+  width: 90px !important;
+  height: 90px !important;
+}
+
+.section02-donut-center strong {
+  font-size: 35px !important;
+}
+
+.section02-donut-center span {
+  margin-top: 2px !important;
+  font-size: 12px !important;
+}
+
+
+/* =========================================================
+   LEGEND = 4 แถวแนวตั้ง
+========================================================= */
+
+.section02-donut-legend {
+  min-width: 0;
+
+  display: flex !important;
+  flex-direction: column !important;
+
+  gap: 5px !important;
+
+  justify-content: center;
+}
+
+
+/* =========================================================
+   1 ประเภท = 1 บรรทัดแนวนอน
+========================================================= */
+
+.section02-donut-legend-row {
+  width: 100%;
+  min-width: 0;
+
+  display: flex !important;
+  flex-direction: row !important;
+
+  align-items: center !important;
+
+  gap: 10px !important;
+
+  padding: 4px 6px !important;
+
+  box-sizing: border-box;
+
+  border-radius: 6px;
+
+  background: #f7f7f8;
+  border: 1px solid #eeeeef;
+}
+
+
+/* จุดสี */
+.section02-donut-dot {
+  width: 8px !important;
+  height: 8px !important;
+
+  flex: 0 0 8px;
+
+  border-radius: 3px;
+}
+
+
+/* ชื่อประเภท */
+.section02-donut-label {
+  min-width: 0;
+
+  flex: 1 1 auto;
+
+  color: #33363c;
+
+  font-size: 15px !important;
+  font-weight: 700;
+
+  line-height: 1.80;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* จำนวนเหตุการณ์ */
+.section02-donut-count {
+  flex: 0 0 85px;
+
+  color: #8c9098;
+
+  font-size: 12px !important;
+  line-height: 1;
+
+  white-space: nowrap;
+
+  text-align: right;
+}
+
+
+/* เปอร์เซ็นต์ */
+.section02-donut-percent {
+  flex: 0 0 55px;
+
+  color: #8f132a;
+
+  font-size: 15px !important;
+  font-weight: 800;
+
+  line-height: 1;
+
+  white-space: nowrap;
+
+  text-align: right;
+}
+
+/* =========================================================
+   INSIGHT - 2 LINES
+========================================================= */
+
+.section02-insight-text {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.section02-insight-line1 {
+  display: block;
+
+  color: #404349;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  line-height: 1.25;
+}
+
+.section02-insight-line2 {
+  display: block;
+
+  color: #8f132a;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  line-height: 1.25;
+}
+
+/* =========================================================
+   INSIGHT - FINAL COLUMN LAYOUT
+========================================================= */
+
+/* ให้ข้อ 01 / 02 กว้างขึ้น
+   ข้อ 03 แคบลง ลดพื้นที่โล่งด้านขวา */
+.section02-insight-grid {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.15fr)
+    minmax(0, 1.15fr)
+    minmax(0, 0.80fr);
+
+  gap: 22px;
+
+  align-items: start;
+}
+
+
+/* เลข + ข้อความ */
+.section02-insight-grid
+.section02-insight-row {
+  display: grid;
+
+  grid-template-columns:
+    38px minmax(0, 1fr);
+
+  align-items: start;
+
+  gap: 11px;
+
+  padding: 0;
+
+  border: 0;
+}
+
+
+/* ขยาย 01 / 02 / 03 */
+.section02-insight-grid
+.section02-insight-row > strong {
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #98172f;
+
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  line-height: 1;
+}
+
+
+/* จัดข้อความให้เสมอกับวงกลม */
+.section02-insight-text {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+
+  padding-top: 1px;
+}
+
+
+/* บรรทัดแรก */
+.section02-insight-line1 {
+  font-size: 13px;
+  line-height: 1.3;
+
+  color: #404349;
+}
+
+
+/* จำนวนเหตุการณ์บรรทัด 2 */
+.section02-insight-line2 {
+  font-size: 13px;
+  line-height: 1.3;
+
+  font-weight: 800;
+
+  color: #8f132a;
+}
+
+/* =========================================================
+   TIME CARD - FIT INSIDE CARD
+========================================================= */
+
+.section02-time-card {
+  min-height: 0;
+  overflow: hidden;
+}
+
+
+/* บีบระยะระหว่าง 3 แถว */
+.section02-time-chart {
+  gap: 10px !important;
+  margin-top: 2px !important;
+}
+
+
+/* แต่ละแถวเตี้ยลง */
+.section02-time-bar-row {
+  grid-template-columns:
+    100px minmax(0, 1fr) 30px;
+
+  gap: 5px !important;
+}
+
+
+/* กะที่ 1 / กะที่ 2 / กะที่ 3 */
+.section02-time-info strong {
+  font-size: 15px !important;
+  line-height: 1.15;
+}
+
+
+/* เวลาใต้ชื่อกะ */
+.section02-time-info small {
+  margin-top: px !important;
+
+  font-size: 12px !important;
+  line-height: 1.1;
+}
+
+
+/* แท่งกราฟเตี้ยลงนิดเดียว */
+.section02-time-track {
+  height: 22px !important;
+}
+
+
+/* ตัวเลข 16 / 11 / 4 */
+.section02-time-count {
+  font-size: 15px !important;
+  line-height: 1;
+
+  text-align: right;
+}
+
+
+/* กล่องชมพูด้านล่าง */
+.section02-time-highlight {
+  margin-top: 8px !important;
+
+  padding: 25px 10px !important;
+
+  gap: 30px;
+
+  min-height: 0;
+}
+
+
+/* ข้อความซ้าย */
+.section02-time-highlight span {
+  font-size: 15px !important;
+  line-height: 1.15;
+}
+
+
+/* ข้อความขวา */
+.section02-time-highlight strong {
+  font-size: 15px !important;
+  line-height: 1.15;
+
+  white-space: nowrap;
+}
+
+.section02-calendar-cell small {
+  min-width: 16px;
+  height: 16px;
+
+  padding: 0 3px;
+
+  font-size: 10px;
+
+  border-radius: 999px;
+}
+
+/* =========================================================
+   MAP PREVIEW
+========================================================= */
+
+.section02-map-preview {
+  display: flex;
+  flex-direction: column;
+
+  padding: 26px;
+
+  box-sizing: border-box;
+
+  color: #24262b;
+}
+
+
+/* MAP PREVIEW */
+.section02-map-preview > span {
+  color: #94172e;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 1.2px;
+}
+
+
+/* หัวข้อ */
+.section02-map-preview h2 {
+  margin: 7px 0 0;
+
+  color: #7f1024;
+
+  font-size: 34px;
+}
+
+
+/* ชื่อศูนย์ / เดือน */
+.section02-map-preview > p {
+  margin: 7px 0 0;
+
+  color: #6b6e75;
+
+  font-size: 16px;
+}
+
+/* =========================================================
+   SECTION 02 - EVENT MAP
+========================================================= */
+
+.section02-map-content {
+  min-height: 0;
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+
+  margin-top: 18px;
+}
+
+
+/* กรอบแผนที่ */
+.section02-map-frame {
+  min-height: 0;
+  flex: 1;
+
+  overflow: hidden;
+
+  border:
+    1px solid #dedfe3;
+
+  border-radius: 12px;
+
+  background: #eef0f2;
+}
+
+
+/* Leaflet */
+.section02-leaflet-map {
+  width: 100%;
+  height: 100%;
+
+  min-height: 540px;
+}
+
+
+/* =========================================================
+   CUSTOM MAP MARKER
+========================================================= */
+
+.section02-map-marker-wrapper {
+  background: transparent;
+  border: 0;
+}
+
+
+.section02-map-marker {
+  position: relative;
+
+  width: 24px;
+  height: 24px;
+
+  background:
+    var(--marker-color);
+
+  border:
+    3px solid #ffffff;
+
+  border-radius:
+    50% 50% 50% 0;
+
+  transform:
+    rotate(-45deg);
+
+  box-sizing:
+    border-box;
+
+  box-shadow:
+    0 3px 8px
+    rgba(0, 0, 0, 0.32);
+
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+
+  transform-origin: center center;  
+
+
+}
+
+
+.section02-map-marker span {
+  position: absolute;
+
+  width: 7px;
+  height: 7px;
+
+  top: 50%;
+  left: 50%;
+
+  transform:
+    translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 255, 255, 0.95);
+}
+
+/* หมุดที่ถูก Spiderfy กางออก */
+.section02-map-marker-wrapper.is-spiderfied
+.section02-map-marker {
+  transform:
+    rotate(-45deg)
+    scale(1.35);
+
+  box-shadow:
+    0 5px 12px
+    rgba(0, 0, 0, 0.38);
+}
+
+
+/* ตัวที่เมาส์กำลังชี้ ใหญ่ขึ้นอีกนิด */
+.section02-map-marker-wrapper.is-spiderfied:hover
+.section02-map-marker {
+  transform:
+    rotate(-45deg)
+    scale(1.55);
+}
+
+
+/* =========================================================
+   MAP POPUP
+========================================================= */
+
+.section02-map-popup {
+  min-width: 150px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+
+  font-family: inherit;
+}
+
+
+.section02-map-popup strong {
+  color: #8f132a;
+
+  font-size: 13px;
+}
+
+
+.section02-map-popup span {
+  color: #4e535b;
+
+  font-size: 11px;
+}
+
+
+.section02-map-popup small {
+  margin-top: 3px;
+
+  color: #92969e;
+
+  font-size: 9px;
+}
+
+/* =========================================================
+   MAP BOTTOM LEGEND - SINGLE ROW
+========================================================= */
+
+.section02-map-bottom {
+  min-height: 68px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  padding: 10px 14px;
+
+  border: 1px solid #e1e2e5;
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #fafafb
+    );
+
+  box-sizing: border-box;
+}
+
+
+/* ฝั่งประเภทเหตุ */
+.section02-map-legend {
+  min-width: 0;
+  flex: 1;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* แต่ละประเภท */
+.section02-map-legend-item {
+  width: 100%;
+  min-width: 0;
+
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  column-gap: 8px;
+
+  padding: 10px 12px;
+
+  border: 1px solid #ececef;
+  border-radius: 8px;
+
+  background: #f7f7f8;
+
+  box-sizing: border-box;
+}
+
+/* สีประเภทเหตุ */
+.section02-map-legend-color {
+  width: 12px;
+  height: 12px;
+
+  border-radius: 3px;
+}
+
+
+/* ชื่อประเภท */
+.section02-map-legend-item strong {
+  color: #34373d;
+
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* จำนวนเหตุการณ์ */
+.section02-map-legend-item small {
+  color: #858a92;
+
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+
+  white-space: nowrap;
+}
+
+
+/* =========================
+   TOTAL
+========================= */
+
+.section02-map-total {
+  flex: 0 0 auto;
+
+  min-height: 42px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  padding-left: 18px;
+
+  border-left:
+    1px solid #e0e1e4;
+}
+
+
+.section02-map-total strong {
+  color: #98172f;
+
+  font-size: 32px;
+  font-weight: 900;
+
+  line-height: 1;
+}
+
+
+.section02-map-total span {
+  color: #4d5259;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   LEAFLET MARKER CLUSTER
+========================================================= */
+
+.section02-marker-cluster-wrapper {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+
+/* วง Cluster */
+.section02-marker-cluster {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+
+  border:
+    3px solid
+    rgba(255, 255, 255, 0.96);
+
+  border-radius: 50%;
+
+  background:
+    var(
+      --cluster-color,
+      #98172f
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 4px 12px
+    rgba(0, 0, 0, 0.28);
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+
+/* ตัวเลขใน Cluster */
+.section02-marker-cluster strong {
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  line-height: 1;
+}
+
+
+/* Hover */
+.section02-marker-cluster-wrapper:hover
+.section02-marker-cluster {
+  transform:
+    scale(1.08);
+
+  box-shadow:
+    0 5px 15px
+    rgba(0, 0, 0, 0.32);
+}
