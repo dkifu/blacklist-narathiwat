@@ -104,6 +104,13 @@ function MonthlyReport({ profile }) {
   const [exportingPdf, setExportingPdf] = useState(false)
 
   const [editorOpen, setEditorOpen] = useState(false)
+
+  const [editMode, setEditMode] =
+    useState(false)
+
+  const [reportHasContent, setReportHasContent] =
+    useState(false)
+
   const [reportLoading, setReportLoading] = useState(false)
   const [reportMessage, setReportMessage] = useState('')
   const [reportMessageType, setReportMessageType] =
@@ -131,16 +138,21 @@ function MonthlyReport({ profile }) {
   const isCenter = role === 'center'
 
   useEffect(() => {
-    loadCenters()
-  }, [profile?.id, profile?.center_id])
+        loadCenters()
+    }, [profile?.id, profile?.center_id])
 
-  useEffect(() => {
+    useEffect(() => {
+
     setEditorOpen(false)
+    setEditMode(false)
+    setReportHasContent(false)
 
     if (!selectedCenterId) {
         setCurrentReport(null)
         return
     }
+
+    
 
     loadMonthlyReport()
   }, [selectedCenterId, month, year])
@@ -195,16 +207,28 @@ function MonthlyReport({ profile }) {
     if (!selectedCenterId) return
 
     setReportLoading(true)
+
     setReportMessage('')
     setReportMessageType('')
 
-    const { data, error } = await supabase
+    const { data, error } =
+        await supabase
         .from('monthly_reports')
         .select('*')
-        .eq('center_id', Number(selectedCenterId))
-        .eq('report_month', month)
-        .eq('report_year', year)
+        .eq(
+            'center_id',
+            Number(selectedCenterId)
+        )
+        .eq(
+            'report_month',
+            month
+        )
+        .eq(
+            'report_year',
+            year
+        )
         .maybeSingle()
+
 
     if (error) {
         console.error(
@@ -213,6 +237,11 @@ function MonthlyReport({ profile }) {
         )
 
         setCurrentReport(null)
+
+        setEditorOpen(false)
+        setEditMode(false)
+        setReportHasContent(false)
+
         setReportMessage(
         'ไม่สามารถโหลดข้อมูลรายงานได้'
         )
@@ -220,12 +249,357 @@ function MonthlyReport({ profile }) {
         setReportMessageType('error')
 
         setReportLoading(false)
+
         return
     }
 
-    setCurrentReport(data || null)
+
+    // =========================
+    // ยังไม่มี Report
+    // =========================
+
+    if (!data) {
+
+        setCurrentReport(null)
+
+        setEditorOpen(false)
+        setEditMode(false)
+        setReportHasContent(false)
+
+        setReportLoading(false)
+
+        return
+    }
+
+
+    // =========================
+    // ตรวจว่ารายงานมีข้อมูล
+    // ในหัวข้อใดแล้วหรือยัง
+    // =========================
+
+    const {
+        data: sectionRows,
+        error: sectionError,
+    } =
+        await supabase
+        .from('monthly_report_sections')
+        .select(
+            'section_no, content'
+        )
+        .eq(
+            'report_id',
+            data.id
+        )
+
+
+    let hasContent = false
+
+
+    if (sectionError) {
+
+        console.error(
+        'Load report sections error:',
+        sectionError
+        )
+
+    } else {
+
+        hasContent =
+        (sectionRows || []).some(
+            (section) => {
+
+            const content =
+                section?.content
+
+            if (
+                !content ||
+                typeof content !== 'object'
+            ) {
+                return false
+            }
+
+
+            // =========================
+            // ข้อมูลแบบรายการ
+            // =========================
+
+            if (
+                Array.isArray(
+                content.rows
+                )
+            ) {
+                return (
+                content.rows.length > 0
+                )
+            }
+
+
+            if (
+                Array.isArray(
+                content.items
+                )
+            ) {
+                return (
+                content.items.length > 0
+                )
+            }
+
+
+            if (
+                Array.isArray(
+                content.pages
+                )
+            ) {
+                return (
+                content.pages.length > 0
+                )
+            }
+
+
+            // =========================
+            // รองรับ Section อื่น
+            // ในอนาคต
+            // =========================
+
+            return Object.entries(
+                content
+            ).some(
+                ([key, value]) => {
+
+                // ค่า config อย่างเดียว
+                // ไม่นับเป็นข้อมูลรายงาน
+                if (
+                    key ===
+                    'rowsPerPage'
+                ) {
+                    return false
+                }
+
+
+                if (
+                    Array.isArray(
+                    value
+                    )
+                ) {
+                    return (
+                    value.length > 0
+                    )
+                }
+
+
+                if (
+                    typeof value ===
+                    'string'
+                ) {
+                    return (
+                    value.trim() !== ''
+                    )
+                }
+
+
+                if (
+                    typeof value ===
+                    'number'
+                    ) {
+                    return true
+                }
+
+
+                if (
+                    typeof value ===
+                    'boolean'
+                ) {
+                    return value
+                }
+
+
+                if (
+                    value &&
+                    typeof value ===
+                    'object'
+                ) {
+                    return (
+                    Object.keys(
+                        value
+                    ).length > 0
+                    )
+                }
+
+
+                return false
+                }
+            )
+            }
+        )
+    }
+
+
+    // =========================
+    // พบ Report เดิม
+    // เปิด Preview ให้อัตโนมัติ
+    // =========================
+
+    setCurrentReport(data)
+
+    setReportHasContent(
+        hasContent
+    )
+
+    // พบ Report แล้ว
+    // เปิดหน้า Preview ให้อัตโนมัติ
+    setEditorOpen(true)
+
+    // เปิดมาครั้งแรกเป็นโหมดดู
+    setEditMode(false)
+
     setReportLoading(false)
-  }
+
+    
+    }
+
+    const handleSectionDataChange = async () => {
+
+        if (!currentReport?.id) {
+            return
+        }
+
+        const {
+            data,
+            error,
+        } =
+            await supabase
+            .from('monthly_report_sections')
+            .select(
+                'section_no, content'
+            )
+            .eq(
+                'report_id',
+                currentReport.id
+            )
+
+
+        if (error) {
+            console.error(
+            'Refresh report content state error:',
+            error
+            )
+
+            return
+        }
+
+
+        const hasContent =
+            (data || []).some(
+            (section) => {
+
+                const content =
+                section?.content
+
+                if (
+                !content ||
+                typeof content !== 'object'
+                ) {
+                return false
+                }
+
+
+                if (
+                Array.isArray(
+                    content.rows
+                )
+                ) {
+                return (
+                    content.rows.length > 0
+                )
+                }
+
+
+                if (
+                Array.isArray(
+                    content.items
+                )
+                ) {
+                return (
+                    content.items.length > 0
+                )
+                }
+
+
+                if (
+                Array.isArray(
+                    content.pages
+                )
+                ) {
+                return (
+                    content.pages.length > 0
+                )
+                }
+
+
+                return Object.entries(
+                content
+                ).some(
+                ([key, value]) => {
+
+                    if (
+                    key === 'rowsPerPage'
+                    ) {
+                    return false
+                    }
+
+
+                    if (
+                    Array.isArray(value)
+                    ) {
+                    return value.length > 0
+                    }
+
+
+                    if (
+                    typeof value === 'string'
+                    ) {
+                    return (
+                        value.trim() !== ''
+                    )
+                    }
+
+
+                    if (
+                    typeof value === 'number'
+                    ) {
+                    return true
+                    }
+
+
+                    if (
+                    typeof value === 'boolean'
+                    ) {
+                    return value
+                    }
+
+
+                    if (
+                    value &&
+                    typeof value === 'object'
+                    ) {
+                    return (
+                        Object.keys(value)
+                        .length > 0
+                    )
+                    }
+
+
+                    return false
+                }
+                )
+            }
+            )
+
+
+        setReportHasContent(
+            hasContent
+        )
+        }
 
   const handleCreateReport = async () => {
     if (!canEdit) {
@@ -301,6 +675,12 @@ function MonthlyReport({ profile }) {
     }
 
     setCurrentReport(data)
+
+    setReportHasContent(false)
+
+    setEditorOpen(true)
+
+    setEditMode(true)
 
     setReportMessage(
     'สร้างรายงานประจำเดือนเรียบร้อยแล้ว'
@@ -740,7 +1120,21 @@ function MonthlyReport({ profile }) {
                     ? 'monthly-section-item active'
                     : 'monthly-section-item'
                 }
-                onClick={() => setSelectedSection(section.id)}
+                onClick={() => {
+
+                    setSelectedSection(
+                        section.id
+                    )
+
+                    // เปลี่ยนหัวข้อ
+                    // กลับสู่โหมด Preview ก่อนเสมอ
+                    setEditMode(false)
+
+                    if (currentReport) {
+                        setEditorOpen(true)
+                    }
+
+                    }}
             >
                 <span className="monthly-section-number">
                 {String(section.id).padStart(2, '0')}
@@ -803,30 +1197,72 @@ function MonthlyReport({ profile }) {
               <button
                 type="button"
                 className="secondary-button"
-              >
+
+                disabled={
+                    !currentReport ||
+                    reportLoading
+                }
+
+                onClick={() => {
+
+                    if (!currentReport) {
+                    return
+                    }
+
+                    setEditorOpen(true)
+
+                    setEditMode(false)
+
+                }}
+                >
                 ดูตัวอย่าง
-              </button>
+                </button>
 
               {canEdit && (
+
                 <button
                     type="button"
                     className="primary-button"
-                    onClick={() => {
+
+                    onClick={async () => {
+
+                    // =========================
+                    // มี Report อยู่แล้ว
+                    // = เข้า Edit Mode
+                    // =========================
+
                     if (currentReport) {
+
                         setEditorOpen(true)
-                    } else {
-                        handleCreateReport()
+
+                        setEditMode(true)
+
+                        return
                     }
+
+
+                    // =========================
+                    // ยังไม่มี Report
+                    // = สร้างก่อน
+                    // =========================
+
+                    await handleCreateReport()
+
                     }}
+
                     disabled={reportLoading}
                 >
+
                     {reportLoading
                     ? 'กำลังโหลด...'
                     : currentReport
                         ? 'แก้ไขรายงาน'
                         : 'สร้างรายงาน'}
+
                 </button>
-              )}
+
+                )}
+                    
 
             </div>
 
@@ -846,8 +1282,10 @@ function MonthlyReport({ profile }) {
                 <span>สถานะรายงาน</span>
                 <strong>
                     {currentReport.status === 'complete'
-                    ? 'เสร็จสมบูรณ์'
-                    : 'ฉบับร่าง'}
+                        ? 'เสร็จสมบูรณ์'
+                        : reportHasContent
+                            ? 'กำลังจัดทำ'
+                            : 'ฉบับร่าง'}
                 </strong>
                 </div>
 
@@ -868,7 +1306,11 @@ function MonthlyReport({ profile }) {
                 <div className="monthly-editor-toolbar">
 
                 <div>
-                    <span>กำลังแก้ไข</span>
+                    <span>
+                        {editMode
+                            ? 'กำลังแก้ไข'
+                            : 'ดูตัวอย่าง'}
+                    </span>
                     <strong>{activeSection.title}</strong>
                 </div>
 
@@ -891,8 +1333,16 @@ function MonthlyReport({ profile }) {
                             center={selectedCenter}
                             month={month}
                             year={year}
-                            canEdit={canEdit}
-                        />
+
+                            canEdit={
+                                canEdit &&
+                                editMode
+                            }
+
+                            onDataChange={
+                                handleSectionDataChange
+                            }
+                            />
 
                     ) : (
 

@@ -8,7 +8,7 @@ import {
 } from 'react'
 
 import * as XLSX from 'xlsx'
-import { toPng } from 'html-to-image'
+import html2canvas from 'html2canvas'
 
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -261,6 +261,8 @@ function EventMap({ rows }) {
         zoomControl: true,
         attributionControl: true,
 
+        fadeAnimation: false,
+
         // ซูมละเอียด
         zoomSnap: 0.05,
         zoomDelta: 0.05,
@@ -277,15 +279,12 @@ function EventMap({ rows }) {
     // =========================
 
     L.tileLayer(
-      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      {
-        maxZoom: 19,
-
-        crossOrigin: true,
-
-        attribution:
-          '&copy; OpenStreetMap contributors',
-      }
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+            maxZoom: 19,
+            crossOrigin: 'anonymous',
+            attribution: '&copy; OpenStreetMap contributors',
+        }
     ).addTo(map)
 
 
@@ -976,7 +975,9 @@ const Section02Editor = forwardRef(
     month,
     year,
     canEdit,
-  }, ref) {
+    onDataChange,
+    }, ref) {
+
   const fileInputRef = useRef(null)
 
 
@@ -1064,6 +1065,8 @@ const Section02Editor = forwardRef(
 
         return false
         }
+
+        onDataChange?.()
 
         return true
 
@@ -1891,50 +1894,393 @@ const Section02Editor = forwardRef(
         })
     })
 
+    const blobToDataUrl = (blob) =>
+    new Promise((resolve, reject) => {
 
-    const captureCurrentPage = async () => {
-    const node = pageRef.current
+        const reader =
+        new FileReader()
 
-    if (!node) {
-        throw new Error(
-        'ไม่พบหน้ารายงานสำหรับส่งออก'
+        reader.onloadend = () =>
+        resolve(reader.result)
+
+        reader.onerror =
+        reject
+
+        reader.readAsDataURL(
+        blob
         )
-    }
 
-    if (document.fonts?.ready) {
-        await document.fonts.ready
-    }
-
-    return await toPng(node, {
-        width: 1120,
-        height: 792,
-
-        pixelRatio: 2,
-
-        backgroundColor: '#ffffff',
-
-        cacheBust: true,
-
-        style: {
-        width: '1120px',
-        height: '792px',
-
-        minWidth: '1120px',
-        minHeight: '792px',
-
-        maxWidth: 'none',
-
-        transform: 'none',
-        transformOrigin: 'top left',
-
-        position: 'relative',
-        top: '0',
-        left: '0',
-
-        margin: '0',
-        },
     })
+
+
+    const prepareLeafletTilesForCapture =
+    async (rootNode) => {
+
+        const mapNode =
+        rootNode?.querySelector(
+            '.section02-leaflet-map'
+        )
+
+
+        // หน้าที่ไม่ใช่ Map
+        if (!mapNode) {
+        return () => {}
+        }
+
+
+        const start =
+        Date.now()
+
+        const timeout =
+        10000
+
+        let tiles = []
+
+
+        // =========================
+        // รอ Tile โหลดให้ครบก่อน
+        // =========================
+
+        while (
+        Date.now() - start <
+        timeout
+        ) {
+
+        tiles =
+            Array.from(
+            mapNode.querySelectorAll(
+                '.leaflet-tile'
+            )
+            )
+
+
+        const ready =
+            tiles.length > 0 &&
+            tiles.every(
+            (img) =>
+                img.complete &&
+                img.naturalWidth > 0 &&
+                img.classList.contains(
+                'leaflet-tile-loaded'
+                )
+            )
+
+
+        if (ready) {
+            break
+        }
+
+
+        await new Promise(
+            (resolve) =>
+            setTimeout(
+                resolve,
+                150
+            )
+        )
+        }
+
+
+        const allReady =
+        tiles.length > 0 &&
+        tiles.every(
+            (img) =>
+            img.complete &&
+            img.naturalWidth > 0
+        )
+
+
+        // ห้ามสร้าง PDF ถ้า
+        // Tile ยังไม่พร้อม
+        if (!allReady) {
+
+        throw new Error(
+            'แผนที่ยังโหลดไม่ครบ กรุณาลองสร้าง PDF ใหม่อีกครั้ง'
+        )
+
+        }
+
+
+        // =========================
+        // สำรอง URL เดิม
+        // =========================
+
+        const backups =
+        tiles.map(
+            (img) => ({
+            img,
+            src: img.src,
+            srcset:
+                img.getAttribute(
+                'srcset'
+                ),
+            })
+        )
+
+
+        // =========================
+        // แปลง Tile เป็น Data URL
+        // เพื่อให้ html2canvas จับได้แน่นอน
+        // =========================
+
+        await Promise.all(
+
+        backups.map(
+            async ({
+            img,
+            src,
+            }) => {
+
+            const response =
+                await fetch(
+                src,
+                {
+                    mode: 'cors',
+                    credentials:
+                    'omit',
+                    cache:
+                    'force-cache',
+                }
+                )
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                `โหลดแผนที่ไม่สำเร็จ (${response.status})`
+                )
+
+            }
+
+
+            const blob =
+                await response.blob()
+
+
+            const dataUrl =
+                await blobToDataUrl(
+                blob
+                )
+
+
+            img.removeAttribute(
+                'srcset'
+            )
+
+            img.src =
+                dataUrl
+
+
+            if (img.decode) {
+
+                try {
+
+                await img.decode()
+
+                } catch {
+                // ไม่ต้องทำอะไร
+                }
+
+            }
+
+            }
+        )
+
+        )
+
+
+        // รอ DOM วาด Tile
+        // หลังเปลี่ยนเป็น Data URL
+        await new Promise(
+        (resolve) => {
+
+            requestAnimationFrame(
+            () => {
+
+                requestAnimationFrame(
+                resolve
+                )
+
+            }
+            )
+
+        }
+        )
+
+
+        // =========================
+        // คืน Tile เดิมหลัง Capture
+        // =========================
+
+        return () => {
+
+        backups.forEach(
+            ({
+            img,
+            src,
+            srcset,
+            }) => {
+
+            img.src =
+                src
+
+
+            if (srcset) {
+
+                img.setAttribute(
+                'srcset',
+                srcset
+                )
+
+            }
+
+            }
+        )
+
+        }
+
     }
+
+    const captureCurrentPage =
+        async () => {
+
+            const node =
+            pageRef.current
+
+
+            if (!node) {
+
+            throw new Error(
+                'ไม่พบหน้ารายงานสำหรับส่งออก'
+            )
+
+            }
+
+
+            if (
+            document.fonts?.ready
+            ) {
+
+            await document.fonts.ready
+
+            }
+
+
+            await waitForPreviewRender()
+
+
+            const originalTransform =
+            node.style.transform
+
+            const originalTransformOrigin =
+            node.style.transformOrigin
+
+            node.style.transform =
+            'none'
+
+            node.style.transformOrigin =
+            'top left'
+
+
+            let restoreTiles =
+            () => {}
+
+
+            try {
+
+            restoreTiles =
+                await prepareLeafletTilesForCapture(
+                node
+                )
+
+
+            const canvas =
+                await html2canvas(
+                node,
+                {
+                    width: 1120,
+                    height: 792,
+
+                    backgroundColor:
+                    '#ffffff',
+
+                    scale: 2,
+
+                    useCORS: true,
+
+                    allowTaint: false,
+
+                    logging: false,
+
+                    onclone: (clonedDocument) => {
+
+                        const mapNode =
+                            clonedDocument.querySelector(
+                            '.section02-leaflet-map'
+                            )
+
+                        if (!mapNode) {
+                            return
+                        }
+
+                        mapNode
+                            .querySelectorAll(
+                            '.leaflet-tile'
+                            )
+                            .forEach((tile) => {
+
+                            tile.style.opacity = '1'
+                            tile.style.visibility = 'visible'
+                            tile.style.filter = 'none'
+                            tile.style.transition = 'none'
+
+                            })
+
+                        const tilePane =
+                            mapNode.querySelector(
+                            '.leaflet-tile-pane'
+                            )
+
+                        if (tilePane) {
+                            tilePane.style.opacity = '1'
+                            tilePane.style.filter = 'none'
+                        }
+
+                    },
+
+                    imageTimeout:
+                    15000,
+
+                    scrollX: 0,
+                    scrollY: 0,
+
+                    windowWidth:
+                    1120,
+
+                    windowHeight:
+                    792,
+                }
+                )
+
+
+            return canvas.toDataURL(
+                'image/png'
+            )
+
+            } finally {
+
+                restoreTiles()
+
+                node.style.transform =
+                    originalTransform
+
+                node.style.transformOrigin =
+                    originalTransformOrigin
+
+            }
+
+        }
+    
 
     // =========================
     // SAVE CURRENT PAGE AS PNG
@@ -1960,40 +2306,10 @@ const Section02Editor = forwardRef(
         await document.fonts.ready
         }
 
-        const dataUrl = await toPng(
-        node,
-        {
-            width: 1120,
-            height: 792,
+        const dataUrl =
+            await captureCurrentPage()
 
-            // ได้ภาพ 2240 × 1584 px
-            // แต่สัดส่วนยังเป็น A4 Landscape
-            pixelRatio: 2,
-
-            backgroundColor: '#ffffff',
-
-            cacheBust: true,
-
-            style: {
-            width: '1120px',
-            height: '792px',
-
-            minWidth: '1120px',
-            minHeight: '792px',
-
-            maxWidth: 'none',
-
-            transform: 'none',
-            transformOrigin: 'top left',
-
-            position: 'relative',
-            top: '0',
-            left: '0',
-
-            margin: '0',
-            },
-        }
-        )
+        
 
         const link =
         document.createElement('a')
@@ -2109,10 +2425,17 @@ const Section02Editor = forwardRef(
   // =========================
 
   return (
-    <div className="section02-editor">
+    <div
+        className={
+            canEdit
+            ? 'section02-editor is-editing'
+            : 'section02-editor is-preview'
+        }
+    >
 
       {/* LEFT PANEL */}
-
+       
+      {canEdit && ( 
       <aside className="section02-panel">
 
         <div className="section02-panel-head">
@@ -2368,6 +2691,98 @@ const Section02Editor = forwardRef(
         </div>
 
       </aside>
+
+      )}
+
+      {/* PREVIEW PAGE NAVIGATION */}
+
+        {!canEdit && (
+
+        <div className="section02-viewer-toolbar">
+
+            <div className="section02-viewer-pages">
+
+            <button
+                type="button"
+                className={
+                previewPage === 0
+                    ? 'section02-viewer-page active'
+                    : 'section02-viewer-page'
+                }
+                onClick={() =>
+                setPreviewPage(0)
+                }
+            >
+                01 · หน้าสรุป
+            </button>
+
+
+            {tablePages.map(
+                (_, index) => (
+
+                <button
+                    type="button"
+                    key={index}
+                    className={
+                    previewPage === index + 1
+                        ? 'section02-viewer-page active'
+                        : 'section02-viewer-page'
+                    }
+                    onClick={() =>
+                    setPreviewPage(
+                        index + 1
+                    )
+                    }
+                >
+                    {String(
+                    index + 2
+                    ).padStart(2, '0')}
+
+                    {' · '}
+
+                    ตาราง หน้า {index + 1}
+                </button>
+
+                )
+            )}
+
+
+            {hasMapPage && (
+
+                <button
+                type="button"
+                className={
+                    previewPage === mapPageIndex
+                    ? 'section02-viewer-page active'
+                    : 'section02-viewer-page'
+                }
+                onClick={() =>
+                    setPreviewPage(
+                    mapPageIndex
+                    )
+                }
+                >
+                {String(
+                    mapPageIndex + 1
+                ).padStart(2, '0')}
+
+                {' · '}
+
+                แผนที่จุดเกิดเหตุ
+                </button>
+
+            )}
+
+            </div>
+
+
+            <span className="section02-viewer-total">
+            ทั้งหมด {totalPages} หน้า
+            </span>
+
+        </div>
+
+        )}
 
 
       {/* RIGHT PREVIEW */}

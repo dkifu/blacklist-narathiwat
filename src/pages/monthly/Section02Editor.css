@@ -11,6 +11,117 @@
 }
 
 /* =========================================================
+   VIEW / EDIT MODE
+========================================================= */
+
+.section02-editor.is-editing {
+  grid-template-columns:
+    300px minmax(0, 1fr);
+}
+
+.section02-editor.is-preview {
+  grid-template-columns:
+    minmax(0, 1fr);
+}
+
+
+/* Viewer navigation */
+
+.section02-viewer-toolbar {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  padding: 12px 14px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #293241;
+  border-radius: 12px;
+
+  background: #11161f;
+}
+
+
+.section02-viewer-pages {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 8px;
+}
+
+
+.section02-viewer-page {
+  min-height: 36px;
+
+  padding: 0 13px;
+
+  border: 1px solid #323b4b;
+  border-radius: 8px;
+
+  background: #171d27;
+
+  color: #9ca7b9;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.15s ease;
+}
+
+
+.section02-viewer-page:hover {
+  border-color: #4b586d;
+
+  color: #ffffff;
+
+  background: #1b222e;
+}
+
+
+.section02-viewer-page.active {
+  border-color:
+    rgba(213, 38, 85, 0.42);
+
+  background:
+    rgba(197, 31, 71, 0.15);
+
+  color: #ff668d;
+
+  box-shadow:
+    inset 3px 0 0 #d52655;
+}
+
+
+.section02-viewer-total {
+  flex: 0 0 auto;
+
+  color: #778397;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.section02-editor.is-preview
+.section02-preview {
+  width: 100%;
+
+  box-sizing: border-box;
+}
+
+/* =========================================================
    LEFT PANEL
 ========================================================= */
 
