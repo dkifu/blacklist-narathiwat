@@ -101,6 +101,7 @@ function MonthlyReport({ profile }) {
 
   const [currentReport, setCurrentReport] = useState(null)
 
+  const section01ExportRef = useRef(null)
   const section02ExportRef = useRef(null)
   const [exportingPdf, setExportingPdf] = useState(false)
 
@@ -754,11 +755,16 @@ function MonthlyReport({ profile }) {
         // =================================
 
         const sectionExporters = [
-            {
+        {
+            sectionNo: 1,
+            exporter:
+            section01ExportRef.current,
+        },
+        {
             sectionNo: 2,
             exporter:
-                section02ExportRef.current,
-            },
+            section02ExportRef.current,
+        },
         ]
 
         sectionExporters.sort(
@@ -1163,6 +1169,16 @@ function MonthlyReport({ profile }) {
                 className="monthly-pdf-export-host"
                 aria-hidden="true"
             >
+
+                <Section01Editor
+                ref={section01ExportRef}
+                report={currentReport}
+                center={selectedCenter}
+                month={month}
+                year={year}
+                canEdit={false}
+                />
+
                 <Section02Editor
                 ref={section02ExportRef}
                 report={currentReport}
@@ -1171,6 +1187,7 @@ function MonthlyReport({ profile }) {
                 year={year}
                 canEdit={false}
                 />
+
             </div>
             )}
 
