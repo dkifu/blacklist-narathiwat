@@ -8,6 +8,7 @@ import { jsPDF } from 'jspdf'
 import { supabase } from '../lib/supabase'
 import './MonthlyReport.css'
 
+import Section01Editor from './monthly/Section01Editor'
 import Section02Editor from './monthly/Section02Editor'
 
 const MONTHS = [
@@ -1326,7 +1327,25 @@ function MonthlyReport({ profile }) {
 
                 <div className="monthly-editor-body">
 
-                    {activeSection.id === 2 ? (
+                    {activeSection.id === 1 ? (
+
+                        <Section01Editor
+                            report={currentReport}
+                            center={selectedCenter}
+                            month={month}
+                            year={year}
+
+                            canEdit={
+                                canEdit &&
+                                editMode
+                            }
+
+                            onDataChange={
+                                handleSectionDataChange
+                            }
+                        />
+
+                    ) : activeSection.id === 2 ? (
 
                         <Section02Editor
                             report={currentReport}
@@ -1342,35 +1361,37 @@ function MonthlyReport({ profile }) {
                             onDataChange={
                                 handleSectionDataChange
                             }
-                            />
+                        />
 
                     ) : (
 
                         <div className="monthly-editor-placeholder">
 
-                        <span>
-                            หัวข้อที่{' '}
-                            {String(
-                            activeSection.id
-                            ).padStart(2, '0')}
-                        </span>
+                            <span>
+                                หัวข้อที่{' '}
+                                {String(
+                                    activeSection.id
+                                ).padStart(2, '0')}
+                            </span>
 
-                        <h3>
-                            {activeSection.title}
-                        </h3>
+                            <h3>
+                                {activeSection.title}
+                            </h3>
 
-                        <p>
-                            Editor ของหัวข้อนี้
-                            จะถูกสร้างในขั้นต่อไป
-                        </p>
+                            <p>
+                                Editor ของหัวข้อนี้
+                                จะถูกสร้างในขั้นต่อไป
+                            </p>
 
-                        <small>
-                            Report ID #{currentReport.id}
-                        </small>
+                            <small>
+                                Report ID #{currentReport.id}
+                            </small>
 
                         </div>
 
                     )}
+
+                       
 
                     </div>
 
