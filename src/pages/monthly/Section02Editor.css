@@ -974,6 +974,22 @@
     rgba(0, 0, 0, 0.04);
 }
 
+.section02-donut-svg {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  transform: rotate(0deg);
+}
+
+.section02-donut-center {
+  position: relative;
+  z-index: 2;
+}
+
 .section02-donut-center {
   width: 102px;
   height: 102px;
@@ -1502,10 +1518,17 @@
 /* ตัวเลขรวม */
 .section02-total-number {
   font-size: 72px;
+
+  margin-bottom: 5px;
+
+  transform: scale(1.6);  /* ใหญ่ขึ้นนิดเดียว */
 }
 
 .section02-total-label {
-  font-size: 20px;
+  font-size: 40px;
+  margin-left: 16px;
+
+  transform: translate(25px, 13px);
 }
 
 /* กล่องข้อมูลย่อย */
@@ -1612,7 +1635,7 @@
   grid-template-columns:
     170px minmax(0, 1fr) !important;
 
-  gap: 25px !important;
+  gap: 18px !important;
 }
 
 
@@ -1649,7 +1672,7 @@
   display: flex !important;
   flex-direction: column !important;
 
-  gap: 5px !important;
+  gap: 8px !important;
 
   justify-content: center;
 }
@@ -1668,9 +1691,9 @@
 
   align-items: center !important;
 
-  gap: 10px !important;
+  gap: 6px !important;
 
-  padding: 4px 6px !important;
+  padding: 6px 10px !important;
 
   box-sizing: border-box;
 
@@ -1700,7 +1723,7 @@
 
   color: #33363c;
 
-  font-size: 15px !important;
+  font-size: 12px !important;
   font-weight: 700;
 
   line-height: 1.80;
@@ -1714,7 +1737,7 @@
 
 /* จำนวนเหตุการณ์ */
 .section02-donut-count {
-  flex: 0 0 85px;
+  flex: 0 0 45px;
 
   color: #8c9098;
 
@@ -2188,9 +2211,9 @@
   align-items: center;
   justify-content: space-between;
 
-  gap: 16px;
+  gap: 8px;
 
-  padding: 10px 14px;
+  padding: 5px 8px;
 
   border: 1px solid #e1e2e5;
   border-radius: 10px;
@@ -2213,7 +2236,7 @@
 
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
   align-items: stretch;
 }
 
@@ -2225,9 +2248,9 @@
   display: grid;
   grid-template-columns: 12px 1fr auto;
   align-items: center;
-  column-gap: 8px;
+  column-gap: 5px;
 
-  padding: 10px 12px;
+  padding: 10px 8px;
 
   border: 1px solid #ececef;
   border-radius: 8px;
@@ -2250,9 +2273,9 @@
 .section02-map-legend-item strong {
   color: #34373d;
 
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 800;
-  line-height: 1.2;
+  line-height: 1.0;
 
   white-space: nowrap;
   overflow: hidden;
@@ -2265,7 +2288,7 @@
   color: #858a92;
 
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 800;
   line-height: 1;
 
   white-space: nowrap;
@@ -2377,4 +2400,135 @@
   box-shadow:
     0 5px 15px
     rgba(0, 0, 0, 0.32);
+}
+
+.section02-previous-month {
+  color: #8f132a !important;
+  font-size: 12px !important;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   OVERVIEW REAL ICONS
+========================================================= */
+
+.section02-overview-total {
+  display: flex;
+  align-items: center;
+  gap: 50px;
+
+  margin-top: 15px;
+  margin-bottom: 16px;
+  margin-left: 16px;
+}
+
+
+/* ไอคอนไซเรนใหญ่ */
+
+.section02-overview-main-icon {
+  width: 70px;
+  height: 70px;
+
+  flex: 0 0 70px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  color: #a51632;
+
+  background:
+    linear-gradient(
+      145deg,
+      #fff4f5,
+      #f7dce2
+    );
+
+    transform: scale(1.5);  /* ใหญ่ขึ้นนิดเดียว */
+}
+
+.section02-overview-main-icon svg {
+  width: 50px;
+  height: 50px;
+
+  stroke-width: 1.8;
+}
+
+
+/* เลขจำนวนเหตุ */
+
+.section02-overview-total-value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+
+  transform: translate(40px, 8px);
+}
+
+
+/* =========================
+   MINI INFO
+========================= */
+
+.section02-overview-mini > div {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  min-width: 0;
+}
+
+
+/* วงกลม Icon */
+
+.section02-overview-mini-icon {
+  width: 40px;
+  height: 40px;
+
+  flex: 0 0 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  color: #98172f;
+  background: #f8e8eb;
+
+  transform: scale(1.2);  /* ใหญ่ขึ้นนิดเดียว */
+}
+
+.section02-overview-mini-icon svg {
+  width: 30px;
+  height: 30px;
+
+  stroke-width: 2;
+}
+
+
+/* ข้อความข้าง Icon */
+
+.section02-overview-mini-text {
+  display: flex;
+  flex-direction: column;
+
+  min-width: 0;
+}
+
+.section02-overview-mini-text small {
+  display: block;
+}
+
+.section02-overview-mini-text strong {
+  display: block;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }

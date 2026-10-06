@@ -10,6 +10,13 @@ import {
 import * as XLSX from 'xlsx'
 import html2canvas from 'html2canvas'
 
+import {
+  Siren,
+  CalendarDays,
+  Clock3,
+  CarFront,
+} from 'lucide-react'
+
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -24,12 +31,40 @@ const EXCEL_HEADERS = [
   'เวลา',
   'เจ้าหน้าที่ Operator',
   'ประเภทเหตุ',
+  'รหัสเหตุ',
   'วันที่เกิดเหตุ',
   'เวลาเกิดเหตุ',
   'ที่มา alarm',
   'IP Address',
   'Lat',
   'Long',
+]
+
+const EVENT_CATEGORIES = [
+  {
+    code: 1,
+    name: 'เหตุรุนแรง/ความไม่สงบ',
+    color: '#e21f36',
+    zIndex: 4000,
+  },
+  {
+    code: 2,
+    name: 'เหตุจากระบบ (LPR/AI)',
+    color: '#1769aa',
+    zIndex: 3000,
+  },
+  {
+    code: 3,
+    name: 'อาชญากรรมทั่วไป',
+    color: '#1ca56b',
+    zIndex: 2000,
+  },
+  {
+    code: 4,
+    name: 'อุบัติเหตุ',
+    color: '#f4bd16',
+    zIndex: 1000,
+  },
 ]
 
 const THAI_MONTHS = [
@@ -67,84 +102,9 @@ const getCenterReportLabel = (center) => {
     : centerName
 }
 
-const getCategoryColor = (name, index = 0) => {
-  const text = String(name || '').toLowerCase()
 
-  // เหตุรุนแรง / ความไม่สงบ
-  if (
-    text.includes('รุนแรง') ||
-    text.includes('ความไม่สงบ')
-  ) {
-    return '#e21f36'
-  }
 
-  // LPR / IVA
-  if (
-    text.includes('lpr') ||
-    text.includes('iva')
-  ) {
-    return '#1769aa'
-  }
 
-  // อาชญากรรม
-  if (text.includes('อาชญากรรม')) {
-    return '#1ca56b'
-  }
-
-  // อุบัติเหตุ
-  if (text.includes('อุบัติเหตุ')) {
-    return '#f4bd16'
-  }
-
-  const fallbackColors = [
-    '#8f1730',
-    '#7654a8',
-    '#da6b2d',
-    '#447c92',
-    '#7c8b3a',
-  ]
-
-  return fallbackColors[
-    index % fallbackColors.length
-  ]
-}
-
-const getMarkerZIndex = (name) => {
-  const text =
-    String(name || '').toLowerCase()
-
-  // 1. เหตุความไม่สงบ = สูงสุด
-  if (
-    text.includes('รุนแรง') ||
-    text.includes('ความไม่สงบ')
-  ) {
-    return 4000
-  }
-
-  // 2. LPR / IVA
-  if (
-    text.includes('lpr') ||
-    text.includes('iva')
-  ) {
-    return 3000
-  }
-
-  // 3. อาชญากรรม
-  if (
-    text.includes('อาชญากรรม')
-  ) {
-    return 2000
-  }
-
-  // 4. อุบัติเหตุ
-  if (
-    text.includes('อุบัติเหตุ')
-  ) {
-    return 1000
-  }
-
-  return 0
-}
 
 const formatExcelValue = (value) => {
   if (value === null || value === undefined) return ''
@@ -160,41 +120,81 @@ const normalizeEventDate = (value) => {
     return ''
   }
 
-  // กรณี XLSX ส่งมาเป็น Date
-  if (value instanceof Date) {
-    const day = value.getDate()
-    const month = value.getMonth() + 1
-    const rawYear = value.getFullYear()
+  const formatDate = (
+    day,
+    month,
+    rawYear
+  ) => {
+    let year = Number(rawYear)
 
-    // ถ้า Excel เก็บ 2569 มาแล้ว ไม่ต้อง +543 ซ้ำ
-    const year =
-      rawYear >= 2400
-        ? rawYear
-        : rawYear + 543
+    if (
+      !Number.isFinite(day) ||
+      !Number.isFinite(month) ||
+      !Number.isFinite(year)
+    ) {
+      return ''
+    }
 
-    return `${day}/${month}/${year}`
+    // ปี 2 หลัก เช่น 69
+    // ให้ถือเป็น พ.ศ. 2569
+    if (year >= 0 && year < 100) {
+      year = 2500 + year
+    }
+
+    // ปี ค.ศ. เช่น 2026
+    // แปลงเป็น พ.ศ. 2569
+    if (year >= 1900 && year < 2400) {
+      year += 543
+    }
+
+    const paddedDay =
+      String(day).padStart(2, '0')
+
+    const paddedMonth =
+      String(month).padStart(2, '0')
+
+    return `${paddedDay}/${paddedMonth}/${year}`
   }
 
-  // กรณี Excel ส่งมาเป็น serial number
+  // =========================
+  // XLSX ส่งมาเป็น Date
+  // =========================
+
+  if (value instanceof Date) {
+    return formatDate(
+      value.getDate(),
+      value.getMonth() + 1,
+      value.getFullYear()
+    )
+  }
+
+  // =========================
+  // Excel Serial Number
+  // =========================
+
   if (typeof value === 'number') {
     const parsed =
       XLSX.SSF.parse_date_code(value)
 
     if (parsed) {
-      const year =
-        parsed.y >= 2400
-          ? parsed.y
-          : parsed.y + 543
-
-      return `${parsed.d}/${parsed.m}/${year}`
+      return formatDate(
+        parsed.d,
+        parsed.m,
+        parsed.y
+      )
     }
   }
 
-  const text = String(value).trim()
+  const text =
+    String(value).trim()
 
-  // เผื่อ serial กลายเป็น string เช่น "244593"
+  // =========================
+  // Serial ที่กลายเป็น String
+  // =========================
+
   if (/^\d+(\.\d+)?$/.test(text)) {
-    const numberValue = Number(text)
+    const numberValue =
+      Number(text)
 
     if (numberValue > 20000) {
       const parsed =
@@ -203,17 +203,56 @@ const normalizeEventDate = (value) => {
         )
 
       if (parsed) {
-        const year =
-          parsed.y >= 2400
-            ? parsed.y
-            : parsed.y + 543
-
-        return `${parsed.d}/${parsed.m}/${year}`
+        return formatDate(
+          parsed.d,
+          parsed.m,
+          parsed.y
+        )
       }
     }
   }
 
-  // เช่น 31/8/2569 อยู่แล้ว
+  // =========================
+  // วันที่ที่ผู้ใช้กรอกเอง
+  // รองรับ:
+  // 1/9/69
+  // 01/9/69
+  // 1/09/2569
+  // 01/09/2569
+  // 1/9/2026
+  // =========================
+
+  const parts =
+    text.split('/')
+
+  if (parts.length === 3) {
+    const day =
+      Number(parts[0])
+
+    const month =
+      Number(parts[1])
+
+    const rawYear =
+      Number(parts[2])
+
+    if (
+      Number.isInteger(day) &&
+      Number.isInteger(month) &&
+      Number.isInteger(rawYear) &&
+      day >= 1 &&
+      day <= 31 &&
+      month >= 1 &&
+      month <= 12
+    ) {
+      return formatDate(
+        day,
+        month,
+        rawYear
+      )
+    }
+  }
+
+  // อ่านไม่ได้ ให้คืนค่าต้นฉบับ
   return text
 }
 
@@ -667,16 +706,17 @@ function EventMap({ rows }) {
         }
 
 
-        const color =
-          getCategoryColor(
-            row.eventType,
-            index
+        const category =
+          EVENT_CATEGORIES.find(
+            (item) =>
+              item.code === Number(row.eventCode)
           )
 
+        const color =
+          category?.color || '#7c8b3a'
+
         const markerZIndex =
-            getMarkerZIndex(
-                row.eventType
-        )  
+          category?.zIndex || 0 
 
 
         // =========================
@@ -1271,7 +1311,15 @@ const Section02Editor = forwardRef(
   // หน้า 1... = ตาราง
 
   const summary = useMemo(() => {
-    const categoryCounts = {}
+    const categoryCounts =
+      Object.fromEntries(
+        EVENT_CATEGORIES.map(
+          (item) => [
+            item.code,
+            0,
+          ]
+        )
+      )
 
     const timeCounts = {
         morning: 0,
@@ -1281,26 +1329,52 @@ const Section02Editor = forwardRef(
 
     const dateCounts = {}
 
+    let previousMonthCount = 0
+
     rows.forEach((row) => {
         // =========================
-        // ประเภทเหตุ
+        // จัดกลุ่มตามรหัสเหตุ
         // =========================
 
-        const category =
-        row.eventType?.trim() ||
-        'ไม่ระบุประเภท'
+        const eventCode =
+          Number(row.eventCode)
 
-        categoryCounts[category] =
-        (categoryCounts[category] || 0) + 1
-
+        if (
+          [1, 2, 3, 4].includes(
+            eventCode
+          )
+        ) {
+          categoryCounts[eventCode] += 1
+        }
 
         // =========================
         // วันเกิดเหตุ
         // =========================
 
         if (row.eventDate) {
-        dateCounts[row.eventDate] =
+          dateCounts[row.eventDate] =
             (dateCounts[row.eventDate] || 0) + 1
+
+          const parts =
+            String(row.eventDate).split('/')
+
+          if (parts.length === 3) {
+            const eventMonth =
+              Number(parts[1])
+
+            const eventYear =
+              Number(parts[2])
+
+            const eventMonthKey =
+              eventYear * 12 + eventMonth
+
+            const reportMonthKey =
+              year * 12 + month
+
+            if (eventMonthKey < reportMonthKey) {
+              previousMonthCount += 1
+            }
+          }
         }
 
 
@@ -1327,25 +1401,49 @@ const Section02Editor = forwardRef(
 
 
     const categories =
-        Object.entries(categoryCounts)
-        .map(([name, count]) => ({
-            name,
+      EVENT_CATEGORIES
+        .map((item) => {
+          const count =
+            categoryCounts[item.code] || 0
+
+          return {
+            ...item,
             count,
             percent:
-            rows.length > 0
+              rows.length > 0
                 ? (count / rows.length) * 100
                 : 0,
-        }))
+          }
+        })
         .sort(
-            (a, b) =>
+          (a, b) =>
             b.count - a.count
         )
 
 
     const dates =
-        Object.entries(dateCounts)
+      Object.entries(dateCounts)
+        .filter(([date]) => {
+          const parts =
+            String(date).split('/')
+
+          if (parts.length !== 3) {
+            return false
+          }
+
+          const dateMonth =
+            Number(parts[1])
+
+          const dateYear =
+            Number(parts[2])
+
+          return (
+            dateMonth === month &&
+            dateYear === year
+          )
+        })
         .sort(
-            (a, b) =>
+          (a, b) =>
             b[1] - a[1]
         )
 
@@ -1360,9 +1458,10 @@ const Section02Editor = forwardRef(
 
 
     const topCategory =
-        categories.length > 0
-        ? categories[0]
-        : null
+      rows.length > 0 &&
+      categories.length > 0
+          ? categories[0]
+          : null
 
 
     const timeGroups = [
@@ -1388,17 +1487,18 @@ const Section02Editor = forwardRef(
 
 
     const topTime =
-        [...timeGroups].sort(
-        (a, b) =>
-            b.count - a.count
-        )[0]
-
+      rows.length > 0
+          ? [...timeGroups].sort(
+              (a, b) =>
+                  b.count - a.count
+            )[0]
+          : null
 
     return {
         total: rows.length,
 
         activeDays:
-        Object.keys(dateCounts).length,
+          dates.length,
 
         categories,
 
@@ -1411,46 +1511,13 @@ const Section02Editor = forwardRef(
         topTime,
 
         dateCounts,
+
+        previousMonthCount,
     }
-    }, [rows])
+  }, [rows, month, year])
 
 
-  const donutGradient = useMemo(() => {
-    if (
-        summary.total === 0 ||
-        summary.categories.length === 0
-    ) {
-        return '#edf0f3'
-    }
-
-    let start = 0
-
-    const segments =
-        summary.categories.map(
-        (item, index) => {
-            const end =
-            start + item.percent
-
-            const color =
-            getCategoryColor(
-                item.name,
-                index
-            )
-
-            const segment =
-            `${color} ${start}% ${end}%`
-
-            start = end
-
-            return segment
-        }
-        )
-
-    return `conic-gradient(${segments.join(', ')})`
-    }, [
-    summary.total,
-    summary.categories,
-    ])  
+   
 
     const maxTimeCount = useMemo(() => {
         return Math.max(
@@ -1634,21 +1701,7 @@ const Section02Editor = forwardRef(
     const workbook = XLSX.utils.book_new()
 
     const worksheetData = [
-        EXCEL_HEADERS,
-
-        [
-            1,
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-        ],
+      EXCEL_HEADERS,
     ]
     const worksheet =
       XLSX.utils.aoa_to_sheet(
@@ -1656,17 +1709,18 @@ const Section02Editor = forwardRef(
       )
 
     worksheet['!cols'] = [
-        { wch: 8 },   // ลำดับ
-        { wch: 14 },  // วันที่ข้อมูล
-        { wch: 10 },  // เวลา
-        { wch: 24 },  // Operator
-        { wch: 22 },  // ประเภทเหตุ
-        { wch: 14 },  // วันที่เกิดเหตุ
-        { wch: 12 },  // เวลาเกิดเหตุ
-        { wch: 22 },  // ที่มา alarm
-        { wch: 16 },  // IP
-        { wch: 16 },  // Lat
-        { wch: 16 },  // Long
+      { wch: 8 },   // ลำดับ
+      { wch: 14 },  // วันที่ข้อมูล
+      { wch: 10 },  // เวลา
+      { wch: 24 },  // Operator
+      { wch: 28 },  // ประเภทเหตุ
+      { wch: 10 },  // รหัสเหตุ
+      { wch: 14 },  // วันที่เกิดเหตุ
+      { wch: 12 },  // เวลาเกิดเหตุ
+      { wch: 22 },  // ที่มา alarm
+      { wch: 16 },  // IP
+      { wch: 16 },  // Lat
+      { wch: 16 },  // Long
     ]
 
     XLSX.utils.book_append_sheet(
@@ -1679,31 +1733,27 @@ const Section02Editor = forwardRef(
     const guideData = [
       ['แบบฟอร์มรายงานประจำเดือน'],
       [],
-      ['ประเภทเหตุ', 'คำอธิบาย'],
-      [
-        'เหตุรุนแรง / ความไม่สงบ',
-        'เหตุการณ์ด้านความมั่นคงหรือความไม่สงบ',
-      ],
-      [
-        'LPR / IVA',
-        'เหตุการณ์ที่ระบบอัจฉริยะตรวจจับได้',
-      ],
-      [
-        'อาชญากรรมทั่วไป',
-        'เหตุอาชญากรรมทั่วไป',
-      ],
-      [
-        'อุบัติเหตุ',
-        'อุบัติเหตุและเหตุที่เกี่ยวข้อง',
-      ],
+      ['รหัสเหตุ', 'หมวดเหตุการณ์'],
+      [1, 'เหตุการณ์รุนแรง/ความไม่สงบ'],
+      [2, 'เหตุจากระบบ (LPR/AI)'],
+      [3, 'อาชญากรรมทั่วไป'],
+      [4, 'อุบัติเหตุ'],
       [],
+      [
+        'ประเภทเหตุ',
+        'กรอกชื่อเหตุการณ์จริง เช่น ลักทรัพย์, ทะเลาะวิวาท, รถต้องสงสัย',
+      ],
+      [
+        'รหัสเหตุ',
+        'กรอกเลข 1 - 4 เพื่อใช้จัดกลุ่มสำหรับกราฟและสรุปรายงาน',
+      ],
       [
         'หมายเหตุ',
         'ห้ามเปลี่ยนชื่อหัวคอลัมน์ใน Sheet ข้อมูลเหตุการณ์',
       ],
       [
         'Lat / Long',
-        'ใช้สำหรับสร้างแผนที่ในขั้นตอนถัดไป',
+        'ใช้สำหรับสร้างแผนที่จุดเกิดเหตุ',
       ],
     ]
 
@@ -1817,6 +1867,14 @@ const Section02Editor = forwardRef(
                 row['ประเภทเหตุ'] ||
                 '',
 
+              eventCode:
+                Number(
+                  formatExcelValue(
+                    row['รหัสเหตุ']
+                  )
+                ),
+                
+
               eventDate:
                 normalizeEventDate(
                     row['วันที่เกิดเหตุ']
@@ -1843,6 +1901,24 @@ const Section02Editor = forwardRef(
                 row['Long'] ||
                 '',
             }))
+
+            const invalidEventCodeRows =
+              cleaned.filter(
+                (row) =>
+                  ![1, 2, 3, 4].includes(
+                    row.eventCode
+                  )
+              )
+
+            if (invalidEventCodeRows.length > 0) {
+              setMessage(
+                `พบข้อมูล ${invalidEventCodeRows.length} รายการ ที่รหัสเหตุไม่ถูกต้อง กรุณากรอกรหัสเหตุเป็น 1, 2, 3 หรือ 4`
+              )
+
+              setMessageType('error')
+
+              return
+            }
 
         setRows(cleaned)
         setPreviewPage(0)
@@ -2214,39 +2290,53 @@ const Section02Editor = forwardRef(
 
                     onclone: (clonedDocument) => {
 
-                        const mapNode =
-                            clonedDocument.querySelector(
-                            '.section02-leaflet-map'
-                            )
+                      // =========================
+                      // FIX DONUT COLOR
+                      // =========================
 
-                        if (!mapNode) {
-                            return
-                        }
+                     
 
-                        mapNode
-                            .querySelectorAll(
-                            '.leaflet-tile'
-                            )
-                            .forEach((tile) => {
 
-                            tile.style.opacity = '1'
-                            tile.style.visibility = 'visible'
-                            tile.style.filter = 'none'
-                            tile.style.transition = 'none'
+                      // =========================
+                      // FIX LEAFLET MAP
+                      // =========================
 
-                            })
+                      const mapNode =
+                          clonedDocument.querySelector(
+                              '.section02-leaflet-map'
+                          )
 
-                        const tilePane =
-                            mapNode.querySelector(
-                            '.leaflet-tile-pane'
-                            )
+                      if (mapNode) {
 
-                        if (tilePane) {
-                            tilePane.style.opacity = '1'
-                            tilePane.style.filter = 'none'
-                        }
+                          mapNode
+                              .querySelectorAll(
+                                  '.leaflet-tile'
+                              )
+                              .forEach((tile) => {
 
-                    },
+                                  tile.style.opacity = '1'
+                                  tile.style.visibility = 'visible'
+                                  tile.style.filter = 'none'
+                                  tile.style.transition = 'none'
+
+                              })
+
+                          const tilePane =
+                              mapNode.querySelector(
+                                  '.leaflet-tile-pane'
+                              )
+
+                          if (tilePane) {
+                              tilePane.style.opacity = '1'
+                              tilePane.style.filter = 'none'
+                          }
+
+                      }
+
+                                   },
+
+                    
+                        
 
                     imageTimeout:
                     15000,
@@ -2834,45 +2924,78 @@ const Section02Editor = forwardRef(
 
                 <div className="section02-overview-card">
 
-                    <span className="section02-card-label">
+                  <span className="section02-card-label">
                     ภาพรวมเหตุการณ์
-                    </span>
+                  </span>
 
-                    <strong className="section02-total-number">
+                  <div className="section02-overview-total">
+
+                    <div className="section02-overview-main-icon">
+                      <Siren />
+                    </div>
+
+                    <div className="section02-overview-total-value">
+                      <strong className="section02-total-number">
                         {summary.total}
-                        </strong>
+                      </strong>
 
-                        <span className="section02-total-label">
+                      <span className="section02-total-label">
                         เหตุการณ์
-                        </span>
+                      </span>
+                    </div>
 
-                    <div className="section02-overview-mini">
+                  </div>
+
+
+                  <div className="section02-overview-mini">
 
                     <div>
+                      <span className="section02-overview-mini-icon">
+                        <CalendarDays />
+                      </span>
+
+                      <span className="section02-overview-mini-text">
                         <small>เกิดเหตุรวม</small>
+
                         <strong>
-                        {summary.activeDays} วัน
+                          {summary.activeDays} วัน
                         </strong>
+                      </span>
                     </div>
 
+
                     <div>
+                      <span className="section02-overview-mini-icon">
+                        <Clock3 />
+                      </span>
+
+                      <span className="section02-overview-mini-text">
                         <small>ช่วงเวลาสูงสุด</small>
+
                         <strong>
-                        {summary.topTime?.time || '-'}
+                          {summary.topTime?.time || '-'}
                         </strong>
+                      </span>
                     </div>
+
 
                     <div>
+                      <span className="section02-overview-mini-icon">
+                        <CarFront />
+                      </span>
+
+                      <span className="section02-overview-mini-text">
                         <small>ประเภทหลัก</small>
+
                         <strong>
-                        {summary.topCategory?.name || '-'}
+                          {summary.topCategory?.name || '-'}
                         </strong>
+                      </span>
                     </div>
 
-                    </div>
+                  </div>
 
                 </div>
-
 
                 <div className="section02-category-card">
 
@@ -2882,27 +3005,59 @@ const Section02Editor = forwardRef(
 
                     <div className="section02-category-chart">
 
-                        <div
-                        className="section02-donut"
-                        style={{
-                            background:
-                            donutGradient,
-                        }}
-                        >
+                        <div className="section02-donut">
 
-                        <div className="section02-donut-center">
+                            <svg
+                              className="section02-donut-svg"
+                              viewBox="0 0 100 100"
+                            >
+                              <circle
+                                cx="50"
+                                cy="50"
+                                r="40"
+                                fill="none"
+                                stroke="#edf0f3"
+                                strokeWidth="20"
+                              />
 
-                            <strong>
-                            {summary.total}
-                            </strong>
+                              {summary.total > 0 &&
+                                summary.categories.map(
+                                  (item, index) => {
 
-                            <span>
-                            เหตุการณ์
-                            </span>
+                                    const previousPercent =
+                                      summary.categories
+                                        .slice(0, index)
+                                        .reduce(
+                                          (sum, category) =>
+                                            sum + category.percent,
+                                          0
+                                        )
 
-                        </div>
+                                    return (
+                                      <circle
+                                        key={item.code}
+                                        cx="50"
+                                        cy="50"
+                                        r="40"
+                                        fill="none"
+                                        stroke={item.color}
+                                        strokeWidth="20"
+                                        pathLength="100"
+                                        strokeDasharray={`${item.percent} ${100 - item.percent}`}
+                                        strokeDashoffset={-previousPercent}
+                                        transform="rotate(-90 50 50)"
+                                      />
+                                    )
+                                  }
+                                )}
+                            </svg>
 
-                        </div>
+                            <div className="section02-donut-center">
+                              <strong>{summary.total}</strong>
+                              <span>เหตุการณ์</span>
+                            </div>
+
+                          </div>
 
 
                         <div className="section02-donut-legend">
@@ -2910,7 +3065,7 @@ const Section02Editor = forwardRef(
                         {summary.categories.length > 0 ? (
 
                             summary.categories.map(
-                            (item, index) => (
+                              (item) => (    
 
                                 <div
                                     className="section02-donut-legend-row"
@@ -2920,11 +3075,7 @@ const Section02Editor = forwardRef(
                                     <span
                                         className="section02-donut-dot"
                                         style={{
-                                        background:
-                                            getCategoryColor(
-                                            item.name,
-                                            index
-                                            ),
+                                          background: item.color,
                                         }}
                                     />
 
@@ -3122,17 +3273,24 @@ const Section02Editor = forwardRef(
 
                     <div className="section02-calendar-note">
 
-                        <span>
+                      <span>
                         สีเข้ม = จำนวนเหตุการณ์มาก
-                        </span>
+                      </span>
 
-                        {summary.topDate && (
+                      {summary.previousMonthCount > 0 && (
+                        <span className="section02-previous-month">
+                          เหตุจากเดือนก่อน{' '}
+                          {summary.previousMonthCount} เหตุการณ์
+                        </span>
+                      )}
+
+                      {summary.topDate && (
                         <strong>
-                            สูงสุด {summary.topDate.date}
-                            {' · '}
-                            {summary.topDate.count} เหตุการณ์
+                          สูงสุด {summary.topDate.date}
+                          {' · '}
+                          {summary.topDate.count} เหตุการณ์
                         </strong>
-                        )}
+                      )}
 
                     </div>
 
@@ -3256,7 +3414,7 @@ const Section02Editor = forwardRef(
                         <div className="section02-map-legend">
 
                             {summary.categories.map(
-                            (item, index) => (
+                                (item) => (
 
                                 <div
                                 className="section02-map-legend-item"
@@ -3266,11 +3424,7 @@ const Section02Editor = forwardRef(
                                 <span
                                     className="section02-map-legend-color"
                                     style={{
-                                    background:
-                                        getCategoryColor(
-                                        item.name,
-                                        index
-                                        ),
+                                      background: item.color,
                                     }}
                                 />
 
