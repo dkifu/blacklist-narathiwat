@@ -1318,9 +1318,14 @@ const Section01Editor = forwardRef(
     const originalTransformOrigin =
         node.style.transformOrigin
 
+    const originalBorderRadius =
+        node.style.borderRadius    
+
     node.style.transform = 'none'
     node.style.transformOrigin =
         'top left'
+
+    node.style.borderRadius = '0px'    
 
     const originalCreatePattern =
         CanvasRenderingContext2D.prototype.createPattern
@@ -1381,6 +1386,8 @@ const Section01Editor = forwardRef(
 
             windowWidth: 1120,
             windowHeight: 792,
+
+            
             }
         )
 
@@ -1398,6 +1405,9 @@ const Section01Editor = forwardRef(
 
         node.style.transformOrigin =
         originalTransformOrigin
+
+        node.style.borderRadius =
+        originalBorderRadius
 
     }
     }
