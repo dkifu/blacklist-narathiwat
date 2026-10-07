@@ -1,7 +1,448 @@
+/* =========================================================
+   ALERT REPORT PAGE
+========================================================= */
+
 .alert-report-page {
   width: 100%;
 }
 
+
+/* =========================================================
+   VSS05 TOOLBAR
+========================================================= */
+
+.vss05-toolbar {
+  width: 100%;
+
+  margin-bottom: 14px;
+
+  padding: 20px;
+
+  border:
+    1px solid #2c3a50;
+
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #111b29,
+      #0d1520
+    );
+}
+
+
+/* HEADER */
+
+.vss05-toolbar-head {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 18px;
+}
+
+
+.vss05-toolbar-code {
+  display: inline-block;
+
+  margin-bottom: 5px;
+
+  color: #ff416c;
+
+  font-size: 11px;
+  font-weight: 900;
+
+  letter-spacing: 0.12em;
+}
+
+
+.vss05-toolbar-head h2 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 18px;
+  font-weight: 800;
+}
+
+
+.vss05-toolbar-head p {
+  margin: 5px 0 0;
+
+  color: #8090a5;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   GRID
+========================================================= */
+
+.vss05-toolbar-grid {
+  display: grid;
+
+  grid-template-columns:
+    1.2fr
+    1fr
+    1fr
+    1.5fr;
+
+  gap: 12px;
+}
+
+
+/* =========================================================
+   TOOL BLOCK
+========================================================= */
+
+.vss05-tool-block {
+  min-width: 0;
+}
+
+
+.vss05-tool-label {
+  min-height: 24px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  margin-bottom: 7px;
+
+  color: #98a8bd;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   UPLOAD
+========================================================= */
+
+.vss05-upload-button {
+  width: 100%;
+  min-height: 42px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 0 14px;
+
+  border:
+    1px dashed #52657e;
+
+  border-radius: 9px;
+
+  background: #172232;
+
+  color: #dce7f5;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+
+.vss05-upload-button:hover {
+  border-color: #ff416c;
+
+  background: #1c293b;
+}
+
+
+/* FILE SELECTED */
+
+.vss05-file-selected {
+  min-height: 42px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding:
+    6px 8px 6px 12px;
+
+  border:
+    1px solid #2e7f59;
+
+  border-radius: 9px;
+
+  background:
+    rgba(
+      24,
+      118,
+      77,
+      0.12
+    );
+}
+
+
+.vss05-file-selected > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+
+.vss05-file-selected strong {
+  overflow: hidden;
+
+  color: #dbf5e8;
+
+  font-size: 11px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+.vss05-file-selected span {
+  margin-top: 1px;
+
+  color: #729d87;
+
+  font-size: 9px;
+}
+
+
+.vss05-file-reset {
+  width: 30px;
+  height: 30px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  flex: none;
+
+  border: 0;
+
+  border-radius: 7px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.05
+    );
+
+  color: #93a7bc;
+
+  cursor: pointer;
+}
+
+
+.vss05-file-reset:hover {
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   SELECT
+========================================================= */
+
+.vss05-select {
+  width: 100%;
+  min-height: 42px;
+
+  padding: 0 10px;
+
+  border:
+    1px solid #34455e;
+
+  border-radius: 9px;
+
+  outline: none;
+
+  background: #101b2b;
+
+  color: #e5edf7;
+
+  font-family: inherit;
+  font-size: 12px;
+}
+
+
+.vss05-select:focus {
+  border-color: #5979a5;
+}
+
+
+/* CENTER USER */
+
+.vss05-fixed-value {
+  min-height: 42px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 0 11px;
+
+  border:
+    1px solid #34455e;
+
+  border-radius: 9px;
+
+  background: #101b2b;
+
+  color: #dce7f5;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.vss05-action-buttons {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 8px;
+}
+
+
+.vss05-convert-button,
+.vss05-download-button {
+  min-height: 42px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  padding: 0 12px;
+
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+
+.vss05-convert-button {
+  border:
+    1px solid #b91f47;
+
+  background: #b91f47;
+
+  color: #ffffff;
+}
+
+
+.vss05-download-button {
+  border:
+    1px solid #168653;
+
+  background: #168653;
+
+  color: #ffffff;
+}
+
+
+.vss05-convert-button:disabled,
+.vss05-download-button:disabled {
+  border-color: #2d394a;
+
+  background: #1a2431;
+
+  color: #576779;
+
+  cursor: not-allowed;
+
+  opacity: 0.75;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.vss05-status-row {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  margin-top: 14px;
+
+  padding-top: 12px;
+
+  border-top:
+    1px solid #243246;
+
+  color: #71839a;
+
+  font-size: 10px;
+}
+
+
+.vss05-status-dot {
+  width: 7px;
+  height: 7px;
+
+  flex: none;
+
+  border-radius: 50%;
+
+  background: #536174;
+}
+
+
+.vss05-status-dot.ready {
+  background: #22b573;
+
+  box-shadow:
+    0 0 10px
+    rgba(
+      34,
+      181,
+      115,
+      0.45
+    );
+}
+
+
+/* =========================================================
+   PHUKET EYES IFRAME
+========================================================= */
 
 .alert-report-frame {
   display: block;
@@ -12,11 +453,43 @@
   border: 0;
   border-radius: 14px;
 
-  background: #f3f5fa;
+  background: #0a1122;
 }
 
 
-@media (max-width: 900px) {
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1200px) {
+
+  .vss05-toolbar-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+}
+
+
+@media (max-width: 700px) {
+
+  .vss05-toolbar {
+    padding: 15px;
+  }
+
+
+  .vss05-toolbar-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .vss05-action-buttons {
+    grid-template-columns: 1fr;
+  }
+
 
   .alert-report-frame {
     min-height: 1400px;
