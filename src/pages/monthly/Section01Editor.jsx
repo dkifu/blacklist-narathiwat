@@ -1322,6 +1322,40 @@ const Section01Editor = forwardRef(
     node.style.transformOrigin =
         'top left'
 
+    const originalCreatePattern =
+        CanvasRenderingContext2D.prototype.createPattern
+
+    CanvasRenderingContext2D.prototype.createPattern =
+        function (image, repetition) {
+
+            if (
+                image instanceof HTMLCanvasElement &&
+                (image.width === 0 || image.height === 0)
+            ) {
+
+                console.warn(
+                    'Fixed zero-size canvas used by html2canvas:',
+                    image.width,
+                    image.height
+                )
+
+                if (image.width === 0) {
+                    image.width = 1
+                }
+
+                if (image.height === 0) {
+                    image.height = 1
+                }
+
+            }
+
+            return originalCreatePattern.call(
+                this,
+                image,
+                repetition
+            )
+        }    
+
     try {
 
         const canvas =
@@ -1355,6 +1389,9 @@ const Section01Editor = forwardRef(
         )
 
     } finally {
+
+        CanvasRenderingContext2D.prototype.createPattern =
+        originalCreatePattern      
 
         node.style.transform =
         originalTransform
