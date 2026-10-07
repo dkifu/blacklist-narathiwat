@@ -88,10 +88,117 @@ const parseAlertDateTime = (value) => {
   }
 }
 
+const normalizePlateForMatch = (value) => {
+
+  const thaiDigits =
+    '๐๑๒๓๔๕๖๗๘๙'
+
+  return String(value || '')
+    .normalize('NFKC')
+    .replace(
+      /[๐-๙]/g,
+      (digit) =>
+        String(
+          thaiDigits.indexOf(digit)
+        )
+    )
+    .replace(
+      /[\s\u00A0\u200B-\u200D\uFEFF\-–—.]/g,
+      ''
+    )
+    .toUpperCase()
+}
+
+
+const normalizeProvinceForMatch = (value) => {
+
+  return String(value || '')
+    .normalize('NFKC')
+    .trim()
+    .replace(/^จังหวัด\s*/i, '')
+    .replace(/^จ\.\s*/i, '')
+    .replace(/\s+/g, '')
+}
+
+
+const makePlateMatchKey = (
+  plate,
+  province
+) => {
+
+  return (
+    normalizePlateForMatch(plate) +
+    '|' +
+    normalizeProvinceForMatch(province)
+  )
+}
+
+
+const blobToDataUrl = (blob) => {
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const reader =
+        new FileReader()
+
+      reader.onload =
+        () => resolve(reader.result)
+
+      reader.onerror =
+        () => reject(reader.error)
+
+      reader.readAsDataURL(blob)
+    }
+  )
+}
+
+
+const parseTemplateDateTime = (value) => {
+
+  const text =
+    String(value || '').trim()
+
+  const match =
+    text.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/
+    )
+
+  if (!match) {
+    return {
+      date: '',
+      time: '',
+    }
+  }
+
+  const [
+    ,
+    day,
+    month,
+    year,
+    hour,
+    minute,
+  ] = match
+
+  const pad =
+    (number) =>
+      String(number).padStart(2, '0')
+
+  return {
+    date:
+      `${year}-${pad(month)}-${pad(day)}`,
+
+    time:
+      `${pad(hour)}:${pad(minute)}`,
+  }
+}
+
 
 function AlertReport({ profile }) {
 
   const fileInputRef = useRef(null)
+
+  const reportFrameRef = useRef(null)
 
   const [selectedFile, setSelectedFile] =
     useState(null)
@@ -283,6 +390,418 @@ function AlertReport({ profile }) {
 
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
+    }
+  }
+
+  const buildPhuketEyesPayload =
+  async (sourceRows) => {
+
+    /*
+     * โหลดทะเบียนรถในระบบ
+     */
+    const {
+      data: vehicleRows,
+      error: vehicleError,
+    } = await supabase
+      .from('vehicles')
+      .select(`
+        id,
+        plate_letters,
+        plate_number,
+        province,
+        thumbnail_path,
+        case_status,
+        created_at
+      `)
+      .order(
+        'created_at',
+        {
+          ascending: false,
+        }
+      )
+
+    if (vehicleError) {
+      throw vehicleError
+    }
+
+
+    /*
+     * ทำ Index ทะเบียนในระบบ
+     *
+     * ถ้ามีทะเบียนซ้ำ
+     * เลือกรถ open ก่อน
+     * และเลือกรายการใหม่กว่า
+     */
+    const sortedVehicles =
+      [...(vehicleRows || [])]
+        .sort((a, b) => {
+
+          const aOpen =
+            a.case_status === 'open'
+
+          const bOpen =
+            b.case_status === 'open'
+
+          if (aOpen !== bOpen) {
+            return aOpen ? -1 : 1
+          }
+
+          return (
+            new Date(
+              b.created_at || 0
+            ) -
+            new Date(
+              a.created_at || 0
+            )
+          )
+        })
+
+
+    const vehicleMap =
+      new Map()
+
+
+    sortedVehicles.forEach(
+      (vehicle) => {
+
+        const plate =
+          [
+            vehicle.plate_letters,
+            vehicle.plate_number,
+          ]
+            .filter(Boolean)
+            .join('')
+
+        const key =
+          makePlateMatchKey(
+            plate,
+            vehicle.province
+          )
+
+        if (
+          key &&
+          vehicle.thumbnail_path &&
+          !vehicleMap.has(key)
+        ) {
+          vehicleMap.set(
+            key,
+            vehicle
+          )
+        }
+      }
+    )
+
+
+    /*
+     * รวมข้อมูล Excel
+     * ทะเบียนเดียวกัน = รถ 1 คัน
+     * แต่มีหลายจุดพบเหตุ
+     */
+    const groupedVehicles =
+      new Map()
+
+    const allDateTimes = []
+
+
+    sourceRows.forEach((row) => {
+
+      const plate =
+        String(
+          row['ทะเบียนรถ'] || ''
+        ).trim()
+
+      const province =
+        String(
+          row['จังหวัด'] || ''
+        ).trim()
+
+
+      if (!plate) {
+        return
+      }
+
+
+      const key =
+        makePlateMatchKey(
+          plate,
+          province
+        )
+
+
+      const dateTime =
+        parseTemplateDateTime(
+          row['วันที่-เวลา']
+        )
+
+
+      if (dateTime.date) {
+
+        allDateTimes.push(
+          `${dateTime.date}T${
+            dateTime.time ||
+            '00:00'
+          }`
+        )
+      }
+
+
+      if (
+        !groupedVehicles.has(key)
+      ) {
+
+        groupedVehicles.set(
+          key,
+          {
+            plate,
+            prov: province,
+
+            owner:
+              String(
+                row['เจ้าของเรื่อง'] ||
+                ''
+              ).trim(),
+
+            type:
+              String(
+                row['รายละเอียดคดี'] ||
+                ''
+              ).trim(),
+
+            s: [],
+
+            imageDataUrl: '',
+          }
+        )
+      }
+
+
+      const vehicle =
+        groupedVehicles.get(key)
+
+
+      /*
+       * ถ้าแถวแรกไม่มีข้อมูล
+       * แต่แถวถัดไปมี
+       */
+      if (
+        !vehicle.owner &&
+        row['เจ้าของเรื่อง']
+      ) {
+        vehicle.owner =
+          String(
+            row['เจ้าของเรื่อง']
+          ).trim()
+      }
+
+
+      if (
+        !vehicle.type &&
+        row['รายละเอียดคดี']
+      ) {
+        vehicle.type =
+          String(
+            row['รายละเอียดคดี']
+          ).trim()
+      }
+
+
+      vehicle.s.push({
+        place:
+          String(
+            row['จุดที่พบ'] || ''
+          ).trim(),
+
+        d: dateTime.date,
+
+        t: dateTime.time,
+      })
+    })
+
+
+    /*
+     * ดึง Thumbnail
+     * เฉพาะรถที่ทะเบียนตรงกัน
+     */
+    await Promise.all(
+
+      [...groupedVehicles.entries()]
+        .map(
+          async ([key, item]) => {
+
+            const vehicle =
+              vehicleMap.get(key)
+
+            if (
+              !vehicle?.thumbnail_path
+            ) {
+              return
+            }
+
+
+            const {
+              data: thumbnailBlob,
+              error: thumbnailError,
+            } =
+              await supabase.storage
+                .from(
+                  'vehicle-images'
+                )
+                .download(
+                  vehicle.thumbnail_path
+                )
+
+
+            if (
+              thumbnailError ||
+              !thumbnailBlob
+            ) {
+
+              console.warn(
+                'โหลด Thumbnail ไม่สำเร็จ:',
+                key,
+                thumbnailError
+              )
+
+              return
+            }
+
+
+            try {
+
+              item.imageDataUrl =
+                await blobToDataUrl(
+                  thumbnailBlob
+                )
+
+            } catch (error) {
+
+              console.warn(
+                'แปลง Thumbnail ไม่สำเร็จ:',
+                key,
+                error
+              )
+            }
+          }
+        )
+    )
+
+
+    /*
+     * หาวันเริ่ม / วันจบ
+     */
+    allDateTimes.sort()
+
+
+    const firstDateTime =
+      allDateTimes[0] || ''
+
+    const lastDateTime =
+      allDateTimes[
+        allDateTimes.length - 1
+      ] || ''
+
+
+    const now =
+      new Date()
+
+    const pad =
+      (number) =>
+        String(number)
+          .padStart(2, '0')
+
+    const today =
+      `${now.getFullYear()}-${pad(
+        now.getMonth() + 1
+      )}-${pad(now.getDate())}`
+
+
+    const reportDate =
+      lastDateTime
+        ? lastDateTime.slice(0, 10)
+        : today
+
+
+    return {
+
+      reportDate,
+
+      start: {
+        d:
+          firstDateTime
+            ? firstDateTime.slice(0, 10)
+            : reportDate,
+
+        t:
+          firstDateTime
+            ? firstDateTime.slice(11, 16)
+            : '',
+      },
+
+      end: {
+        d:
+          lastDateTime
+            ? lastDateTime.slice(0, 10)
+            : reportDate,
+
+        t:
+          lastDateTime
+            ? lastDateTime.slice(11, 16)
+            : '',
+      },
+
+      face: [],
+
+      lpr:
+        [...groupedVehicles.values()],
+    }
+  }
+
+  const sendToPhuketEyes =
+  (payload) => {
+
+    const frame =
+      reportFrameRef.current
+
+    if (!frame) {
+      return
+    }
+
+    const send = () => {
+
+      frame.contentWindow
+        ?.postMessage(
+          {
+            type:
+              'LOAD_VSS05_DATA',
+
+            payload,
+          },
+
+          window.location.origin
+        )
+    }
+
+
+    try {
+
+      if (
+        frame.contentDocument
+          ?.readyState === 'complete'
+      ) {
+        send()
+      } else {
+
+        frame.addEventListener(
+          'load',
+          send,
+          {
+            once: true,
+          }
+        )
+      }
+
+    } catch {
+      send()
     }
   }
 
@@ -666,6 +1185,33 @@ function AlertReport({ profile }) {
         outputRows.length,
 
     })
+
+    /*
+    * ส่งข้อมูลเข้า Phuket Eyes
+    */
+    try {
+
+      const phuketEyesPayload =
+        await buildPhuketEyesPayload(
+          sourceRows
+        )
+
+      sendToPhuketEyes(
+        phuketEyesPayload
+      )
+
+    } catch (templateError) {
+
+      console.error(
+        'Load Phuket Eyes error:',
+        templateError
+      )
+
+      window.alert(
+        'สร้าง Excel VSS05 สำเร็จแล้ว\n' +
+        'แต่ไม่สามารถเติมข้อมูลเข้า Phuket Eyes ได้'
+      )
+    }
 
 
   } catch (error) {
@@ -1084,6 +1630,7 @@ function AlertReport({ profile }) {
       ========================================== */}
 
       <iframe
+        ref={reportFrameRef}
         className="alert-report-frame"
         src={reportUrl}
         title="VSS05 รายงานการแจ้งเตือน"

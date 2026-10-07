@@ -850,6 +850,238 @@ function initForm(){
   fillLists(); buildForm(); render();
 }
 
+
+
+
+
+
+/* ==================================================
+   รับข้อมูล VSS05 จาก React
+================================================== */
+
+function loadImageFromDataUrl(
+  item,
+  dataUrl
+) {
+
+  return new Promise(
+    (resolve) => {
+
+      if (!dataUrl) {
+        resolve();
+        return;
+      }
+
+      const im =
+        new Image();
+
+      im.onload = () => {
+
+        item._url =
+          dataUrl;
+
+        item._im =
+          im;
+
+        resolve();
+      };
+
+      im.onerror = () => {
+        resolve();
+      };
+
+      im.src =
+        dataUrl;
+    }
+  );
+}
+
+
+window.addEventListener(
+  'message',
+  async (event) => {
+
+    /*
+     * รับเฉพาะเว็บเดียวกัน
+     */
+    if (
+      event.origin !==
+      window.location.origin
+    ) {
+      return;
+    }
+
+
+    const message =
+      event.data;
+
+
+    if (
+      !message ||
+      message.type !==
+        'LOAD_VSS05_DATA'
+    ) {
+      return;
+    }
+
+
+    const data =
+      message.payload || {};
+
+
+    const incomingLpr =
+      Array.isArray(data.lpr)
+        ? data.lpr
+        : [];
+
+
+    /*
+     * สร้าง State ใหม่
+     */
+    S = {
+
+      reportDate:
+        data.reportDate ||
+        isoOf(new Date()),
+
+
+      start: {
+
+        d:
+          data.start?.d ||
+          data.reportDate ||
+          isoOf(new Date()),
+
+        t:
+          data.start?.t || '',
+      },
+
+
+      end: {
+
+        d:
+          data.end?.d ||
+          data.reportDate ||
+          isoOf(new Date()),
+
+        t:
+          data.end?.t || '',
+      },
+
+
+      face: [],
+
+
+      lpr:
+        incomingLpr.map(
+          (item) => ({
+
+            plate:
+              item.plate || '',
+
+            prov:
+              item.prov || '',
+
+            owner:
+              item.owner || '',
+
+            type:
+              item.type || '',
+
+            s:
+              Array.isArray(item.s) &&
+              item.s.length
+                ? item.s.map(
+                    (sight) => ({
+
+                      place:
+                        sight.place ||
+                        '',
+
+                      d:
+                        sight.d ||
+                        '',
+
+                      t:
+                        sight.t ||
+                        '',
+                    })
+                  )
+                : [
+                    {
+                      place: '',
+                      d:
+                        data.end?.d ||
+                        data.reportDate ||
+                        '',
+                      t: '',
+                    },
+                  ],
+          })
+        ),
+
+
+      savedAt:
+        Date.now(),
+    };
+
+
+    /*
+     * ใส่รูป Thumbnail
+     */
+    await Promise.all(
+
+      S.lpr.map(
+        async (
+          item,
+          index
+        ) => {
+
+          const imageDataUrl =
+            incomingLpr[
+              index
+            ]?.imageDataUrl;
+
+          if (!imageDataUrl) {
+            return;
+          }
+
+          await loadImageFromDataUrl(
+            item,
+            imageDataUrl
+          );
+        }
+      )
+    );
+
+
+    /*
+     * สร้างฟอร์ม +
+     * Preview ใหม่
+     */
+    rebuild();
+
+
+    const imageCount =
+      incomingLpr.filter(
+        (item) =>
+          item.imageDataUrl
+      ).length;
+
+
+    say(
+      `รับข้อมูล VSS05 แล้ว ${S.lpr.length} คัน` +
+      (
+        imageCount
+          ? ` • พบภาพ ${imageCount} คัน`
+          : ''
+      )
+    );
+  }
+);
+
+
+
 /* เริ่มต้น */
 initForm();
 const loads = [400,500,600,700,800].map(w=>document.fonts.load(`${w} 24px "Noto Sans Thai"`,'ภูเก็ต Phuket'));
