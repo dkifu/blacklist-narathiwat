@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap');
+
 /* =========================================================
    SECTION 01 — MONTHLY COVER
 ========================================================= */
@@ -377,6 +379,8 @@
   --cover-red-deep: #54030e;
   --cover-text: #191d26;
 
+  font-family: 'Noto Sans Thai', sans-serif;
+
   position: relative;
 
   width: 1120px;
@@ -472,16 +476,14 @@
 }
 
 .section01-top-agency-text strong {
-  font-size: clamp(8px, 1.15vw, 18px);
+  font-size: 18px;
   line-height: 1.25;
 }
 
 .section01-top-agency-text span {
   margin-top: 2%;
-
   opacity: 0.82;
-
-  font-size: clamp(4px, 0.52vw, 8px);
+  font-size: 8px;
   line-height: 1.35;
 }
 
@@ -617,7 +619,7 @@
 
   color: #8d0e23;
 
-  font-size: clamp(24px, 3.6vw, 56px);
+  font-size: 40px;
   font-weight: 900;
   line-height: 1.08;
 }
@@ -653,12 +655,10 @@
 
 .section01-title-zone p {
   max-width: 88%;
-
   margin: 0 auto;
-
   color: #20242c;
 
-  font-size: clamp(7px, 1vw, 16px);
+  font-size: 14px;
   font-weight: 700;
   line-height: 1.55;
 }
@@ -671,7 +671,7 @@
   justify-content: center;
   gap: 1%;
 
-  font-size: clamp(7px, 0.95vw, 15px);
+  font-size: 14px;
 }
 
 .section01-period-line span {
