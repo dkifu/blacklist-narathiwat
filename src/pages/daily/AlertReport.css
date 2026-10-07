@@ -1,0 +1,25 @@
+.alert-report-page {
+  width: 100%;
+}
+
+
+.alert-report-frame {
+  display: block;
+
+  width: 100%;
+  min-height: 1100px;
+
+  border: 0;
+  border-radius: 14px;
+
+  background: #f3f5fa;
+}
+
+
+@media (max-width: 900px) {
+
+  .alert-report-frame {
+    min-height: 1400px;
+  }
+
+}
