@@ -1,0 +1,1269 @@
+/* ==========================================
+   USAGE STATISTICS REPORT
+========================================== */
+
+.usage-report-page {
+  width: 100%;
+  color: #eef3fb;
+}
+
+/* HERO */
+
+.usage-report-hero {
+  position: relative;
+  overflow: hidden;
+
+  padding: 34px 36px;
+  margin-bottom: 22px;
+
+  border: 1px solid #293548;
+  border-radius: 18px;
+
+  background:
+    radial-gradient(
+      circle at 88% 15%,
+      rgba(201, 29, 75, 0.17),
+      transparent 36%
+    ),
+    linear-gradient(135deg, #162030, #0f1621);
+
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.18);
+}
+
+.usage-report-hero::after {
+  content: "";
+  position: absolute;
+
+  width: 280px;
+  height: 280px;
+
+  top: -100px;
+  right: -70px;
+
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+
+  pointer-events: none;
+}
+
+.usage-report-eyebrow {
+  display: block;
+  margin-bottom: 10px;
+
+  color: #ff416c;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.usage-report-hero h1 {
+  margin: 0;
+
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.usage-report-hero p {
+  margin: 12px 0 0;
+
+  color: #90a1b7;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+/* REPORT SECTIONS */
+
+.usage-report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(165px, auto);
+  gap: 18px;
+
+  counter-reset: usage-section;
+}
+
+.usage-report-section {
+  position: relative;
+  min-width: 0;
+
+  padding: 26px;
+
+  border: 1px solid #2a3749;
+  border-radius: 16px;
+
+  background: linear-gradient(
+    145deg,
+    #172230,
+    #111923
+  );
+
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+
+  counter-increment: usage-section;
+}
+
+.usage-report-section::before {
+  content: "0" counter(usage-section);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 42px;
+  height: 32px;
+  margin-bottom: 18px;
+
+  padding: 0 8px;
+  box-sizing: border-box;
+
+  border-radius: 9px;
+  background: rgba(255, 65, 108, 0.12);
+  border: 1px solid rgba(255, 65, 108, 0.2);
+
+  color: #ff416c;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.usage-report-section h2 {
+  margin: 0 0 10px;
+
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.usage-report-section p {
+  margin: 0;
+
+  color: #8798af;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 850px) {
+  .usage-report-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .usage-report-hero {
+    padding: 25px 20px;
+  }
+
+  .usage-report-hero h1 {
+    font-size: 23px;
+  }
+
+  .usage-report-section {
+    padding: 20px;
+  }
+}
+
+/* ==========================================
+   CLICKABLE REPORT CARDS
+========================================== */
+
+.usage-report-section--button {
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.usage-report-section--button:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 65, 108, 0.5);
+
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.usage-report-section--button:focus-visible {
+  outline: 2px solid #ff416c;
+  outline-offset: 3px;
+}
+
+/* DETAIL PAGE */
+
+.usage-report-section--detail::before {
+  display: none;
+}
+
+.usage-report-section--detail
+.daily-hub-back-button {
+  margin-bottom: 25px;
+}
+
+/* ==========================================
+   USAGE REPORT - CENTER SELECTOR
+========================================== */
+
+.usage-report-center-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 25px;
+  padding: 20px 22px;
+
+  border: 1px solid #2d3c51;
+  border-radius: 12px;
+
+  background: #111b29;
+}
+
+.usage-report-center-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.usage-report-center-label strong {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.usage-report-center-label span {
+  color: #8295ad;
+  font-size: 12px;
+}
+
+.usage-report-center-select {
+  width: 100%;
+  max-width: 350px;
+  min-height: 44px;
+
+  padding: 0 14px;
+
+  border: 1px solid #394b63;
+  border-radius: 9px;
+
+  background: #192638;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 13px;
+
+  cursor: pointer;
+}
+
+.usage-report-center-select:focus {
+  outline: none;
+  border-color: #ff416c;
+}
+
+.usage-report-center-locked {
+  padding: 12px 18px;
+
+  border: 1px solid #3e3044;
+  border-radius: 9px;
+
+  background: rgba(255, 65, 108, 0.08);
+
+  color: #ff7193;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 650px) {
+  .usage-report-center-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+
+  .usage-report-center-select {
+    max-width: 100%;
+  }
+}
+
+/* ==========================================
+   DAILY USAGE STATISTICS FORM
+========================================== */
+
+.usage-daily-form {
+  margin-top: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* HEADING */
+
+.usage-daily-heading {
+  margin-bottom: 22px;
+  padding-left: 14px;
+  border-left: 4px solid #e52b5a;
+}
+
+.usage-daily-heading h2 {
+  margin: 0 0 6px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.usage-daily-heading p {
+  margin: 0;
+  color: #91a0b5;
+  font-size: 13px;
+}
+
+/* DATE SELECTOR */
+
+.usage-daily-date-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+
+  margin-bottom: 22px;
+  padding: 18px 20px;
+
+  background: #111b29;
+  border: 1px solid #2d3c51;
+  border-radius: 12px;
+}
+
+.usage-daily-date-box label {
+  color: #e6edf7;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.usage-daily-date-box input {
+  width: 210px;
+  max-width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
+
+  padding: 0 13px;
+
+  background: #192638;
+  color: #ffffff;
+
+  border: 1px solid #394b63;
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 13px;
+
+  color-scheme: dark;
+}
+
+.usage-daily-date-box input:focus {
+  outline: none;
+  border-color: #ff416c;
+}
+
+/* TABLE CONTAINER */
+
+.usage-daily-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+
+  border: 1px solid #2d3c51;
+  border-radius: 12px;
+
+  background: #111b29;
+}
+
+/* TABLE */
+
+.usage-daily-table {
+  width: 100%;
+  min-width: 560px;
+
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.usage-daily-table th:first-child {
+  width: 46%;
+}
+
+.usage-daily-table thead {
+  background: #1d2a3c;
+}
+
+.usage-daily-table th {
+  padding: 17px 18px;
+
+  color: #ccd8e8;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+
+  border-bottom: 1px solid #34445b;
+}
+
+.usage-daily-table th:first-child {
+  text-align: left;
+}
+
+.usage-daily-table td {
+  padding: 14px 18px;
+
+  color: #dce6f3;
+  font-size: 13px;
+
+  border-bottom: 1px solid #253246;
+}
+
+.usage-daily-table td:first-child {
+  font-weight: 600;
+}
+
+.usage-daily-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.usage-daily-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+/* NUMBER INPUTS */
+
+.usage-daily-table input[type="number"] {
+  display: block;
+
+  width: 100%;
+  max-width: 145px;
+  min-height: 42px;
+  box-sizing: border-box;
+
+  margin: 0 auto;
+  padding: 0 12px;
+
+  background: #182538;
+  color: #ffffff;
+
+  border: 1px solid #364962;
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.usage-daily-table input[type="number"]::placeholder {
+  color: #62758e;
+}
+
+.usage-daily-table input[type="number"]:focus {
+  outline: none;
+
+  border-color: #ff416c;
+  background: #203149;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 650px) {
+
+  .usage-daily-heading h2 {
+    font-size: 18px;
+  }
+
+  .usage-daily-date-box {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .usage-daily-date-box input {
+    width: 100%;
+  }
+
+  .usage-daily-table th,
+  .usage-daily-table td {
+    padding: 12px;
+  }
+
+}
+
+/* ==========================================
+   MONTHLY USAGE - TWO PANEL LAYOUT
+========================================== */
+
+.usage-monthly-panels {
+  --usage-row-height: 68px;
+  --usage-header-height: 76px;
+
+  display: grid;
+  grid-template-columns:
+    minmax(280px, 36%)
+    minmax(0, 1fr);
+
+  align-items: start;
+  gap: 16px;
+
+  width: 100%;
+  min-width: 0;
+  margin-top: 18px;
+}
+
+/* ==========================================
+   SHARED PANEL STYLE
+========================================== */
+
+.usage-monthly-overview,
+.usage-monthly-days-panel {
+  min-width: 0;
+
+  border: 1px solid #34455b;
+  border-radius: 12px;
+
+  background: #142033;
+
+  overflow: hidden;
+}
+
+/* ==========================================
+   LEFT PANEL - MONTHLY OVERVIEW
+========================================== */
+
+.usage-monthly-overview-header {
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  height: var(--usage-header-height);
+  padding: 0 14px;
+
+  background: #25354b;
+  border-bottom: 1px solid #34455b;
+}
+
+.usage-monthly-overview-header strong {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* LINE SHARE BUTTON */
+
+.usage-monthly-line-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  min-height: 32px;
+  padding: 0 12px;
+
+  border: none;
+  border-radius: 7px;
+
+  background: #06c755;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.usage-monthly-line-button:hover:not(:disabled) {
+  background: #05ad49;
+}
+
+.usage-monthly-line-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* MONTHLY SUMMARY ROWS */
+
+.usage-monthly-overview-row {
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  height: var(--usage-row-height);
+  padding: 0 14px;
+
+  border-bottom: 1px solid #34455b;
+}
+
+.usage-monthly-overview-row:last-child {
+  border-bottom: none;
+}
+
+.usage-monthly-overview-row::before {
+  content: "";
+
+  flex-shrink: 0;
+
+  width: 4px;
+  height: 28px;
+
+  border-radius: 4px;
+  background: var(--usage-tone);
+}
+
+.usage-monthly-overview-row span {
+  flex: 1;
+  min-width: 0;
+
+  color: #e2ebf6;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.usage-monthly-overview-row strong {
+  flex-shrink: 0;
+
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* EVENT COLORS */
+
+.usage-tone-unrest {
+  --usage-tone: #ef4444;
+}
+
+.usage-tone-accident {
+  --usage-tone: #facc15;
+}
+
+.usage-tone-crime {
+  --usage-tone: #10b981;
+}
+
+.usage-tone-lpr_ai {
+  --usage-tone: #38bdf8;
+}
+
+/* ==========================================
+   RIGHT PANEL - DAILY INPUT
+========================================== */
+
+.usage-monthly-days-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+/* RIGHT TITLE - 38px */
+
+.usage-monthly-days-title {
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+
+  height: 38px;
+  padding: 0 14px;
+
+  background: #25354b;
+
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* HORIZONTAL SCROLL AREA */
+
+.usage-monthly-days-scroll {
+  width: 100%;
+  min-width: 0;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scrollbar-width: thin;
+  scrollbar-color: #61738d #172335;
+}
+
+.usage-monthly-days-scroll::-webkit-scrollbar {
+  height: 9px;
+}
+
+.usage-monthly-days-scroll::-webkit-scrollbar-track {
+  background: #172335;
+}
+
+.usage-monthly-days-scroll::-webkit-scrollbar-thumb {
+  background: #61738d;
+  border-radius: 10px;
+}
+
+/* ALL DAYS IN MONTH */
+
+.usage-monthly-days-inner {
+  width: max-content;
+  min-width: 100%;
+}
+
+/* DATE HEADER - 38px */
+
+.usage-monthly-days-header {
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-columns:
+    repeat(var(--usage-days), 74px);
+
+  align-items: center;
+
+  height: 38px;
+
+  border-bottom: 1px solid #34455b;
+  background: #1c2a3e;
+}
+
+.usage-monthly-days-header span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 100%;
+
+  color: #aabbd0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* FOUR DAILY ROWS */
+
+.usage-monthly-day-row {
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-columns:
+    repeat(var(--usage-days), 74px);
+
+  align-items: center;
+
+  height: var(--usage-row-height);
+
+  border-bottom: 1px solid #34455b;
+}
+
+.usage-monthly-day-row:last-child {
+  border-bottom: none;
+}
+
+.usage-monthly-day-cell {
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 100%;
+  padding: 0 4px;
+}
+
+/* DAILY NUMBER INPUT */
+
+.usage-monthly-day-cell input {
+  box-sizing: border-box;
+
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+
+  padding: 0 4px;
+
+  border: 1px solid #40536d;
+  border-radius: 6px;
+
+  background: #23334a;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-monthly-day-cell input::placeholder {
+  color: #94a5bd;
+}
+
+.usage-monthly-day-cell input:focus {
+  outline: none;
+
+  border-color: #ff416c;
+  background: #2b3d58;
+}
+
+.usage-monthly-day-cell input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 850px) {
+
+  .usage-monthly-panels {
+    grid-template-columns:
+      minmax(185px, 40%)
+      minmax(0, 1fr);
+
+    gap: 10px;
+  }
+
+  .usage-monthly-overview-row {
+    padding: 0 9px;
+  }
+
+  .usage-monthly-overview-row span {
+    font-size: 11px;
+  }
+
+}
+
+@media (max-width: 600px) {
+
+  .usage-monthly-panels {
+    grid-template-columns:
+      minmax(140px, 43%)
+      minmax(0, 1fr);
+
+    gap: 8px;
+  }
+
+  .usage-monthly-overview-header {
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .usage-monthly-overview-header strong {
+    font-size: 11px;
+  }
+
+  .usage-monthly-line-button {
+    min-height: 27px;
+    padding: 0 8px;
+    font-size: 10px;
+  }
+
+  .usage-monthly-overview-row {
+    gap: 5px;
+    padding: 0 6px;
+  }
+
+  .usage-monthly-overview-row span {
+    font-size: 10px;
+  }
+
+  .usage-monthly-overview-row strong {
+    font-size: 14px;
+  }
+
+}
+
+/* ==========================================
+   USAGE REPORT - SINGLE ROW HEADER
+========================================== */
+
+/* แถวหลัก 3 ส่วน */
+.usage-report-center-bar {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 220px)
+    minmax(0, 220px);
+
+  align-items: end;
+  gap: 14px;
+
+  padding: 16px 20px;
+}
+
+/* หัวข้อด้านซ้าย */
+.usage-report-center-label {
+  min-width: 0;
+  align-self: center;
+}
+
+/* วันที่อยู่คอลัมน์กลาง */
+.usage-report-inline-date {
+  grid-column: 2;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  min-width: 0;
+}
+
+.usage-report-inline-date label {
+  color: #a8bad0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ให้ช่องวันที่และศูนย์ขนาดเท่ากัน */
+.usage-report-inline-date input,
+.usage-report-center-select,
+.usage-report-center-locked {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+
+  height: 44px;
+  min-height: 44px;
+
+  box-sizing: border-box;
+
+  font-family: inherit;
+  font-size: 13px;
+}
+
+/* ช่องวันที่ */
+.usage-report-inline-date input {
+  padding: 0 13px;
+
+  border: 1px solid #394b63;
+  border-radius: 9px;
+
+  background: #192638;
+  color: #ffffff;
+
+  color-scheme: dark;
+}
+
+.usage-report-inline-date input:focus {
+  outline: none;
+  border-color: #ff416c;
+}
+
+/* ตัวเลือกศูนย์อยู่ขวาสุด */
+.usage-report-center-select,
+.usage-report-center-locked {
+  grid-column: 3;
+  align-self: end;
+}
+
+/* กรณีผู้ใช้ถูกล็อกศูนย์ */
+.usage-report-center-locked {
+  display: flex;
+  align-items: center;
+
+  padding: 0 13px;
+  overflow: hidden;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 900px) {
+
+  .usage-report-center-bar {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 180px)
+      minmax(0, 180px);
+
+    gap: 10px;
+  }
+
+}
+
+@media (max-width: 700px) {
+
+  .usage-report-center-bar {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    align-items: end;
+  }
+
+  .usage-report-center-label {
+    grid-column: 1 / -1;
+  }
+
+  .usage-report-inline-date {
+    grid-column: 1;
+  }
+
+  .usage-report-center-select,
+  .usage-report-center-locked {
+    grid-column: 2;
+  }
+
+}
+
+@media (max-width: 480px) {
+
+  .usage-report-center-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .usage-report-center-label,
+  .usage-report-inline-date,
+  .usage-report-center-select,
+  .usage-report-center-locked {
+    grid-column: 1;
+  }
+
+}
+
+/* ==========================================
+   HIDE NUMBER INPUT SPINNER
+   ซ่อนปุ่มลูกศรขึ้น-ลง
+========================================== */
+
+/* Chrome, Edge, Safari */
+.usage-monthly-day-cell input[type="number"]::-webkit-inner-spin-button,
+.usage-monthly-day-cell input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.usage-monthly-day-cell input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* ==========================================
+   DAILY USAGE SAVE BUTTON
+========================================== */
+
+.usage-daily-save-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: 22px;
+}
+
+.usage-daily-save-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 170px;
+  min-height: 44px;
+
+  padding: 0 22px;
+
+  border: 1px solid #e52b5a;
+  border-radius: 10px;
+
+  background: linear-gradient(135deg, #c91d4b, #a71336);
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.usage-daily-save-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e52b5a, #bf1d49);
+  transform: translateY(-2px);
+}
+
+.usage-daily-save-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 600px) {
+  .usage-daily-save-button {
+    width: 100%;
+  }
+}
+
+/* ==========================================
+   USAGE DAILY - LOADING & ERROR STATUS
+========================================== */
+
+.usage-daily-loading,
+.usage-daily-error {
+  display: flex;
+  align-items: center;
+
+  min-height: 44px;
+  box-sizing: border-box;
+
+  padding: 12px 16px;
+  margin-bottom: 14px;
+
+  border: 1px solid;
+  border-radius: 10px;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* LOADING */
+
+.usage-daily-loading {
+  gap: 12px;
+
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+
+  color: #9cc6ff;
+}
+
+.usage-daily-loading::before {
+  content: "";
+
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+
+  border: 2px solid rgba(156, 198, 255, 0.25);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+
+  animation: usage-loading-spin 0.8s linear infinite;
+}
+
+@keyframes usage-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ERROR */
+
+.usage-daily-error {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+
+  color: #fca5a5;
+}
+
+/* ==========================================
+   DAILY USAGE COLOR LEGEND
+========================================== */
+
+.usage-daily-save-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+.usage-day-color-legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.usage-day-color-legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+
+  /* ขยับคำอธิบายสีไปชิดปุ่มบันทึก */
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.usage-day-color-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #aebed4;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.usage-day-color-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+/* เขียว = วันที่ผ่านมาแล้ว */
+.usage-day-color-swatch--green {
+  background: #173c30;
+  border-color: #15803d;
+}
+
+/* เหลือง = วันปัจจุบัน - 1 */
+.usage-day-color-swatch--yellow {
+  background: #45351e;
+  border-color: #d97706;
+}
+
+/* ฟ้า = วันที่เลือก */
+.usage-day-color-swatch--blue {
+  background: #17354c;
+  border-color: #38bdf8;
+}
+
+/* เทา = วันที่ยังไม่ถึง */
+.usage-day-color-swatch--gray {
+  background: #22314a;
+  border-color: #3b4e6a;
+}
+
+@media (max-width: 900px) {
+  .usage-daily-save-actions {
+    align-items: stretch;
+  }
+
+  .usage-day-color-legend {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .usage-day-color-legend {
+    gap: 12px;
+  }
+
+  .usage-day-color-legend-item {
+    font-size: 11px;
+  }
+}

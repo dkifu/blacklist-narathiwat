@@ -7,6 +7,7 @@ import {
 
 import DailyCctvReport from './daily/DailyCctvReport'
 import AlertReport from './daily/AlertReport'
+import UsageStatisticsReport from './daily/UsageStatisticsReport'
 import './DailyReport.css'
 
 
@@ -108,6 +109,45 @@ function DailyReport({ profile }) {
     )
 
     }
+
+      /* =========================
+        USAGE STATISTICS REPORT
+      ========================= */
+
+      if (activeReport === 'usage') {
+
+        return (
+
+          <div className="daily-hub-report-view">
+
+            <div className="daily-hub-backbar">
+
+              <button
+                type="button"
+                className="daily-hub-back-button"
+                onClick={() => setActiveReport(null)}
+              >
+                <ArrowLeft size={18} />
+                กลับไปหน้ารายงานประจำวัน
+              </button>
+
+              <div className="daily-hub-current-report">
+                <span>USAGE STATS</span>
+                <span>รายงานสถิติการใช้งานระบบ</span>
+              </div>
+
+            </div>
+
+            <UsageStatisticsReport profile={profile} />
+
+          </div>
+
+        )
+
+      }
+
+
+ 
 
 
   /* =========================
@@ -258,7 +298,44 @@ function DailyReport({ profile }) {
 
         </button>
 
-        </div>
+              
+
+              {/* =====================
+                  USAGE STATISTICS REPORT
+              ====================== */}
+
+              <button
+                type="button"
+                className="daily-hub-card"
+                onClick={() => setActiveReport('usage')}
+              >
+                <div className="daily-hub-card-number-box">
+                  03
+                </div>
+
+                <div className="daily-hub-card-content">
+                  <span className="daily-hub-card-number">
+                    USAGE STATS
+                  </span>
+
+                  <h3>
+                    รายงานสถิติการใช้งานระบบ
+                  </h3>
+
+                  <p>
+                    สรุปสถิติการใช้งานรายวัน รายเดือน
+                    รายปี และยอดสะสมทั้งหมด
+                  </p>
+                </div>
+
+                <div className="daily-hub-card-arrow">
+                  <ChevronRight size={22} />
+                </div>
+              </button>
+
+              </div>
+
+           
 
       </section>
 
