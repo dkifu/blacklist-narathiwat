@@ -952,7 +952,7 @@ function UsageStatisticsReport({ profile }) {
 
                     <div className="usage-day-color-legend-item">
                     <span className="usage-day-color-swatch usage-day-color-swatch--yellow" />
-                    <span>วันปัจจุบัน - 1</span>
+                    <span>เมื่อวาน</span>
                     </div>
 
                     <div className="usage-day-color-legend-item">

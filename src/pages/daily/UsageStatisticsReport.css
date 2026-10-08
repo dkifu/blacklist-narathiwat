@@ -1230,7 +1230,7 @@
   border-color: #15803d;
 }
 
-/* เหลือง = วันปัจจุบัน - 1 */
+/* เหลือง = เมื่อวาน */
 .usage-day-color-swatch--yellow {
   background: #45351e;
   border-color: #d97706;
