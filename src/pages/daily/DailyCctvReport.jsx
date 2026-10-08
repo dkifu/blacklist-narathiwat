@@ -237,11 +237,10 @@ function DailyCctvReport({ profile }) {
                 naturalHeight
 
             nextScale =
-                Math.min(
-                1,
-                widthScale,
-                heightScale
-                )
+              Math.min(
+                  1,
+                  widthScale
+              )
             }
 
 
@@ -889,13 +888,53 @@ function DailyCctvReport({ profile }) {
   }
 
   const repair24Pct = repairPercent(form.repair24)
-    const repair48Pct = repairPercent(form.repair48)
-    const repair72Pct = repairPercent(form.repair72)
+  const repair48Pct = repairPercent(form.repair48)
+  const repair72Pct = repairPercent(form.repair72)
 
-    const repairDonutEnd1 = repair24Pct
-    const repairDonutEnd2 = repair24Pct + repair48Pct
-    const repairDonutEnd3 =
+  const repairDonutEnd1 = repair24Pct
+  const repairDonutEnd2 = repair24Pct + repair48Pct
+  const repairDonutEnd3 =
     repair24Pct + repair48Pct + repair72Pct
+
+  const getDonutLabelPosition = (
+    startPct,
+    endPct,
+    radiusPercent = 40
+  ) => {
+    const slicePct = endPct - startPct
+
+    if (slicePct <= 0) {
+      return null
+    }
+
+    const midPct = startPct + slicePct / 2
+
+    // conic-gradient เริ่มที่ 12 นาฬิกา
+    // แต่ Math.cos / Math.sin เริ่มที่ 3 นาฬิกา
+    // จึงต้องลบ 90 องศา
+    const angleDeg = midPct * 3.6 - 90
+    const angleRad = (angleDeg * Math.PI) / 180
+
+    return {
+      left: `${50 + Math.cos(angleRad) * radiusPercent}%`,
+      top: `${50 + Math.sin(angleRad) * radiusPercent}%`,
+    }
+  }
+
+  const repair24LabelPos = getDonutLabelPosition(
+    0,
+    repairDonutEnd1
+  )
+
+  const repair48LabelPos = getDonutLabelPosition(
+    repairDonutEnd1,
+    repairDonutEnd2
+  )
+
+  const repair72LabelPos = getDonutLabelPosition(
+    repairDonutEnd2,
+    repairDonutEnd3
+  )  
 
   const dailyEventTotal =
     Number(form.dailyUnrest || 0) +
@@ -2399,18 +2438,55 @@ const projectDuration =
                 <div className="daily-repair-chart-side">
 
                     <div
-                    className="daily-repair-donut-chart"
-                    style={{
-                        background: `conic-gradient(
-                        #08b850 0 ${repairDonutEnd1}%,
-                        #f4b400 ${repairDonutEnd1}% ${repairDonutEnd2}%,
-                        #ff7a00 ${repairDonutEnd2}% ${repairDonutEnd3}%,
-                        #edf2f7 ${repairDonutEnd3}% 100%
-                        )`,
-                    }}
-                    >
-                    <div className="daily-repair-donut-hole" />
-                    </div>
+                        className="daily-repair-donut-chart"
+                        style={{
+                          background: `conic-gradient(
+                            #08b850 0 ${repairDonutEnd1}%,
+                            #f4b400 ${repairDonutEnd1}% ${repairDonutEnd2}%,
+                            #ff7a00 ${repairDonutEnd2}% ${repairDonutEnd3}%,
+                            #edf2f7 ${repairDonutEnd3}% 100%
+                          )`,
+                        }}
+                      >
+                        <div className="daily-repair-donut-hole">
+
+                          <strong className="daily-repair-donut-total">
+                            {Number(form.repairTotal || 0).toLocaleString('en-US')}
+                          </strong>
+
+                          <span className="daily-repair-donut-unit">
+                            งาน
+                          </span>
+
+                        </div>
+
+                        {repair72Pct > 0 && repair72LabelPos && (
+                          <span
+                            className="daily-repair-donut-label daily-repair-donut-label--orange"
+                            style={repair72LabelPos}
+                          >
+                            {repair72Pct}%
+                          </span>
+                        )}
+
+                        {repair48Pct > 0 && repair48LabelPos && (
+                          <span
+                            className="daily-repair-donut-label daily-repair-donut-label--yellow"
+                            style={repair48LabelPos}
+                          >
+                            {repair48Pct}%
+                          </span>
+                        )}
+
+                        {repair24Pct > 0 && repair24LabelPos && (
+                          <span
+                            className="daily-repair-donut-label daily-repair-donut-label--green"
+                            style={repair24LabelPos}
+                          >
+                            {repair24Pct}%
+                          </span>
+                        )}
+                      </div>
 
                     <div className="daily-repair-legend">
                     <div>
@@ -2655,35 +2731,58 @@ function CameraDonutLegend() {
 }
 
 
-function Donut({
-  percent,
-}) {
-  const safePercent =
-    Math.min(
-      100,
-      Math.max(
-        0,
-        Number(percent || 0)
-      )
-    )
+function Donut({ percent }) {
+  const safePercent = Math.min(
+    100,
+    Math.max(0, Number(percent) || 0)
+  )
+
+  const brokenPercent = 100 - safePercent
+
+  // คำนวณตำแหน่งป้ายตามเปอร์เซ็นต์จริง
+  const getLabelPosition = (startPct, endPct) => {
+    const midPct = (startPct + endPct) / 2
+    const angle = (midPct * 3.6 - 90) * Math.PI / 180
+    const radius = 40
+
+    return {
+      left: `${50 + Math.cos(angle) * radius}%`,
+      top: `${50 + Math.sin(angle) * radius}%`,
+    }
+  }
 
   return (
     <div
       className="daily-donut"
       style={{
-        '--percent':
-          `${safePercent}%`,
+        '--percent': `${safePercent}%`,
       }}
     >
-
-      <div>
-        <strong>
-          {safePercent.toFixed(1)}
-        </strong>
-
+      {/* ตัวเลขเปอร์เซ็นต์ตรงกลาง */}
+      <div className="daily-donut-center">
+        <strong>{safePercent.toFixed(1)}</strong>
         <span>%</span>
       </div>
 
+      {/* เปอร์เซ็นต์สีเขียว */}
+      {safePercent > 0 && (
+        <span
+          className="daily-donut-label daily-donut-label--green"
+          style={getLabelPosition(0, safePercent)}
+        >
+          {safePercent.toFixed(1)}%
+        </span>
+      )}
+
+      {/* เปอร์เซ็นต์สีแดง */}
+      {brokenPercent > 0.05 && (
+        <span
+          className="daily-donut-label daily-donut-label--red"
+          style={getLabelPosition(safePercent, 100)}
+        >
+          {brokenPercent.toFixed(1)}%
+        </span>
+      )}
     </div>
   )
 }
