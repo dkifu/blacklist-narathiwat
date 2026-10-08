@@ -101,6 +101,12 @@ function DailyCctvReport({ profile }) {
     totalCrime: 153,
     totalSystem: 242,
 
+    // CCTV แห่งชาติ - รายวัน
+    dailyCctvTraffic: 0,
+    dailyCctvInvestigation: 0,
+    dailyCctvPrevention: 0,
+
+    // CCTV แห่งชาติ - สะสม
     cctvTraffic: 610,
     cctvInvestigation: 196,
     cctvPrevention: 225,
@@ -1911,37 +1917,21 @@ const projectDuration =
 
             <div className="daily-two-column">
 
-              <label>
-                กล้องพร้อมใช้งาน
+              <NumberInput
+                label="กล้องพร้อมใช้งาน"
+                value={form.cameraReady}
+                onChange={(value) =>
+                  changeNumber('cameraReady', value)
+                }
+              />
 
-                <input
-                  type="number"
-                  min="0"
-                  value={form.cameraReady}
-                  onChange={(e) =>
-                    changeNumber(
-                      'cameraReady',
-                      e.target.value
-                    )
-                  }
-                />
-              </label>
-
-              <label>
-                กล้องเสีย
-
-                <input
-                  type="number"
-                  min="0"
-                  value={form.cameraBroken}
-                  onChange={(e) =>
-                    changeNumber(
-                      'cameraBroken',
-                      e.target.value
-                    )
-                  }
-                />
-              </label>
+              <NumberInput
+                label="กล้องเสีย"
+                value={form.cameraBroken}
+                onChange={(value) =>
+                  changeNumber('cameraBroken', value)
+                }
+              />
 
             </div>
 
@@ -1956,37 +1946,21 @@ const projectDuration =
 
             <div className="daily-two-column">
 
-              <label>
-                พร้อมใช้งานเฉลี่ย
+              <DecimalInput
+                label="พร้อมใช้งานเฉลี่ย"
+                value={form.avgCameraReady}
+                onChange={(value) =>
+                  changeNumber('avgCameraReady', value)
+                }
+              />
 
-                <input
-                  type="number"
-                  step="0.01"
-                  value={form.avgCameraReady}
-                  onChange={(e) =>
-                    changeNumber(
-                      'avgCameraReady',
-                      e.target.value
-                    )
-                  }
-                />
-              </label>
-
-              <label>
-                กล้องเสียเฉลี่ย
-
-                <input
-                  type="number"
-                  step="0.01"
-                  value={form.avgCameraBroken}
-                  onChange={(e) =>
-                    changeNumber(
-                      'avgCameraBroken',
-                      e.target.value
-                    )
-                  }
-                />
-              </label>
+              <DecimalInput
+                label="กล้องเสียเฉลี่ย"
+                value={form.avgCameraBroken}
+                onChange={(value) =>
+                  changeNumber('avgCameraBroken', value)
+                }
+              />
 
             </div>
 
@@ -1999,67 +1973,39 @@ const projectDuration =
               3. สถิติงานซ่อม
             </div>
 
-            <label>
-              งานซ่อมสะสมทั้งหมด
-
-              <input
-                type="number"
-                value={form.repairTotal}
-                onChange={(e) =>
-                  changeNumber(
-                    'repairTotal',
-                    e.target.value
-                  )
-                }
-              />
-            </label>
+            <NumberInput
+              label="งานซ่อมสะสมทั้งหมด"
+              value={form.repairTotal}
+              onChange={(value) =>
+                changeNumber('repairTotal', value)
+              }
+            />
 
             <div className="daily-three-column">
 
-              <label>
-                ภายใน 24 ชม.
+              <NumberInput
+                label="ภายใน 24 ชม."
+                value={form.repair24}
+                onChange={(value) =>
+                  changeNumber('repair24', value)
+                }
+              />
 
-                <input
-                  type="number"
-                  value={form.repair24}
-                  onChange={(e) =>
-                    changeNumber(
-                      'repair24',
-                      e.target.value
-                    )
-                  }
-                />
-              </label>
+              <NumberInput
+                label="24-48 ชม."
+                value={form.repair48}
+                onChange={(value) =>
+                  changeNumber('repair48', value)
+                }
+              />
 
-              <label>
-                24-48 ชม.
-
-                <input
-                  type="number"
-                  value={form.repair48}
-                  onChange={(e) =>
-                    changeNumber(
-                      'repair48',
-                      e.target.value
-                    )
-                  }
-                />
-              </label>
-
-              <label>
-                48-72 ชม.
-
-                <input
-                  type="number"
-                  value={form.repair72}
-                  onChange={(e) =>
-                    changeNumber(
-                      'repair72',
-                      e.target.value
-                    )
-                  }
-                />
-              </label>
+              <NumberInput
+                label="48-72 ชม."
+                value={form.repair72}
+                onChange={(value) =>
+                  changeNumber('repair72', value)
+                }
+              />
 
             </div>
 
@@ -2118,9 +2064,45 @@ const projectDuration =
                 }
               />
 
-            </div>
+              </div>
 
-          </section>
+              {/* CCTV แห่งชาติ - รายวัน */}
+              <div
+                className="daily-section-title"
+                style={{ marginTop: 18 }}
+              >
+                แบ่งตามประเภท CCTV แห่งชาติ (รายวัน)
+              </div>
+
+              <div className="daily-two-column">
+
+                <NumberInput
+                  label="จราจร"
+                  value={form.dailyCctvTraffic}
+                  onChange={(value) =>
+                    changeNumber('dailyCctvTraffic', value)
+                  }
+                />
+
+                <NumberInput
+                  label="สืบสวนสอบสวน"
+                  value={form.dailyCctvInvestigation}
+                  onChange={(value) =>
+                    changeNumber('dailyCctvInvestigation', value)
+                  }
+                />
+
+                <NumberInput
+                  label="ป้องกันปราบปราม"
+                  value={form.dailyCctvPrevention}
+                  onChange={(value) =>
+                    changeNumber('dailyCctvPrevention', value)
+                  }
+                />
+
+              </div>
+
+              </section>
 
 
           <section className="daily-form-section">
@@ -2135,10 +2117,7 @@ const projectDuration =
                 label="เหตุก่อความไม่สงบ"
                 value={form.totalUnrest}
                 onChange={(value) =>
-                  changeNumber(
-                    'totalUnrest',
-                    value
-                  )
+                  changeNumber('totalUnrest', value)
                 }
               />
 
@@ -2146,10 +2125,7 @@ const projectDuration =
                 label="อุบัติเหตุ"
                 value={form.totalAccident}
                 onChange={(value) =>
-                  changeNumber(
-                    'totalAccident',
-                    value
-                  )
+                  changeNumber('totalAccident', value)
                 }
               />
 
@@ -2157,10 +2133,7 @@ const projectDuration =
                 label="อาชญากรรม"
                 value={form.totalCrime}
                 onChange={(value) =>
-                  changeNumber(
-                    'totalCrime',
-                    value
-                  )
+                  changeNumber('totalCrime', value)
                 }
               />
 
@@ -2168,16 +2141,49 @@ const projectDuration =
                 label="เหตุจากระบบ LPR / AI"
                 value={form.totalSystem}
                 onChange={(value) =>
-                  changeNumber(
-                    'totalSystem',
-                    value
-                  )
+                  changeNumber('totalSystem', value)
                 }
               />
 
             </div>
 
-          </section>
+              {/* CCTV แห่งชาติ - สะสม */}
+              <div
+                className="daily-section-title"
+                style={{ marginTop: 18 }}
+              >
+                แบ่งตามประเภท CCTV แห่งชาติ (สะสม)
+              </div>
+
+              <div className="daily-two-column">
+
+                <NumberInput
+                  label="จราจร"
+                  value={form.cctvTraffic}
+                  onChange={(value) =>
+                    changeNumber('cctvTraffic', value)
+                  }
+                />
+
+                <NumberInput
+                  label="สืบสวนสอบสวน"
+                  value={form.cctvInvestigation}
+                  onChange={(value) =>
+                    changeNumber('cctvInvestigation', value)
+                  }
+                />
+
+                <NumberInput
+                  label="ป้องกันปราบปราม"
+                  value={form.cctvPrevention}
+                  onChange={(value) =>
+                    changeNumber('cctvPrevention', value)
+                  }
+                />
+
+              </div>
+
+              </section>
 
         </aside>
 
@@ -2303,11 +2309,11 @@ const projectDuration =
                 </div>
 
                 <div className="daily-info-box-text">
-                    <span>วันที่ปัจจุบัน</span>
+                  <span>วันที่รายงาน</span>
 
-                    <strong>
-                    {currentDateText}
-                    </strong>
+                  <strong>
+                    {formatThaiDate(form.reportDate)}
+                  </strong>
                 </div>
 
                 </div>
@@ -2516,6 +2522,23 @@ const projectDuration =
                 number="4"
                 title="สถิติเหตุการณ์ประจำวัน"
                 total={dailyEventTotal}
+                cctvValues={[
+                  {
+                    label: 'จราจร',
+                    value: form.dailyCctvTraffic,
+                    color: '#0877bd',
+                  },
+                  {
+                    label: 'สืบสวนสอบสวน',
+                    value: form.dailyCctvInvestigation,
+                    color: '#355bb3',
+                  },
+                  {
+                    label: 'ป้องกันปราบปราม',
+                    value: form.dailyCctvPrevention,
+                    color: '#0d9281',
+                  },
+                ]}
                 values={[
                     {
                         label: 'เหตุก่อความไม่สงบ',
@@ -2548,9 +2571,24 @@ const projectDuration =
               <EventCard
                 number="5"
                 title="สถิติเหตุการณ์สะสมตั้งแต่เปิดระบบ"
-                total={
-                  cumulativeEventTotal
-                }
+                total={cumulativeEventTotal}
+                cctvValues={[
+                  {
+                    label: 'จราจร',
+                    value: form.cctvTraffic,
+                    color: '#0877bd',
+                  },
+                  {
+                    label: 'สืบสวนสอบสวน',
+                    value: form.cctvInvestigation,
+                    color: '#355bb3',
+                  },
+                  {
+                    label: 'ป้องกันปราบปราม',
+                    value: form.cctvPrevention,
+                    color: '#0d9281',
+                  },
+                ]}
                 values={[
                 {
                     label: 'เหตุก่อความไม่สงบ',
@@ -2599,6 +2637,44 @@ const projectDuration =
   )
 }
 
+function DecimalInput({ label, value, onChange }) {
+  const [editingValue, setEditingValue] = useState(null)
+
+  const displayValue =
+    Number(value) === 0 ? '' : String(value ?? '')
+
+  return (
+    <label>
+      {label}
+
+      <input
+        type="text"
+        inputMode="decimal"
+        placeholder="0"
+        value={editingValue ?? displayValue}
+
+        onFocus={() => {
+          setEditingValue(displayValue)
+        }}
+
+        onChange={(e) => {
+          const next = e.target.value
+
+          // อนุญาตเฉพาะตัวเลขและจุดทศนิยม
+          if (!/^\d*(?:\.\d*)?$/.test(next)) return
+
+          setEditingValue(next)
+          onChange(next === '' ? '0' : next)
+        }}
+
+        onBlur={() => {
+          setEditingValue(null)
+        }}
+      />
+    </label>
+  )
+}
+
 
 function NumberInput({
   label,
@@ -2612,7 +2688,8 @@ function NumberInput({
       <input
         type="number"
         min="0"
-        value={value}
+        placeholder="0"
+        value={Number(value) === 0 ? '' : (value ?? '')}
         onChange={(e) =>
           onChange(e.target.value)
         }
@@ -2821,6 +2898,7 @@ function EventCard({
   title,
   total,
   values,
+  cctvValues = [],
 }) {
   const maxValue =
     Math.max(
@@ -2952,6 +3030,39 @@ function EventCard({
             </div>
 
       </div>
+
+      {/* CCTV แห่งชาติ */}
+        {cctvValues.length > 0 && (
+          <div className="daily-national-cctv">
+
+            <div className="daily-national-cctv-title">
+              แบ่งตามประเภท CCTV แห่งชาติ
+            </div>
+
+            <div className="daily-national-cctv-grid">
+
+              {cctvValues.map((item) => (
+                <div
+                  className="daily-national-cctv-item"
+                  key={item.label}
+                  style={{
+                    '--cctv-color': item.color,
+                  }}
+                >
+                  <span>{item.label}</span>
+
+                  <strong>
+                    {Number(item.value || 0).toLocaleString('en-US')}
+                  </strong>
+
+                  <small>เหตุการณ์</small>
+                </div>
+              ))}
+
+            </div>
+
+          </div>
+        )}
 
     </section>
   )
