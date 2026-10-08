@@ -2352,15 +2352,13 @@ const projectDuration =
                     </div>
 
                     <div className="daily-info-box-text">
-                        <span>
+                      <span>
                         ระยะเวลาดำเนินงาน
-                        </span>
+                      </span>
 
-                        <strong>
-                        {projectDuration.years} ปี{' '}
-                        {projectDuration.months} เดือน{' '}
-                        {projectDuration.days} วัน
-                        </strong>
+                      <AutoFitDuration
+                        text={`${projectDuration.years} ปี ${projectDuration.months} เดือน ${projectDuration.days} วัน`}
+                      />
                     </div>
 
                     </div>
@@ -2956,6 +2954,56 @@ function EventCard({
       </div>
 
     </section>
+  )
+}
+
+function AutoFitDuration({ text }) {
+  const textRef = useRef(null)
+
+  useEffect(() => {
+    const el = textRef.current
+    if (!el) return
+
+    const fitText = () => {
+      const maxSize = 16
+      const minSize = 9
+
+      el.style.fontSize = `${maxSize}px`
+
+      let size = maxSize
+
+      while (
+        el.scrollWidth > el.clientWidth &&
+        size > minSize
+      ) {
+        size = Math.max(minSize, size - 0.5)
+        el.style.fontSize = `${size}px`
+      }
+    }
+
+    const observer = new ResizeObserver(fitText)
+
+    if (textRef.current?.parentElement) {
+      observer.observe(textRef.current.parentElement)
+    }
+
+    fitText()
+
+    return () => observer.disconnect()
+  }, [text])
+
+  return (
+    <strong
+      ref={textRef}
+      style={{
+        display: 'block',
+        width: '100%',
+        minWidth: 0,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {text}
+    </strong>
   )
 }
 
