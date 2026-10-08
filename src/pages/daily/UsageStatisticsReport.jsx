@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import liff from '@line/liff'
 import './UsageStatisticsReport.css'
+import UsageYearlyTable from './UsageYearlyTable'
 
 const usageSections = [
   {
@@ -193,6 +194,10 @@ function createUsageMonthlyFlex({
 
 function UsageStatisticsReport({ profile }) {
   const [activeSection, setActiveSection] = useState(null)
+  const [hasUnsavedYearly, setHasUnsavedYearly] = useState(false)
+  const [isImportingYearly, setIsImportingYearly] = useState(false)
+  const [yearlyToolbarTarget, setYearlyToolbarTarget] = useState(null)
+
   const [usageDate, setUsageDate] = useState(getYesterdayLocalDate)
 
   const yesterdayDate = getYesterdayLocalDate()
@@ -367,10 +372,11 @@ function UsageStatisticsReport({ profile }) {
   }
 
   const confirmDiscard = () =>
-    !hasUnsavedUsage || window.confirm(UNSAVED_WARNING)
+    !(hasUnsavedUsage || hasUnsavedYearly) ||
+    window.confirm(UNSAVED_WARNING)
 
   const handleBack = () => {
-    if (isSavingUsage || isLoadingUsage) return
+    if (isSavingUsage || isLoadingUsage || isImportingYearly) return
     if (!confirmDiscard()) return
     if (hasUnsavedUsage) discardLocalChanges()
     setActiveSection(null)
@@ -387,7 +393,11 @@ function UsageStatisticsReport({ profile }) {
   }
 
   const handleCenterChange = (nextCenterId) => {
-    if (nextCenterId === selectedCenterId || isSavingUsage) return
+    if (
+      nextCenterId === selectedCenterId ||
+      isSavingUsage ||
+      isImportingYearly
+    ) return
     if (!confirmDiscard()) return
     setSelectedCenterId(nextCenterId)
   }
@@ -700,7 +710,13 @@ function UsageStatisticsReport({ profile }) {
             ← กลับไปเลือกหมวดสถิติ
           </button>
 
-          <div className="usage-report-center-bar">
+          <div
+            className={`usage-report-center-bar ${
+              activeSection === 'yearly'
+                ? 'usage-report-center-bar--yearly'
+                : ''
+            }`}
+          >
             <div className="usage-report-center-label">
               <strong>
                 {activeSection === 'daily' ? 'บันทึกสถิติรายวัน' : 'ศูนย์ที่จัดทำรายงาน'}
@@ -728,11 +744,25 @@ function UsageStatisticsReport({ profile }) {
               </div>
             )}
 
+            {activeSection === 'yearly' && (
+            <>
+              <div className="usage-report-yearly-heading">
+                <h2>สถิติการใช้งานรายปี</h2>
+                <p>สรุปเหตุการณ์รายเดือน ตั้งแต่ พ.ศ. 2566 จนถึงปัจจุบัน</p>
+              </div>
+
+              <div
+                ref={setYearlyToolbarTarget}
+                className="usage-yearly-toolbar-target"
+              />
+            </>
+          )}
+
             {canManageAllCenters ? (
               <select
                 className="usage-report-center-select"
                 value={selectedCenterId}
-                disabled={isSavingUsage}
+                disabled={isSavingUsage || isImportingYearly}
                 onChange={(event) => handleCenterChange(event.target.value)}
               >
                 <option value="">-- เลือกศูนย์ --</option>
@@ -927,7 +957,10 @@ function UsageStatisticsReport({ profile }) {
                                                 cursor: 'not-allowed',
                                             }
                                     }
-                                value={dailyCountsByDate[date]?.[item.key] ?? ''}
+                                value={dailyCountsByDate[date]?.[item.key] ?? 0}
+                                onFocus={(event) => {
+                                  event.target.select()
+                                }}
                                 onChange={(event) =>
                                   handleDailyCountChange(date, item.key, event.target.value)
                                 }
@@ -988,10 +1021,13 @@ function UsageStatisticsReport({ profile }) {
 
             </div>
           ) : (
-            <div>
-              <h2>สถิติการใช้งานรายปี</h2>
-              <p>ตารางสถิติรายเดือนตั้งแต่ พ.ศ. 2566 พร้อมสรุปยอดสะสมทั้งหมด</p>
-            </div>
+            <UsageYearlyTable
+              selectedCenterId={selectedCenterId}
+              onDirtyChange={setHasUnsavedYearly}
+              onImportingChange={setIsImportingYearly}
+              toolbarTarget={yearlyToolbarTarget}
+              hideIntro
+            />
           )}
         </div>
       )}

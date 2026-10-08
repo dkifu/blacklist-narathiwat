@@ -1,0 +1,1374 @@
+/* Read-only yearly report: self-contained styling, no daily selectors changed. */
+.usage-yearly-report { min-width: 0; display: grid; gap: 18px; }
+.usage-yearly-intro { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.usage-yearly-intro h2 { margin: 0 0 4px; color: #fff; font-size: 18px; font-weight: 800; }
+.usage-yearly-intro p { margin: 0; color: #a6b6cb; font-size: 12px; }
+.usage-yearly-refresh, .usage-yearly-message button {
+  min-height: 36px; padding: 0 12px; border: 1px solid #52617a; border-radius: 8px;
+  background: #24364b; color: #e8f1ff; font-family: inherit; font-weight: 700; font-size: 12px; cursor: pointer;
+}
+.usage-yearly-refresh:hover, .usage-yearly-message button:hover { border-color: #ff416c; }
+.usage-yearly-year-card { min-width: 0; border: 1px solid #34455b; border-radius: 12px; overflow: hidden; background: #142033; }
+.usage-yearly-year-title { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 12px 15px; background: #233348; border-bottom: 1px solid #34455b; }
+.usage-yearly-year-title strong { color: #fff; font-size: 15px; }
+.usage-yearly-year-title span { color: #a7b9d0; font-size: 12px; }
+.usage-yearly-table-scroll { max-width: 100%; overflow-x: auto; scrollbar-color: #64748b #182536; scrollbar-width: thin; }
+.usage-yearly-table-scroll:focus-visible { outline: 2px solid #38bdf8; outline-offset: -2px; }
+.usage-yearly-table { width: 100%; min-width: 1050px; border-spacing: 0; border-collapse: separate; table-layout: fixed; font-variant-numeric: tabular-nums; }
+.usage-yearly-table th, .usage-yearly-table td { box-sizing: border-box; padding: 11px 5px; text-align: center; border-bottom: 1px solid #34455b; border-right: 1px solid #34455b; font-size: 12px; white-space: nowrap; color: #e5edf8; }
+.usage-yearly-table th:last-child, .usage-yearly-table td:last-child { border-right: 0; }
+
+.usage-yearly-table thead th {
+  background: #2c4360;
+  color: #eaf2fb;
+  font-weight: 800;
+}
+
+.usage-yearly-table thead tr:first-child th {
+  background: #22354d;
+  color: #ffffff;
+}
+
+.usage-yearly-table .usage-yearly-type-heading { width: 235px; position: sticky; left: 0; z-index: 4; }
+.usage-yearly-table .usage-yearly-total-heading { width: 105px; white-space: normal; }
+.usage-yearly-table tbody th.usage-yearly-type { position: sticky; left: 0; z-index: 2; text-align: left; padding: 12px 10px; white-space: normal; line-height: 1.4; font-weight: 750; background: #1f2c3f; border-left: 5px solid var(--yearly-tone); }
+.usage-yearly-table tbody th.usage-yearly-type--unrest { --yearly-tone: #ef4444; color: #ffd3d6; background: #4c2433; }
+.usage-yearly-table tbody th.usage-yearly-type--accident { --yearly-tone: #facc15; color: #ffed9f; background: #4e4226; }
+.usage-yearly-table tbody th.usage-yearly-type--crime { --yearly-tone: #10b981; color: #adf3d7; background: #1d413b; }
+.usage-yearly-table tbody th.usage-yearly-type--lpr_ai { --yearly-tone: #38bdf8; color: #b6e9ff; background: #234258; }
+.usage-yearly-table tbody tr:hover td { background: #1d3047; }
+.usage-yearly-table td.usage-yearly-total-cell { color: #fff; font-weight: 800; background: #1d3045; }
+.usage-yearly-table td.usage-yearly-future { color: #7b8aa0; background: #162335; }
+.usage-yearly-table tfoot th, .usage-yearly-table tfoot td { background: #304158; color: #fff; font-weight: 800; border-bottom: 0; }
+.usage-yearly-table tfoot th { position: sticky; left: 0; z-index: 2; text-align: left; padding-left: 14px; }
+.usage-yearly-empty, .usage-yearly-message { padding: 20px; border: 1px solid #34455b; border-radius: 10px; background: #142033; color: #c1d0e1; font-size: 13px; }
+.usage-yearly-message--error { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: #fda4af; border-color: #7f3346; }
+.usage-yearly-note { margin: 0; color: #a7b9d0; font-size: 12px; line-height: 1.65; }
+@media (max-width: 600px) {
+  .usage-yearly-intro { align-items: stretch; flex-direction: column; }
+  .usage-yearly-refresh { align-self: flex-start; }
+  .usage-yearly-year-title { padding: 10px 12px; }
+  .usage-yearly-table th, .usage-yearly-table td { font-size: 11px; }
+}
+
+/* เพิ่มท้าย UsageYearlyTable.css เท่านั้น ไม่ต้องลบ CSS เดิม */
+.usage-yearly-year-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.usage-yearly-year-actions > span {
+  margin-right: 9px;
+}
+.usage-yearly-edit-btn,
+.usage-yearly-save-btn {
+  min-height: 34px;
+  min-width: 92px;
+  padding: 6px 13px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .2s, opacity .2s;
+}
+.usage-yearly-edit-btn {
+  border: 1px solid #ef4444;
+  color: #fff;
+  background: #b91c1c;
+}
+.usage-yearly-edit-btn:hover:not(:disabled) { background: #dc2626; }
+.usage-yearly-edit-btn--cancel { background: #374151; border-color: #64748b; }
+.usage-yearly-edit-btn--cancel:hover:not(:disabled) { background: #475569; }
+.usage-yearly-save-btn {
+  border: 1px solid #16a34a;
+  color: #fff;
+  background: #15803d;
+}
+.usage-yearly-save-btn:hover:not(:disabled) { background: #16a34a; }
+.usage-yearly-edit-btn:disabled, .usage-yearly-save-btn:disabled {
+  opacity: .43;
+  cursor: not-allowed;
+}
+.usage-yearly-table .usage-yearly-number-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  box-sizing: border-box;
+  background: #24364b;
+  color: #fff;
+  border: 1px solid #64748b;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  padding: 0 3px;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.usage-yearly-number-input::-webkit-inner-spin-button,
+.usage-yearly-number-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.usage-yearly-table .usage-yearly-number-input:focus {
+  outline: 2px solid #38bdf8;
+  outline-offset: 0;
+  border-color: #38bdf8;
+}
+.usage-yearly-table .usage-yearly-number-input::placeholder { color: #91a3b9; }
+@media (max-width: 600px) {
+  .usage-yearly-year-actions { justify-content: flex-start; }
+  .usage-yearly-year-actions > span { flex-basis: 100%; }
+  .usage-yearly-edit-btn, .usage-yearly-save-btn { min-width: 80px; }
+}
+
+
+/* ==========================================
+   YEARLY REPORT - EXCEL DOWNLOAD BUTTON
+========================================== */
+
+/* จัดปุ่มให้อยู่แถวเดียวกัน */
+.usage-yearly-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ปุ่มดาวน์โหลด Excel */
+.usage-yearly-excel-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 38px;
+  min-width: 160px;
+  padding: 0 16px;
+
+  border: 1px solid #22c55e;
+  border-radius: 9px;
+
+  background: linear-gradient(
+    135deg,
+    #15803d,
+    #166534
+  );
+
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow: 0 3px 12px rgba(22, 163, 74, 0.16);
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* เมื่อเอาเมาส์ชี้ */
+.usage-yearly-excel-button:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    #16a34a,
+    #15803d
+  );
+
+  transform: translateY(-1px);
+
+  box-shadow: 0 5px 16px rgba(22, 163, 74, 0.25);
+}
+
+/* เมื่อกดปุ่ม */
+.usage-yearly-excel-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* เมื่อไม่สามารถดาวน์โหลดได้ */
+.usage-yearly-excel-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* การใช้คีย์บอร์ด */
+.usage-yearly-excel-button:focus-visible {
+  outline: 2px solid #86efac;
+  outline-offset: 3px;
+}
+
+/* หน้าจอมือถือ */
+@media (max-width: 600px) {
+  .usage-yearly-toolbar {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .usage-yearly-excel-button {
+    flex: 1;
+    min-width: 140px;
+  }
+}
+
+
+/* ==========================================
+   YEARLY REPORT - TEMPLATE BUTTON
+========================================== */
+
+.usage-yearly-template-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 38px;
+  min-width: 145px;
+  padding: 0 16px;
+
+  border: 1px solid #3b82f6;
+  border-radius: 9px;
+
+  background: linear-gradient(
+    135deg,
+    #2563eb,
+    #1d4ed8
+  );
+
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+
+  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.18);
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.usage-yearly-template-button:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    #3b82f6,
+    #2563eb
+  );
+
+  border-color: #60a5fa;
+  transform: translateY(-1px);
+
+  box-shadow: 0 5px 16px rgba(37, 99, 235, 0.28);
+}
+
+.usage-yearly-template-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.usage-yearly-template-button:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 3px;
+}
+
+/* YEARLY EXCEL IMPORT BUTTON */
+
+.usage-yearly-import-button {
+  min-height: 38px;
+  min-width: 145px;
+  padding: 0 16px;
+  border: 1px solid #fb923c;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #ea580c, #c2410c);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .2s ease, transform .2s ease;
+}
+
+.usage-yearly-import-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  transform: translateY(-1px);
+}
+
+.usage-yearly-import-button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+
+/* COMPACT EXCEL IMPORT PREVIEW */
+
+.usage-yearly-import-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  padding: 13px 16px;
+  border: 1px solid #36516c;
+  border-radius: 10px;
+  background: #152338;
+}
+
+.usage-yearly-import-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.usage-yearly-import-success {
+  color: #86efac;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.usage-yearly-import-filename {
+  color: #a9bcd3;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.usage-yearly-import-details {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.usage-yearly-import-stat {
+  padding: 7px 12px;
+  border-radius: 7px;
+  background: #23374f;
+  color: #b8cce1;
+  font-size: 12px;
+}
+
+.usage-yearly-import-stat strong {
+  margin-left: 4px;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.usage-yearly-import-pending {
+  margin-left: auto;
+  color: #fcd34d;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .usage-yearly-import-pending {
+    margin-left: 0;
+  }
+}
+
+
+/* EXCEL IMPORT COMPARISON */
+
+.usage-yearly-import-comparison {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.usage-yearly-import-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.usage-yearly-import-count strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.usage-yearly-import-count--new {
+  color: #86efac;
+  background: #183d35;
+  border-color: #24674d;
+}
+
+.usage-yearly-import-count--changed {
+  color: #fcd34d;
+  background: #4a3521;
+  border-color: #785021;
+}
+
+.usage-yearly-import-count--same {
+  color: #93c5fd;
+  background: #23374f;
+  border-color: #385879;
+}
+
+.usage-yearly-import-cancel {
+  padding: 7px 13px;
+  border: 1px solid #64748b;
+  border-radius: 7px;
+  background: #344256;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.usage-yearly-import-cancel:hover {
+  background: #475569;
+}
+
+.usage-yearly-import-cancel:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+
+/* EXCEL IMPORT - COMPACT HORIZONTAL SUMMARY */
+
+/* กล่องสรุปทั้ง 6 เรียงแนวนอน */
+.usage-yearly-import-details {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+/* กลุ่มเพิ่มใหม่ / เปลี่ยนแปลง / ตรงกันแล้ว */
+.usage-yearly-import-comparison {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+/* ลดขนาดกล่องสรุปทั้งหมดให้เท่ากัน */
+.usage-yearly-import-details .usage-yearly-import-stat,
+.usage-yearly-import-details .usage-yearly-import-count {
+  box-sizing: border-box;
+  flex: 0 0 125px;
+  width: 125px;
+  min-height: 32px;
+  padding: 5px 7px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* ปรับตัวเลขให้กระชับ */
+.usage-yearly-import-count strong,
+.usage-yearly-import-stat strong {
+  font-size: 12px;
+}
+
+/* จอแคบให้ขึ้นบรรทัดใหม่ได้ */
+@media (max-width: 1100px) {
+  .usage-yearly-import-details,
+  .usage-yearly-import-comparison {
+    flex-wrap: wrap;
+  }
+
+  .usage-yearly-import-pending {
+    margin-left: 0;
+  }
+}
+
+
+/* YEARLY EXCEL IMPORT CONFIRM */
+
+.usage-yearly-import-confirm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  min-height: 32px;
+  min-width: 132px;
+  padding: 5px 12px;
+
+  border: 1px solid #22c55e;
+  border-radius: 7px;
+
+  background: linear-gradient(135deg, #15803d, #166534);
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition: background .2s ease, opacity .2s ease;
+}
+
+.usage-yearly-import-confirm:hover:not(:disabled) {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+.usage-yearly-import-confirm:disabled,
+.usage-yearly-import-cancel:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+
+/* ==========================================
+   YEARLY REPORT - CENTER BAR LAYOUT
+   แก้เฉพาะหน้าสถิติรายปี
+========================================== */
+
+/* เปลี่ยนจาก 3 คอลัมน์ เป็น 2 คอลัมน์ */
+.usage-report-center-bar--yearly {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+/* ซ่อนข้อความศูนย์ที่จัดทำรายงาน */
+.usage-report-center-bar--yearly
+.usage-report-center-label {
+  display: none;
+}
+
+/* พื้นที่ของปุ่มทั้ง 4 */
+.usage-report-center-bar--yearly
+.usage-yearly-toolbar-target {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+/* เรียงปุ่มเป็นแนวนอน ชิดซ้าย */
+.usage-report-center-bar--yearly
+.usage-yearly-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 10px;
+}
+
+/* ช่องเลือกศูนย์อยู่ด้านขวา */
+.usage-report-center-bar--yearly
+.usage-report-center-select,
+.usage-report-center-bar--yearly
+.usage-report-center-locked {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
+/* หน้าจอเล็กให้ปุ่มอยู่ด้านบน ช่องเลือกศูนย์ด้านล่าง */
+@media (max-width: 950px) {
+  .usage-report-center-bar--yearly {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .usage-report-center-bar--yearly
+  .usage-yearly-toolbar-target {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .usage-report-center-bar--yearly
+  .usage-report-center-select,
+  .usage-report-center-bar--yearly
+  .usage-report-center-locked {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+  }
+}
+
+
+/* ==========================================
+   YEARLY REPORT - TOOLBAR FINAL ALIGNMENT
+========================================== */
+
+/* จัดปุ่มให้อยู่กึ่งกลางแนวตั้ง */
+.usage-report-center-bar--yearly
+.usage-yearly-toolbar-target {
+  display: flex;
+  align-items: center;
+}
+
+/* จัดเรียงปุ่มแนวนอน */
+.usage-report-center-bar--yearly
+.usage-yearly-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+/* ให้ปุ่มทั้ง 4 ขนาดเท่ากัน */
+.usage-report-center-bar--yearly
+.usage-yearly-toolbar > button {
+  box-sizing: border-box;
+  flex: 0 0 155px;
+  width: 155px;
+  min-width: 0;
+  height: 38px;
+  min-height: 38px;
+  padding: 0 10px;
+
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* ปรับช่องเลือกศูนย์ให้อยู่แนวเดียวกับปุ่ม */
+.usage-report-center-bar--yearly
+.usage-report-center-select,
+.usage-report-center-bar--yearly
+.usage-report-center-locked {
+  height: 40px;
+  min-height: 40px;
+}
+
+/* หน้าจอแคบ ปุ่มแบ่งแถวอย่างเป็นระเบียบ */
+@media (max-width: 700px) {
+  .usage-report-center-bar--yearly
+  .usage-yearly-toolbar > button {
+    flex: 1 1 145px;
+    width: auto;
+  }
+}
+
+/* ==========================================
+   YEARLY TOP BAR - TITLE LEFT / ACTIONS RIGHT
+========================================== */
+
+.usage-report-center-bar--yearly {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+}
+
+/* ซ่อน label เดิมของศูนย์ */
+.usage-report-center-bar--yearly
+.usage-report-center-label {
+  display: none;
+}
+
+/* หัวข้อรายปีฝั่งซ้าย */
+.usage-report-yearly-heading {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.usage-report-yearly-heading h2 {
+  margin: 0 0 4px;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.usage-report-yearly-heading p {
+  margin: 0;
+  color: #a6b6cb;
+  font-size: 12px;
+}
+
+/* พื้นที่ปุ่ม */
+.usage-report-center-bar--yearly
+.usage-yearly-toolbar-target {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+/* ปุ่มทั้งหมดชิดขวา */
+.usage-report-center-bar--yearly
+.usage-yearly-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ขนาดปุ่ม */
+.usage-report-center-bar--yearly
+.usage-yearly-toolbar > button {
+  box-sizing: border-box;
+  min-width: 150px;
+  height: 38px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+/* select อยู่ขวาสุด */
+.usage-report-center-bar--yearly
+.usage-report-center-select,
+.usage-report-center-bar--yearly
+.usage-report-center-locked {
+  grid-column: 3;
+  width: 220px;
+  min-width: 220px;
+  height: 38px;
+  min-height: 38px;
+  margin: 0;
+  align-self: center;
+  box-sizing: border-box;
+}
+
+/* ซ่อนหัวข้อเดิมใต้แถบบน เวลาส่ง hideIntro มา */
+.usage-yearly-intro {
+  margin-bottom: 0;
+}
+
+/* responsive */
+@media (max-width: 1200px) {
+  .usage-report-center-bar--yearly {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .usage-report-yearly-heading {
+    grid-column: 1;
+  }
+
+  .usage-report-center-bar--yearly
+  .usage-yearly-toolbar-target {
+    grid-column: 1;
+    justify-content: flex-start;
+  }
+
+  .usage-report-center-bar--yearly
+  .usage-yearly-toolbar {
+    justify-content: flex-start;
+  }
+
+  .usage-report-center-bar--yearly
+  .usage-report-center-select,
+  .usage-report-center-bar--yearly
+  .usage-report-center-locked {
+    grid-column: 1;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ซ่อนหัวข้อรายปีเดิม หลังย้ายหัวข้อไปแถบด้านบนแล้ว */
+.usage-yearly-report > .usage-yearly-intro {
+  display: none;
+}
+
+
+/* ==========================================
+   YEARLY REPORT - OVERALL SUMMARY
+========================================== */
+
+.usage-yearly-overall {
+  width: 100%;
+  max-width: 470px;
+  border: 1px solid #34455b;
+  border-radius: 12px;
+  background: #142033;
+  overflow: hidden;
+}
+
+/* ส่วนหัว */
+.usage-yearly-overall-header {
+  padding: 15px 16px;
+  background: #25354b;
+  border-bottom: 1px solid #34455b;
+}
+
+.usage-yearly-overall-header h3 {
+  margin: 0 0 5px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.usage-yearly-overall-header p {
+  margin: 0;
+  color: #a6b6cb;
+  font-size: 11px;
+}
+
+/* แถวข้อมูล */
+.usage-yearly-overall-row {
+  --overall-tone: #64748b;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  min-height: 57px;
+  padding: 10px 15px;
+  box-sizing: border-box;
+
+  border-bottom: 1px solid #34455b;
+}
+
+/* แถบสีด้านซ้าย */
+.usage-yearly-overall-row::before {
+  content: "";
+  width: 4px;
+  height: 25px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background: var(--overall-tone);
+}
+
+/* สีตามประเภทเหตุการณ์ */
+.usage-yearly-overall-row--unrest {
+  --overall-tone: #ef4444;
+}
+
+.usage-yearly-overall-row--accident {
+  --overall-tone: #facc15;
+}
+
+.usage-yearly-overall-row--crime {
+  --overall-tone: #10b981;
+}
+
+.usage-yearly-overall-row--lpr_ai {
+  --overall-tone: #38bdf8;
+}
+
+/* ชื่อเหตุการณ์ */
+.usage-yearly-overall-name {
+  flex: 1;
+  min-width: 0;
+  color: #e5edf8;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* ตัวเลข */
+.usage-yearly-overall-row strong {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* แถวรวมทั้งหมด */
+.usage-yearly-overall-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 16px;
+  background: #25354b;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.usage-yearly-overall-footer strong {
+  font-size: 19px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+/* มือถือ */
+@media (max-width: 600px) {
+  .usage-yearly-overall {
+    max-width: 100%;
+  }
+}
+
+
+/* ==========================================
+   YEARLY OVERVIEW DASHBOARD
+========================================== */
+
+.usage-yearly-dashboard {
+  display: grid;
+  grid-template-columns: minmax(300px, 470px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.usage-yearly-dashboard > .usage-yearly-overall {
+  width: 100%;
+  max-width: none;
+}
+
+.usage-yearly-distribution {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #34455b;
+  border-radius: 12px;
+  background: #142033;
+}
+
+.usage-yearly-distribution-header {
+  padding: 15px 18px;
+  background: #25354b;
+  border-bottom: 1px solid #34455b;
+}
+
+.usage-yearly-distribution-header h3 {
+  margin: 0 0 5px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.usage-yearly-distribution-header p {
+  margin: 0;
+  color: #a6b6cb;
+  font-size: 11px;
+}
+
+.usage-yearly-distribution-content {
+  padding: 24px 22px;
+}
+
+.usage-yearly-share-bar {
+  display: flex;
+  width: 100%;
+  height: 15px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #334155;
+  margin-bottom: 26px;
+}
+
+.usage-yearly-share-segment {
+  height: 100%;
+}
+
+.usage-yearly-share-segment--unrest {
+  background: #ef4444;
+}
+
+.usage-yearly-share-segment--accident {
+  background: #facc15;
+}
+
+.usage-yearly-share-segment--crime {
+  background: #10b981;
+}
+
+.usage-yearly-share-segment--lpr_ai {
+  background: #38bdf8;
+}
+
+.usage-yearly-distribution-list {
+  display: grid;
+  gap: 16px;
+}
+
+.usage-yearly-distribution-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #e5edf8;
+  font-size: 12px;
+}
+
+.usage-yearly-distribution-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 3px;
+  background: var(--distribution-color);
+}
+
+.usage-yearly-distribution-item--unrest {
+  --distribution-color: #ef4444;
+}
+
+.usage-yearly-distribution-item--accident {
+  --distribution-color: #facc15;
+}
+
+.usage-yearly-distribution-item--crime {
+  --distribution-color: #10b981;
+}
+
+.usage-yearly-distribution-item--lpr_ai {
+  --distribution-color: #38bdf8;
+}
+
+.usage-yearly-distribution-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.usage-yearly-distribution-item strong {
+  font-size: 14px;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-yearly-distribution-percent {
+  min-width: 58px;
+  text-align: right;
+  color: var(--distribution-color);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .usage-yearly-dashboard {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .usage-yearly-distribution-content {
+    padding: 18px 16px;
+  }
+}
+
+
+/* ==========================================
+   YEARLY DISTRIBUTION - VERTICAL BAR CHART
+========================================== */
+
+.usage-yearly-bar-chart {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 18px;
+  width: 100%;
+}
+
+.usage-yearly-bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  text-align: center;
+}
+
+.usage-yearly-bar-value {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-yearly-bar-track {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+
+  width: 100%;
+  max-width: 90px;
+  height: 160px;
+
+  background: #1b2c42;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+
+.usage-yearly-bar-fill {
+  width: 100%;
+  flex-shrink: 0;
+  background: var(--bar-color);
+  border-radius: 8px 8px 0 0;
+  transition: height 0.4s ease;
+}
+
+.usage-yearly-bar-item--unrest {
+  --bar-color: #ef4444;
+}
+
+.usage-yearly-bar-item--accident {
+  --bar-color: #facc15;
+}
+
+.usage-yearly-bar-item--crime {
+  --bar-color: #10b981;
+}
+
+.usage-yearly-bar-item--lpr_ai {
+  --bar-color: #38bdf8;
+}
+
+.usage-yearly-bar-label {
+  min-height: 32px;
+  color: #dce6f3;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.usage-yearly-bar-percent {
+  color: var(--bar-color);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 600px) {
+  .usage-yearly-bar-chart {
+    gap: 8px;
+  }
+
+  .usage-yearly-bar-track {
+    height: 120px;
+  }
+
+  .usage-yearly-bar-value {
+    font-size: 14px;
+  }
+
+  .usage-yearly-bar-label {
+    font-size: 10px;
+  }
+}
+
+/* ==========================================
+   YEARLY DISTRIBUTION - HORIZONTAL DASHBOARD
+========================================== */
+
+.usage-yearly-distribution-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 18px 20px;
+}
+
+/* กล่องสรุปด้านบน */
+.usage-yearly-distribution-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.usage-yearly-distribution-total-card,
+.usage-yearly-distribution-top-card {
+  padding: 14px 16px;
+  border: 1px solid #34455b;
+  border-radius: 10px;
+  background: #18263a;
+}
+
+.usage-yearly-distribution-total-card span,
+.usage-yearly-distribution-top-card span {
+  display: block;
+  margin-bottom: 6px;
+  color: #a9bcd3;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.usage-yearly-distribution-total-card strong,
+.usage-yearly-distribution-top-card strong {
+  display: block;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-yearly-distribution-top-card small {
+  display: block;
+  margin-top: 4px;
+  color: #c8d5e6;
+  font-size: 11px;
+}
+
+/* กราฟแท่งแนวนอน */
+.usage-yearly-horizontal-chart {
+  display: grid;
+  gap: 14px;
+}
+
+.usage-yearly-horizontal-item {
+  display: grid;
+  gap: 7px;
+}
+
+.usage-yearly-horizontal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.usage-yearly-horizontal-name {
+  min-width: 0;
+  color: #e5edf8;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.usage-yearly-horizontal-values {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.usage-yearly-horizontal-values strong {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-yearly-horizontal-values span {
+  min-width: 54px;
+  text-align: right;
+  color: var(--horizontal-color);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-yearly-horizontal-track {
+  width: 100%;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #25364d;
+}
+
+.usage-yearly-horizontal-fill {
+  height: 100%;
+  min-width: 0;
+  border-radius: 999px;
+  background: var(--horizontal-color);
+  transition: width 0.35s ease;
+}
+
+/* สีแต่ละประเภท */
+.usage-yearly-horizontal-item--unrest {
+  --horizontal-color: #ef4444;
+}
+
+.usage-yearly-horizontal-item--accident {
+  --horizontal-color: #facc15;
+}
+
+.usage-yearly-horizontal-item--crime {
+  --horizontal-color: #10b981;
+}
+
+.usage-yearly-horizontal-item--lpr_ai {
+  --horizontal-color: #38bdf8;
+}
+
+/* จอเล็ก */
+@media (max-width: 700px) {
+  .usage-yearly-distribution-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .usage-yearly-horizontal-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .usage-yearly-horizontal-values {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .usage-yearly-distribution-total-card strong,
+  .usage-yearly-distribution-top-card strong {
+    font-size: 20px;
+  }
+}
+
+/* HORIZONTAL CHART - WITHOUT SUMMARY CARDS */
+
+.usage-yearly-distribution-content {
+  padding: 24px 24px;
+}
+
+.usage-yearly-horizontal-chart {
+  display: grid;
+  gap: 22px;
+}
+
+.usage-yearly-horizontal-track {
+  height: 14px;
+}
+
+
+/* ==========================================
+   EXCEL IMPORT - PREVENT TEXT OVERFLOW
+========================================== */
+
+/* ให้กลุ่มสรุปขึ้นแถวใหม่ได้เมื่อพื้นที่ไม่พอ */
+.usage-yearly-import-details,
+.usage-yearly-import-comparison {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* กล่องขยายตามความยาวตัวเลข */
+.usage-yearly-import-details .usage-yearly-import-stat,
+.usage-yearly-import-details .usage-yearly-import-count {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 115px;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 6px 12px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* ปรับตัวเลขให้ไม่เบียดข้อความ */
+.usage-yearly-import-details strong {
+  margin-left: 0;
+  font-size: 12px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
