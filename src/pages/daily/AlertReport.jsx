@@ -567,6 +567,12 @@ function AlertReport({ profile }) {
                 ''
               ).trim(),
 
+            action:
+              String(
+                row['แผนเผชิญเหตุ'] ||
+                ''
+              ).trim(),  
+
             s: [],
 
             imageDataUrl: '',
@@ -601,6 +607,17 @@ function AlertReport({ profile }) {
         vehicle.type =
           String(
             row['รายละเอียดคดี']
+          ).trim()
+      }
+
+
+      if (
+        !vehicle.action &&
+        row['แผนเผชิญเหตุ']
+      ) {
+        vehicle.action =
+          String(
+            row['แผนเผชิญเหตุ']
           ).trim()
       }
 

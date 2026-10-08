@@ -265,18 +265,42 @@ function icon(name,cx,cy,s,color,lw=2){
 }
 
 /* แถวข้อมูล */
-function row(iconName,label,val,x,y,w,rp=0){
+function row(iconName,label,val,x,y,w,rp=0,maxLines=Infinity){
   setF(500,24);
-  const lines = wrap(val||'-', w-236-30-rp);
+
+  const maxW = w-236-30-rp;
+  let lines = wrap(val||'-', maxW);
+
+  // จำกัดจำนวนบรรทัดเฉพาะแถวที่กำหนด
+  if(lines.length > maxLines){
+    lines = lines.slice(0,maxLines);
+
+    let last = lines[lines.length-1].trimEnd();
+
+    // ตัดข้อความให้พอดีกับความกว้าง
+    while(last.length && ctx.measureText(last+'…').width > maxW){
+      last = last.slice(0,-1);
+    }
+
+    lines[lines.length-1] = last.trimEnd()+'…';
+  }
+
   const h = Math.max(46, lines.length*33+13);
+
   if(!DRY){
     icon(iconName,x+44,y+23,13,'#cbd5f0',2);
     T(label,x+78,y+31,{s:24,c:MUTED});
     T(':',x+214,y+31,{c:MUTED});
     lines.forEach((l,i)=>T(l,x+236,y+31+i*33,{s:24,w:500}));
-    ctx.strokeStyle='rgba(120,150,220,.28)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(x+30,y+h); ctx.lineTo(x+w-30-rp,y+h); ctx.stroke();
+
+    ctx.strokeStyle='rgba(120,150,220,.28)';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(x+30,y+h);
+    ctx.lineTo(x+w-30-rp,y+h);
+    ctx.stroke();
   }
+
   return h;
 }
 
@@ -322,6 +346,7 @@ function drawItems(items,x,y,w,accent){
 
     cy += row('shield','เจ้าของคดี',it.owner||'-',x,cy,w,rpAt(cy));
     cy += row('doc','ประเภทคดี',it.type||'-',x,cy,w,rpAt(cy));
+    cy += row('doc','การปฏิบัติงาน',it.action||'-',x,cy,w,rpAt(cy),2);
 
     const s = it.sightings.length ? it.sightings : [{place:'',time:''}];
     {
@@ -656,7 +681,10 @@ function buildFromState(){
   const mk=(list,kind)=>({count:null,items:list.map(it=>({
     title: kind==='face' ? (it.name.trim()||'(ยังไม่กรอกชื่อ)')
                          : 'ป้ายทะเบียนเลขที่ '+([it.plate.trim()||'-',it.prov.trim()].filter(Boolean).join(' ')),
-    owner:it.owner.trim(), type:it.type.trim(), img:it._im||null,
+    owner:it.owner.trim(),
+    type:it.type.trim(),
+    action:(it.action||'').trim(),
+    img:it._im||null,
     sightings:sortedSights(it.s).map(x=>({place:x.place.trim(),time:sightRaw(x)}))
   }))});
   const face=mk(S.face,'face'), lpr=mk(S.lpr,'lpr');
@@ -791,11 +819,18 @@ function itemCard(kind,list,idx){
   const addS=h('button',{class:'small',text:'+ เพิ่มการพบเหตุ (ครั้งถัดไป)'});
   addS.onclick=()=>{ it.s.push(newSight(it.s[it.s.length-1])); rebuild(); };
   const card=h('div',{class:'item'},head,top,photoBox(it,kind),
-    h('div',{class:'three'},
-      fld('เจ้าของคดี',inp(it,'owner',{list:'dl-owner',ph:'เช่น สภ.ถลาง',req:true})),
-      fld('ประเภทคดี',inp(it,'type',{list:'dl-type',ph:'เช่น ลักทรัพย์',req:true}))),
-    h('div',{class:'sbox'},h('div',{class:'lab',text:`การพบเหตุ (${it.s.length} ครั้ง)`}),
-      it.s.map((_,i)=>sightRow(list,it,i)),addS));
+  h('div',{class:'three'},
+    fld('เจ้าของคดี',inp(it,'owner',{list:'dl-owner',ph:'เช่น สภ.ถลาง',req:true})),
+    fld('ประเภทคดี',inp(it,'type',{list:'dl-type',ph:'เช่น ลักทรัพย์',req:true}))),
+
+  fld('การปฏิบัติงาน',
+    inp(it,'action',{
+      ph:'ระบุแผนเผชิญเหตุหรือการปฏิบัติงาน'
+    })
+  ),
+
+  h('div',{class:'sbox'},h('div',{class:'lab',text:`การพบเหตุ (${it.s.length} ครั้ง)`}),
+    it.s.map((_,i)=>sightRow(list,it,i)),addS));
   card.addEventListener('paste',e=>{ const f=imageFromClipboard(e); if(f){ e.preventDefault(); setItemImage(it,f); } });
   return card;
 }
@@ -987,6 +1022,9 @@ window.addEventListener(
 
             type:
               item.type || '',
+
+            action:
+              item.action || '',  
 
             s:
               Array.isArray(item.s) &&
