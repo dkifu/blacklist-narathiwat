@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Phuket Eyes – สร้างรูปรายงานประจำวัน</title>
+<title>โครงการ 6 หัวเมืองหลัก – สร้างรูปรายงานประจำวัน</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -114,7 +114,7 @@ button.danger{background:#e0424b;border-color:#e0424b;color:#fff}
 </head>
 <body>
 <div class="wrap">
-  <h1>Phuket Eyes – สร้างรูปรายงานประจำวัน</h1>
+  <h1>โครงการ 6 หัวเมืองหลัก – สร้างรูปรายงานประจำวัน</h1>
   <p class="sub">กรอกข้อมูลในฟอร์มด้านซ้าย รูปจะสร้างให้อัตโนมัติทันที</p>
   <div class="grid">
     <div class="card">
@@ -207,6 +207,28 @@ const ic = {
     ctx.strokeRect(cx-s*.7,cy-s,s*1.4,s*2);
     ctx.beginPath(); for(const k of [-.45,0,.45]){ctx.moveTo(cx-s*.4,cy+s*k);ctx.lineTo(cx+s*.4,cy+s*k);} ctx.stroke();
   },
+
+  task(cx,cy,s){
+    // กรอบเอกสาร
+    ctx.strokeRect(cx-s*.7,cy-s,s*1.4,s*2);
+
+    // เส้นหัวข้อ/ข้อความ
+    ctx.beginPath();
+    ctx.moveTo(cx-s*.3,cy-s*.45);
+    ctx.lineTo(cx+s*.25,cy-s*.45);
+
+    ctx.moveTo(cx-s*.3,cy+s*.55);
+    ctx.lineTo(cx+s*.25,cy+s*.55);
+    ctx.stroke();
+
+    // เครื่องหมายถูกตรงกลาง
+    ctx.beginPath();
+    ctx.moveTo(cx-s*.28,cy+s*.02);
+    ctx.lineTo(cx-s*.06,cy+s*.26);
+    ctx.lineTo(cx+s*.34,cy-s*.20);
+    ctx.stroke();
+  },
+
   pin(cx,cy,s){
     ctx.beginPath(); ctx.moveTo(cx,cy+s); ctx.bezierCurveTo(cx-s*1.2,cy-s*.2,cx-s*.9,cy-s,cx,cy-s);
     ctx.bezierCurveTo(cx+s*.9,cy-s,cx+s*1.2,cy-s*.2,cx,cy+s); ctx.stroke();
@@ -346,7 +368,7 @@ function drawItems(items,x,y,w,accent){
 
     cy += row('shield','เจ้าของคดี',it.owner||'-',x,cy,w,rpAt(cy));
     cy += row('doc','ประเภทคดี',it.type||'-',x,cy,w,rpAt(cy));
-    cy += row('doc','การปฏิบัติงาน',it.action||'-',x,cy,w,rpAt(cy),2);
+    cy += row('task','การปฏิบัติงาน',it.action||'-',x,cy,w,rpAt(cy),2);
 
     const s = it.sightings.length ? it.sightings : [{place:'',time:''}];
     {
