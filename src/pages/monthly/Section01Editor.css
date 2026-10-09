@@ -1900,8 +1900,10 @@
    SECURITY BODY
 ========================================================= */
 
+
+
 .cover-security-body {
-  height: 69%;
+  height: 81%;
 
   position: relative;
 
@@ -2172,8 +2174,8 @@
 .cover-photo-frame {
   position: relative;
 
-  width: 460px;
-  height: 260px;
+  width: 560px;
+  height: 320px;
 
   transform: translateY(5px);
 
@@ -2364,24 +2366,26 @@
   gap: 3%;
 }
 
+/* =========================================
+   COVER FOOTER — EMERGENCY 191 BADGE
+========================================= */
+
 .cover-footer-badge {
-  width: 29px;
-  height: 29px;
-
-  flex: 0 0 auto;
-
-  border:
-    1px solid
-    rgba(255,255,255,.35);
-
-  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 36px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  font-size: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+
+  color: #ffffff;
+  font-size: 13px;
   font-weight: 900;
+  line-height: 2;
 }
 
 .cover-footer-item > div:last-child,
@@ -2420,14 +2424,14 @@
 
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 15px;
 
   text-align: right;
 }
 
 .cover-online-dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 
   border-radius: 50%;
 
@@ -2462,4 +2466,140 @@
 .cover-radar-cross,
 .cover-orbit {
   display: none;
+}
+
+/* SLOGAN MOVED TO FOOTER */
+
+.cover-footer {
+  grid-template-columns: 1fr 2fr 1fr;
+}
+
+.cover-footer-center {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cover-footer-center .cover-slogan {
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: transparent;
+  color: #fff;
+}
+
+.cover-footer-center .cover-slogan strong {
+  flex: 0 1 auto;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.cover-footer-center .cover-slogan span {
+  flex: 1;
+  width: auto;
+  height: 1px;
+  background: rgba(255,255,255,0.45);
+}
+
+/* =========================================
+   COVER FOOTER — RIGHT STATUS
+========================================= */
+
+.cover-footer-right {
+  justify-self: end;
+  align-self: center;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 15px;
+  min-width: 150px;
+
+  text-align: right;
+}
+
+/* กล่องข้อความ */
+.cover-footer-right > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* SECURITY NETWORK */
+.cover-footer-right small {
+  font-size: 8px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.08em;
+}
+
+/* 24 Hr ONLINE */
+.cover-footer-right strong {
+  margin-top: 0.1px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+/* จุดสีเขียว */
+.cover-online-dot {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+
+  border-radius: 50%;
+  background: #60dc9b;
+
+  box-shadow: 0 0 0 4px
+    rgba(96, 220, 155, 0.12);
+}
+
+/* =========================================
+   COVER FOOTER — LEFT CONTACT
+   ขนาดตัวอักษรเท่าฝั่งขวา
+========================================= */
+
+.cover-footer-item > div:last-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* EMERGENCY / CONTACT */
+.cover-footer-item small {
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.08em;
+}
+
+/* เหตุด่วน เหตุร้าย แจ้ง 191 */
+.cover-footer-item strong {
+  margin-top: 0.1px;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.3;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+/* =========================================
+   COVER — HIDE LEFT & RIGHT INFORMATION
+========================================= */
+
+.cover-side-info.cover-side-left,
+.cover-side-info.cover-side-right {
+  visibility: hidden;
 }

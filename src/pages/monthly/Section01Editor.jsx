@@ -78,7 +78,7 @@ const createDefaultCover = (center) => {
       'ดูแลความปลอดภัย เพื่อประชาชน',
 
     footerLeft:
-      'เหตุด่วน เหตุร้าย แจ้ง 191',
+      'แจ้งเหตุด่วน เหตุร้าย',
 
     footerCenter: stationName,
 
@@ -1907,49 +1907,7 @@ const Section01Editor = forwardRef(
 
           {/* FOOTER */}
 
-          <div className="section01-panel-block">
-
-            <label>
-              ข้อความส่วนท้าย
-            </label>
-
-            <input
-              className="section01-input"
-              value={form.footerLeft}
-              placeholder="ด้านซ้าย"
-              onChange={(e) =>
-                changeField(
-                  'footerLeft',
-                  e.target.value
-                )
-              }
-            />
-
-            <input
-              className="section01-input"
-              value={form.footerCenter}
-              placeholder="ตรงกลาง"
-              onChange={(e) =>
-                changeField(
-                  'footerCenter',
-                  e.target.value
-                )
-              }
-            />
-
-            <input
-              className="section01-input"
-              value={form.footerRight}
-              placeholder="ด้านขวา"
-              onChange={(e) =>
-                changeField(
-                  'footerRight',
-                  e.target.value
-                )
-              }
-            />
-
-          </div>
+          
 
 
           <div className="section01-panel-block">
@@ -2168,10 +2126,7 @@ const Section01Editor = forwardRef(
                     </div>
 
 
-                    <div className="cover-main-status">
-                        <span />
-                        SECURITY SYSTEM
-                    </div>
+                    
 
                     </div>
 
@@ -2293,13 +2248,7 @@ const Section01Editor = forwardRef(
                     </div>
 
 
-                    <div className="cover-slogan">
-                    <span />
-                    <strong>
-                        “{form.slogan}”
-                    </strong>
-                    <span />
-                    </div>
+                    
 
                 </section>
 
@@ -2315,25 +2264,25 @@ const Section01Editor = forwardRef(
 
                     <div>
                         <small>EMERGENCY / CONTACT</small>
-                        <strong>{form.footerLeft}</strong>
+                        <strong>แจ้งเหตุด่วน เหตุร้าย</strong>
                     </div>
                     </div>
 
 
                     <div className="cover-footer-center">
-                    <small>CCTV NARATHIWAT</small>
-                    <strong>{form.footerCenter}</strong>
+                      <div className="cover-slogan">
+                        <span />
+                        <strong>“{form.slogan}”</strong>
+                        <span />
+                      </div>
                     </div>
-
 
                     <div className="cover-footer-right">
                     <span className="cover-online-dot" />
 
                     <div>
                         <small>SECURITY NETWORK</small>
-                        <strong>
-                        {form.footerRight || 'ONLINE'}
-                        </strong>
+                        <strong>24 HR ONLINE</strong>
                     </div>
                     </div>
 
