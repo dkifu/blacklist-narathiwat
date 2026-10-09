@@ -1,0 +1,379 @@
+.section03-editor {
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* =========================================
+   SECTION 03 — FIXED A4 PREVIEW SYSTEM
+========================================= */
+
+.section03-preview {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+
+  padding: 20px;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  overflow: hidden;
+
+  background: #0f141c;
+  border: 1px solid #293241;
+  border-radius: 14px;
+}
+
+/* Scaled page placeholder */
+.section03-paper-stage {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+/* Actual A4 landscape canvas */
+.section03-paper {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 1120px;
+  height: 792px;
+
+  box-sizing: border-box;
+  padding: 34px;
+  margin: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  transform-origin: top left;
+  overflow: hidden;
+
+  background: #ffffff;
+  color: #17283f;
+
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+
+  font-family: 'Noto Sans Thai', sans-serif;
+}
+
+
+
+
+/* =========================================
+   REPORT HEADING
+========================================= */
+
+.section03-heading {
+  margin-bottom: 3%;
+  flex-shrink: 0;
+}
+
+.section03-heading h2 {
+  margin: 0;
+
+  font-size: clamp(17px, 2.8cqw, 27px);
+  font-weight: 900;
+
+  color: #831329;
+  line-height: 1.35;
+}
+
+.section03-heading p {
+  margin: 5px 0 0;
+
+  font-size: clamp(15px, 1.1cqw, 12px);
+  color: #667085;
+}
+
+/* =========================================
+   TABLE WRAPPER
+========================================= */
+
+.section03-table-wrap {
+  width: 100%;
+  min-width: 0;
+  flex: 0 0 auto;
+  overflow: hidden;
+
+  background: linear-gradient(180deg, #ffffff 0%, #fcfcfd 100%);
+  border: 1px solid #e4e8ef;
+  border-radius: 16px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+}
+
+/* =========================================
+   TABLE
+========================================= */
+
+.section03-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  font-size: 13px;
+  line-height: 1.5;
+
+  font-weight: 500;
+}
+
+.section03-table th,
+.section03-table td {
+  padding: 10px 6px;
+
+  border-right: 1px solid #d8dee8;
+  border-bottom: 1px solid #d8dee8;
+  text-align: center;
+  vertical-align: middle;
+
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+/* HEADER */
+.section03-table thead th {
+  background: linear-gradient(180deg, #93162f 0%, #7d1329 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  padding-top: 11px;
+  padding-bottom: 11px;
+  
+}
+
+/* CATEGORY COLUMN */
+.section03-table thead th:first-child {
+  width: 22%;
+}
+
+/* 12 MONTHS */
+.section03-table thead th:nth-child(n+2):nth-child(-n+13) {
+  width: 4.75%;
+}
+
+/* TOTAL + UTILIZED */
+.section03-table thead th:nth-child(14),
+.section03-table thead th:nth-child(15) {
+  width: 10.5%;
+}
+
+.section03-table thead th:first-child {
+  border-top-left-radius: 14px;
+}
+
+.section03-table thead th:last-child {
+  border-top-right-radius: 14px;
+}
+
+/* CATEGORY NAME */
+.section03-table tbody th {
+  min-width: 0;
+  text-align: left;
+  padding-left: 12px;
+  padding-right: 8px;
+
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+/* =========================================
+   EVENT CATEGORY COLORS
+========================================= */
+
+/* 01 — UNREST : RED */
+.section03-table tbody tr:nth-child(1) > th {
+  background: #dc3545;
+  color: #ffffff;
+}
+
+.section03-table tbody tr:nth-child(1) > td {
+  background: #fff5f6;
+}
+
+/* 02 — ACCIDENT : YELLOW */
+.section03-table tbody tr:nth-child(2) > th {
+  background: #f4c430;
+  color: #28313d;
+}
+
+.section03-table tbody tr:nth-child(2) > td {
+  background: #fffdf0;
+}
+
+/* 03 — CRIME : GREEN */
+.section03-table tbody tr:nth-child(3) > th {
+  background: #20a36b;
+  color: #ffffff;
+}
+
+.section03-table tbody tr:nth-child(3) > td {
+  background: #f1fbf6;
+}
+
+/* 04 — LPR / AI : BLUE */
+.section03-table tbody tr:nth-child(4) > th {
+  background: #2378bb;
+  color: #ffffff;
+}
+
+.section03-table tbody tr:nth-child(4) > td {
+  background: #f0f7fd;
+}
+
+/* =========================================
+   TOTAL COLUMNS
+========================================= */
+
+.section03-table .section03-total {
+  font-weight: 900;
+  font-size: 13px;
+  color: #17283f;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+/* GRAND TOTAL */
+.section03-table .section03-grand-total > th,
+.section03-table .section03-grand-total > td {
+  background: linear-gradient(180deg, #f4e1e6 0%, #edd3da 100%);
+  color: #651225;
+
+  font-weight: 900;
+  font-size: 15px;
+  text-align: center;
+}
+
+/* =========================================
+   FOOTNOTE
+========================================= */
+
+.section03-note {
+  margin-top: auto;
+  padding-top: 14px;
+
+  color: #8791a1;
+  font-size: clamp(8px, 0.9cqw, 10px);
+}
+
+/* =========================================
+   LOADING / ERROR
+========================================= */
+
+.section03-message {
+  padding: 35px;
+  text-align: center;
+
+  background: #0f141c;
+  border: 1px solid #293241;
+  border-radius: 12px;
+
+  color: #dce3ed;
+  font-size: 12px;
+}
+
+/* =========================================
+   NARROW WORKSPACE
+========================================= */
+
+@media (max-width: 980px) {
+  .section03-preview {
+    padding: 12px;
+  }
+}
+
+
+
+/* =========================================
+   SECTION 03 — MODERN CHART
+========================================= */
+
+.section03-chart {
+  flex: 0 0 auto;
+  min-height: 0;
+  margin-top: 16px;
+  padding: 14px 16px 12px;
+
+  background:
+    linear-gradient(180deg, #fafbfd 0%, #f4f6f9 100%);
+  border: 1px solid #e4e8ef;
+  border-radius: 18px;
+
+  box-shadow:
+    0 8px 18px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  overflow: visible;
+}
+
+.section03-chart-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.section03-chart-header h3 {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(14px, 1.7cqw, 20px);
+  font-weight: 900;
+  color: #831329;
+  letter-spacing: -0.01em;
+}
+
+.section03-chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1000 / 245;
+  overflow: visible;
+}
+
+.section03-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+
+  gap: 8px 16px;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+.section03-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 4px 10px;
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #e4e8ef;
+
+  font-size: clamp(8px, 0.95cqw, 11px);
+  font-weight: 700;
+  color: #475569;
+}
+
+.section03-chart-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 3px;
+}
+
+.section03-table tr > *:last-child {
+  border-right: none;
+}
+
+.section03-table tbody tr:last-child > * {
+  border-bottom: none;
+}

@@ -10,6 +10,7 @@ import './MonthlyReport.css'
 
 import Section01Editor from './monthly/Section01Editor'
 import Section02Editor from './monthly/Section02Editor'
+import Section03Editor from './monthly/Section03Editor'
 
 const MONTHS = [
   { value: 1, label: 'มกราคม' },
@@ -1362,25 +1363,45 @@ function MonthlyReport({ profile }) {
                             }
                         />
 
-                    ) : activeSection.id === 2 ? (
+                    
+                        ) : activeSection.id === 2 ? (
 
-                        <Section02Editor
-                            report={currentReport}
-                            center={selectedCenter}
-                            month={month}
-                            year={year}
+                            <Section02Editor
+                                report={currentReport}
+                                center={selectedCenter}
+                                month={month}
+                                year={year}
 
-                            canEdit={
-                                canEdit &&
-                                editMode
-                            }
+                                canEdit={
+                                    canEdit &&
+                                    editMode
+                                }
 
-                            onDataChange={
-                                handleSectionDataChange
-                            }
-                        />
+                                onDataChange={
+                                    handleSectionDataChange
+                                }
+                            />
 
-                    ) : (
+                        ) : activeSection.id === 3 ? (
+
+                            <Section03Editor
+                                report={currentReport}
+                                center={selectedCenter}
+                                month={month}
+                                year={year}
+
+                                canEdit={
+                                    canEdit &&
+                                    editMode
+                                }
+
+                                onDataChange={
+                                    handleSectionDataChange
+                                }
+                            />
+
+                        ) : (
+
 
                         <div className="monthly-editor-placeholder">
 
