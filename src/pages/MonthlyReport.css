@@ -1369,3 +1369,14 @@
   font-size: 11px;
   line-height: 1.35;
 }
+
+
+/* PDF EXPORT — KEEP EVERY SECTION IN CAPTURE AREA */
+
+.monthly-pdf-export-host > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+}

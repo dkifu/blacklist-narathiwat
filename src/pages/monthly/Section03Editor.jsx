@@ -1,5 +1,13 @@
 
-import { useEffect, useRef, useState } from 'react'
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react'
+
+import html2canvas from 'html2canvas'
 import { supabase } from '../../lib/supabase'
 import './Section03Editor.css'
 
@@ -175,21 +183,53 @@ function Section03Chart({ rows, year }) {
 
     
 
-export default function Section03Editor({
+const Section03Editor = forwardRef(function Section03Editor({
   report,
   center,
+  month,
   year,
-}) {
+  canEdit = false,
+  onDataChange,
+}, ref) {
   const [rows, setRows] = useState([])
+
+  const [sourceRows, setSourceRows] = useState([])
+
+  const [savedRows, setSavedRows] = useState([])
+
+  const [manualUtilizedKeys, setManualUtilizedKeys] = useState([])
+  const [savedManualUtilizedKeys, setSavedManualUtilizedKeys] = useState([])
+
+  const [sectionSaving, setSectionSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
+  const [saveStatus, setSaveStatus] = useState('')
+  const [exportingPng, setExportingPng] = useState(false)
+
+  const [editMonth, setEditMonth] = useState(0)
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const previewRef = useRef(null)
+  const paperRef = useRef(null)
   const [previewScale, setPreviewScale] = useState(1)
 
   const selectedYear = Number(year)
   const calendarYear =
     selectedYear >= 2400 ? selectedYear - 543 : selectedYear
+
+  const today = new Date()
+
+        const editableMonthCount =
+        calendarYear < today.getFullYear()
+            ? 12
+            : calendarYear === today.getFullYear()
+            ? today.getMonth()
+            : 0
+
+        useEffect(() => {
+        setEditMonth(Math.max(0, editableMonthCount - 1))
+        }, [calendarYear, editableMonthCount, center?.id])
 
   useEffect(() => {
     let active = true
@@ -198,6 +238,11 @@ export default function Section03Editor({
       setLoading(true)
       setError('')
       setRows([])
+      setSourceRows([])
+      setSavedRows([])
+      setSaveMessage('')
+      setManualUtilizedKeys([])
+      setSavedManualUtilizedKeys([])
 
       try {
         const centerId = Number(center?.id)
@@ -317,25 +362,111 @@ export default function Section03Editor({
             ? values.reduce((sum, value) => sum + (value ?? 0), 0)
             : null
 
-          const utilizedEntries = MONTHS.map(
-            (_, monthIndex) =>
-              monthIndex < completedMonths
-                ? utilizedValues[`${monthIndex}|${type.key}`]
-                : undefined
-          )
+          
+            /* ใช้ขยายผลได้: ค่าเริ่มต้นเท่ากับยอดรวม */
+            const utilized = total
 
-          const utilized = utilizedEntries.some(
-            value => value !== undefined
-          )
-            ? utilizedEntries.reduce(
-                (sum, value) => sum + (value ?? 0), 0
-              )
-            : null
+            return { ...type, values, total, utilized }
 
-          return { ...type, values, total, utilized }
+                    })
+
+        
+const displayRows = nextRows.map(row => ({
+    ...row,
+    values: [...row.values],
+    }))
+    let loadedManualKeys = []
+
+    // โหลดเฉพาะข้อมูลที่บันทึกของรายงานหัวข้อ 03
+    if (report?.id) {
+    const { data: sectionData, error: sectionError } =
+        await supabase
+        .from('monthly_report_sections')
+        .select('content')
+        .eq('report_id', report.id)
+        .eq('section_no', 3)
+        .maybeSingle()
+
+    if (sectionError) throw sectionError
+
+    const content = sectionData?.content
+
+    if (content && Number(content.year) === calendarYear) {
+        const overrides = content.overrides || {}
+        const utilizedOverrides = content.utilizedOverrides || {}
+
+        loadedManualKeys = Object.keys(utilizedOverrides).filter(
+            key => TYPE_KEYS.has(key)
+        )
+
+        displayRows.forEach(row => {
+        const monthChanges = overrides[row.key] || {}
+
+        row.values = row.values.map((original, index) => {
+            if (index >= completedMonths) return null
+
+            if (!Object.prototype.hasOwnProperty.call(
+            monthChanges, index
+            )) {
+            return original
+            }
+
+            const value = monthChanges[index]
+
+            return value === null ||
+            (Number.isSafeInteger(value) && value >= 0)
+            ? value
+            : original
         })
 
-        if (active) setRows(nextRows)
+        const validValues = row.values.filter(
+            value => value !== null
+        )
+
+        row.total = validValues.length
+            ? validValues.reduce((sum, value) => sum + value, 0)
+            : null
+            // ค่าอัตโนมัติใช้ยอดรวมล่าสุด
+                row.utilized = row.total
+
+        if (Object.prototype.hasOwnProperty.call(
+            utilizedOverrides, row.key
+        )) {
+            const value = utilizedOverrides[row.key]
+
+            if (
+            value === null ||
+            (Number.isSafeInteger(value) && value >= 0)
+            ) {
+            row.utilized = value
+            }
+        }
+        })
+    }
+    }
+
+    if (active) {
+    setSourceRows(
+        nextRows.map(row => ({
+        ...row,
+        values: [...row.values],
+        }))
+    )
+
+    setRows(displayRows)
+
+    setSavedRows(
+        displayRows.map(row => ({
+        ...row,
+        values: [...row.values],
+        }))
+    )
+
+    setManualUtilizedKeys(loadedManualKeys)
+    setSavedManualUtilizedKeys([...loadedManualKeys])
+
+    }
+
       } catch (err) {
         if (active) {
           setError(err.message || 'ไม่สามารถโหลดข้อมูลได้')
@@ -347,48 +478,64 @@ export default function Section03Editor({
 
     load()
     return () => { active = false }
-  }, [center?.id, calendarYear])
+  }, [center?.id, calendarYear, report?.id])
 
   
   // =========================================
   // SECTION 03 — AUTO FIT A4 PREVIEW
   // =========================================
 
-  useEffect(() => {
-    if (loading || error) return
+  
+useEffect(() => {
+  if (loading || error) return
 
-    const element = previewRef.current
-    if (!element) return
+  const element = previewRef.current
+  if (!element) return
 
-    const updateScale = () => {
+  let frameId = 0
+
+  const updateScale = () => {
+    cancelAnimationFrame(frameId)
+
+    frameId = requestAnimationFrame(() => {
       const styles = window.getComputedStyle(element)
 
-      const paddingLeft =
-        parseFloat(styles.paddingLeft) || 0
-
-      const paddingRight =
-        parseFloat(styles.paddingRight) || 0
+      const padding =
+        (parseFloat(styles.paddingLeft) || 0) +
+        (parseFloat(styles.paddingRight) || 0)
 
       const availableWidth = Math.max(
-        1,
-        element.clientWidth - paddingLeft - paddingRight
-      )
+        0,
+        element.clientWidth - padding
+        )
+
+      // อย่าย่อกระดาษตอนพื้นที่ยังซ่อนอยู่
+      if (availableWidth <= 100) return
 
       const nextScale = Math.min(
         1,
         availableWidth / 1120
       )
 
-      setPreviewScale(Math.max(0.1, nextScale))
-    }
+      setPreviewScale(nextScale)
+    })
+  }
 
-    updateScale()
+  const observer = new ResizeObserver(updateScale)
 
-    const observer = new ResizeObserver(updateScale)
     observer.observe(element)
 
-    return () => observer.disconnect()
-  }, [loading, error])
+  window.addEventListener('resize', updateScale)
+
+  updateScale()
+
+  return () => {
+    cancelAnimationFrame(frameId)
+    observer.disconnect()
+    window.removeEventListener('resize', updateScale)
+  }
+}, [loading, error, canEdit])
+
 
 
   const grandTotal = rows.reduce(
@@ -401,6 +548,371 @@ export default function Section03Editor({
 
   const hasData = rows.some(row => row.total != null)
   const hasUtilized = rows.some(row => row.utilized != null)
+
+  
+    const handleManualChange = (typeKey, rawValue) => {
+    if (
+        !canEdit ||
+        editMonth < 0 ||
+        editMonth >= editableMonthCount
+    ) return
+
+    const value =
+        rawValue === '' ? null : Number(rawValue)
+
+    if (
+        value !== null &&
+        (!Number.isSafeInteger(value) || value < 0)
+    ) return
+
+    setRows(previous =>
+        previous.map(row => {
+        if (row.key !== typeKey) return row
+
+        const values = [...row.values]
+        values[editMonth] = value
+
+        
+        const hasValue = values.some(v => v != null)
+
+        const total = hasValue
+        ? values.reduce(
+            (sum, v) => sum + (v ?? 0), 0
+            )
+        : null
+
+        return {
+        ...row,
+        values,
+        total,
+
+        // หากไม่ได้แก้ Manual ให้ตามยอดรวม
+        utilized: manualUtilizedKeys.includes(typeKey)
+            ? row.utilized
+            : total,
+        }
+
+        })
+    )
+    }
+
+
+
+const handleUtilizedChange = (typeKey, rawValue) => {
+  if (!canEdit) return
+
+  const value =
+    rawValue === '' ? null : Number(rawValue)
+
+  if (
+    value !== null &&
+    (!Number.isSafeInteger(value) || value < 0)
+  ) return
+
+  // เมื่อกรอกเอง ให้จดจำว่าเป็น Manual
+  setManualUtilizedKeys(previous =>
+    previous.includes(typeKey)
+      ? previous
+      : [...previous, typeKey]
+  )
+
+  setRows(previous =>
+    previous.map(row =>
+      row.key === typeKey
+        ? { ...row, utilized: value }
+        : row
+    )
+  )
+
+  setSaveMessage('')
+}
+
+
+const enableAutoUtilized = typeKey => {
+  if (!canEdit) return
+
+  setManualUtilizedKeys(previous =>
+    previous.filter(key => key !== typeKey)
+  )
+
+  setRows(previous =>
+    previous.map(row =>
+      row.key === typeKey
+        ? { ...row, utilized: row.total }
+        : row
+    )
+  )
+
+  setSaveMessage('')
+}
+
+
+
+    
+const rowsDifferFrom = reference =>
+  rows.some((row, index) => {
+    const original = reference[index]
+    if (!original) return false
+
+    return (
+      row.utilized !== original.utilized ||
+      row.values.some(
+        (value, monthIndex) =>
+          value !== original.values[monthIndex]
+      )
+    )
+  })
+
+  
+const sameManualKeys = (a, b) =>
+  a.length === b.length &&
+  a.every(key => b.includes(key))
+
+const hasManualChanges =
+  rowsDifferFrom(savedRows) ||
+  !sameManualKeys(
+    manualUtilizedKeys,
+    savedManualUtilizedKeys
+  )
+
+const hasSourceDifferences =
+  rowsDifferFrom(sourceRows) ||
+  manualUtilizedKeys.length > 0
+
+    
+
+    
+    const saveManualReport = async () => {
+    if (sectionSaving) return
+
+    if (!canEdit || !report?.id) {
+        setSaveStatus('error')
+        setSaveMessage('ไม่มีสิทธิ์แก้ไขหรือไม่พบ Report ID')
+        return
+    }
+
+    if (!hasManualChanges) return
+
+    setSectionSaving(true)
+    setSaveMessage('')
+
+    try {
+        const overrides = {}
+        const utilizedOverrides = {}
+
+        rows.forEach(row => {
+        const original = sourceRows.find(
+            item => item.key === row.key
+        )
+
+        if (!original) return
+
+        const monthChanges = {}
+
+        row.values.forEach((value, index) => {
+            // ไม่บันทึกเดือนปัจจุบันและเดือนอนาคต
+            if (index >= editableMonthCount) return
+
+            if (value !== original.values[index]) {
+            monthChanges[index] = value
+            }
+        })
+
+        if (Object.keys(monthChanges).length > 0) {
+            overrides[row.key] = monthChanges
+        }
+
+        if (manualUtilizedKeys.includes(row.key)) {
+            utilizedOverrides[row.key] = row.utilized
+        }
+        })
+
+        const snapshot = rows.map(row => ({
+        ...row,
+        values: [...row.values],
+        }))
+
+        const { error: saveError } = await supabase
+        .from('monthly_report_sections')
+        .upsert(
+            {
+            report_id: report.id,
+            section_no: 3,
+            content: {
+                version: 1,
+                year: calendarYear,
+                overrides,
+                utilizedOverrides,
+            },
+            updated_at: new Date().toISOString(),
+            },
+            {
+            onConflict: 'report_id,section_no',
+            }
+        )
+
+        if (saveError) throw saveError
+
+        setSavedRows(snapshot)
+        setSavedManualUtilizedKeys([...manualUtilizedKeys])
+        setSaveStatus('success')
+        setSaveMessage('บันทึกข้อมูลรายงานเรียบร้อยแล้ว')
+
+        onDataChange?.()
+
+    } catch (err) {
+        console.error('Save Section 03 error:', err)
+
+        setSaveStatus('error')
+        setSaveMessage(
+        err.message || 'ไม่สามารถบันทึกข้อมูลได้'
+        )
+    } finally {
+        setSectionSaving(false)
+    }
+    }
+
+
+
+    
+    const resetManualChanges = () => {
+        setRows(
+            sourceRows.map(row => ({
+            ...row,
+            values: [...row.values],
+            }))
+        )
+
+        setManualUtilizedKeys([])
+        setSaveMessage('')
+        setSaveStatus('')
+    }
+
+  
+/* =========================================
+   SECTION 03 — EXPORT A4
+========================================= */
+
+const captureSection03 = async () => {
+  const node = paperRef.current
+
+  if (loading || error || !node) {
+    throw new Error('หน้ารายงานหัวข้อ 03 ยังไม่พร้อม')
+  }
+
+  if (document.fonts?.ready) {
+    await document.fonts.ready
+  }
+
+  const originalTransform = node.style.transform
+  const originalOrigin = node.style.transformOrigin
+
+  try {
+    // จับภาพจากขนาดกระดาษจริง ไม่ใช้ขนาดที่ย่อใน Preview
+    node.style.transform = 'none'
+    node.style.transformOrigin = 'top left'
+
+    await new Promise(resolve => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(resolve)
+      })
+    })
+
+    const canvas = await html2canvas(node, {
+      width: 1120,
+      height: 792,
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: 1120,
+      windowHeight: 792,
+    })
+
+    return canvas.toDataURL('image/png')
+
+  } finally {
+    node.style.transform = originalTransform
+    node.style.transformOrigin = originalOrigin
+  }
+}
+
+
+
+/* =========================================
+   DOWNLOAD PNG — SECTION 03 ONLY
+========================================= */
+
+const downloadSection03Png = async () => {
+  if (exportingPng || sectionSaving) return
+
+  setExportingPng(true)
+  setSaveMessage('')
+
+  try {
+    const dataUrl = await captureSection03()
+
+    const centerName =
+      center?.code || center?.name || 'CENTER'
+
+    const safeCenterName = String(centerName)
+      .replace(/[\\/:*?"<>|]/g, '_')
+
+    const link = document.createElement('a')
+
+    link.href = dataUrl
+    link.download =
+      `Monthly_Report_${safeCenterName}_${month}_${year}_Section03.png`
+
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+
+    setSaveStatus('success')
+    setSaveMessage('ดาวน์โหลด PNG หัวข้อ 03 เรียบร้อยแล้ว')
+
+  } catch (err) {
+    console.error('Section 03 PNG error:', err)
+
+    setSaveStatus('error')
+    setSaveMessage(
+      err.message || 'ไม่สามารถดาวน์โหลด PNG ได้'
+    )
+
+  } finally {
+    setExportingPng(false)
+  }
+}
+
+
+/* API สำหรับ MonthlyReport.jsx */
+useImperativeHandle(ref, () => ({
+  isReady: () => !loading && !error && rows.length === 4,
+
+  hasData: () =>
+    rows.some(row =>
+      row.values.some(value => value != null) ||
+      row.utilized != null
+    ),
+
+  exportPng: async () => {
+    return await captureSection03()
+  },
+
+  exportPdfPages: async () => {
+    const dataUrl = await captureSection03()
+
+    return [{
+      sectionNo: 3,
+      orientation: 'landscape',
+      dataUrl,
+    }]
+  },
+}))
+
 
   if (loading) {
     return <div className="section03-message">
@@ -416,8 +928,206 @@ export default function Section03Editor({
 
   return (
     
-    <div className="section03-editor">
-        <div className="section03-preview" ref={previewRef}>
+    
+<div className={`section03-editor ${canEdit ? 'section03-editing' : ''}`}>
+
+  {canEdit && (
+    <aside className="section03-panel">
+
+      <div className="section03-panel-head">
+        <span>หัวข้อ 03</span>
+        <h3>แก้ไขข้อมูลรายงาน</h3>
+        <p>ปรับข้อมูลเฉพาะรายงานฉบับนี้</p>
+      </div>
+
+      <div className="section03-panel-body">
+
+        <label className="section03-field-label">
+          เลือกเดือนที่ต้องการแก้ไข
+        </label>
+
+        <select
+          className="section03-month-select"
+          value={editableMonthCount > 0 ? editMonth : ''}
+          disabled={editableMonthCount === 0}
+          onChange={e => setEditMonth(Number(e.target.value))}
+        >
+          {editableMonthCount === 0 && (
+            <option value="">ยังไม่มีเดือนที่ปิดแล้ว</option>
+          )}
+
+          {MONTHS.slice(0, editableMonthCount).map(
+            (name, index) => (
+              <option key={name} value={index}>
+                {name} พ.ศ. {selectedYear}
+              </option>
+            )
+          )}
+        </select>
+
+        <div className="section03-edit-fields">
+          {rows.map(row => (
+            <label className="section03-edit-field" key={row.key}>
+              <span>
+                <i
+                  style={{
+                    background: CHART_COLORS[row.key],
+                  }}
+                />
+                {row.name}
+              </span>
+
+              <input
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                disabled={editableMonthCount === 0}
+                value={row.values[editMonth] ?? ''}
+                placeholder="ว่าง"
+                onChange={e =>
+                  handleManualChange(row.key, e.target.value)
+                }
+              />
+            </label>
+          ))}
+        </div>
+
+        
+        {/* ===== UTILIZED TOTAL EDITOR ===== */}
+        <div className="section03-utilized-block">
+
+        <h4>ใช้ขยายผลได้</h4>
+
+        <p>
+            แก้ไขยอดรวมของปี แยกตามประเภทเหตุการณ์
+        </p>
+
+        
+        {rows.map(row => (
+            <div
+                key={row.key}
+                className="section03-utilized-field"
+            >
+                <span>
+                <i
+                    style={{
+                    background: CHART_COLORS[row.key]
+                    }}
+                />
+                {row.name}
+                </span>
+
+                <div className="section03-utilized-controls">
+
+                <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    value={row.utilized ?? ''}
+                    placeholder="ว่าง"
+                    aria-label={`ใช้ขยายผลได้ ${row.name}`}
+                    disabled={sectionSaving}
+                    onChange={e =>
+                    handleUtilizedChange(
+                        row.key,
+                        e.target.value
+                    )
+                    }
+                />
+
+                {manualUtilizedKeys.includes(row.key) && (
+                    <button
+                    type="button"
+                    className="section03-auto-button"
+                    disabled={sectionSaving}
+                    onClick={() =>
+                        enableAutoUtilized(row.key)
+                    }
+                    >
+                    อัตโนมัติ
+                    </button>
+                )}
+
+                </div>
+            </div>
+        ))}
+
+
+        </div>
+
+        
+        <button
+        type="button"
+        className="section03-save-button"
+        disabled={
+            sectionSaving ||
+            !hasManualChanges ||
+            !report?.id
+        }
+        onClick={saveManualReport}
+        >
+        {sectionSaving
+            ? 'กำลังบันทึก...'
+            : 'บันทึกข้อมูลรายงาน'}
+        </button>
+
+        {saveMessage && (
+        <p className={`section03-save-message ${saveStatus}`}>
+            {saveMessage}
+        </p>
+        )}
+
+
+        <button
+          type="button"
+          className="section03-reset-button"
+          disabled={sectionSaving || !hasSourceDifferences}
+          onClick={resetManualChanges}
+        >
+          คืนค่าจากสถิติรายปี
+        </button>
+
+        <p className="section03-edit-note">
+        {hasManualChanges
+            ? 'มีข้อมูลที่แก้ไขแต่ยังไม่ได้บันทึก'
+            : 'ไม่มีการเปลี่ยนแปลงที่รอบันทึก'}
+        </p>
+
+        
+        
+
+        {/* SECTION 03 — PNG EXPORT */}
+        <div className="section03-export-block">
+        <h4>ส่งออกรายงาน</h4>
+
+        <button
+            type="button"
+            className="section03-png-button"
+            onClick={downloadSection03Png}
+            disabled={
+            exportingPng ||
+            sectionSaving ||
+            !report?.id
+            }
+        >
+            {exportingPng
+            ? 'กำลังสร้าง PNG...'
+            : '↓ บันทึกหน้า 03 เป็น PNG'}
+        </button>
+
+        <small>
+            บันทึกเฉพาะหัวข้อ 03 เป็นภาพ A4 แนวนอน
+         </small>
+      </div>
+
+    </div>
+  </aside>
+)}
+
+  <div className="section03-preview" ref={previewRef}>
+
 
             <div
             className="section03-paper-stage"
@@ -429,8 +1139,9 @@ export default function Section03Editor({
 
             <div
                 className="section03-paper"
+                ref={paperRef}
                 style={{
-                transform: `scale(${previewScale})`,
+                    transform: `scale(${previewScale})`,
                 }}
             >
 
@@ -492,5 +1203,7 @@ export default function Section03Editor({
         </div>    {/* paper-stage */}
       </div>      {/* preview */}
     </div>        // editor
-  )
-}
+   )
+})
+
+export default Section03Editor

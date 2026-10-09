@@ -104,6 +104,11 @@ function MonthlyReport({ profile }) {
 
   const section01ExportRef = useRef(null)
   const section02ExportRef = useRef(null)
+  const section03ExportRef = useRef(null)
+
+  
+  const [section03ExportVersion, setSection03ExportVersion] = useState(0)
+
   const [exportingPdf, setExportingPdf] = useState(false)
 
   const [editorOpen, setEditorOpen] = useState(false)
@@ -755,18 +760,22 @@ function MonthlyReport({ profile }) {
         // ตอนนี้มี Exporter จริงเฉพาะ 02
         // =================================
 
+        
         const sectionExporters = [
         {
             sectionNo: 1,
-            exporter:
-            section01ExportRef.current,
+            exporter: section01ExportRef.current,
         },
         {
             sectionNo: 2,
-            exporter:
-            section02ExportRef.current,
+            exporter: section02ExportRef.current,
+        },
+        {
+            sectionNo: 3,
+            exporter: section03ExportRef.current,
         },
         ]
+
 
         sectionExporters.sort(
             (a, b) =>
@@ -1189,6 +1198,17 @@ function MonthlyReport({ profile }) {
                 canEdit={false}
                 />
 
+                <Section03Editor
+                key={`section03-export-${currentReport.id}-${section03ExportVersion}`}
+                ref={section03ExportRef}
+                report={currentReport}
+                center={selectedCenter}
+                month={month}
+                year={year}
+                canEdit={false}
+                />
+
+
             </div>
             )}
 
@@ -1382,25 +1402,26 @@ function MonthlyReport({ profile }) {
                                 }
                             />
 
+                        
                         ) : activeSection.id === 3 ? (
 
-                            <Section03Editor
-                                report={currentReport}
-                                center={selectedCenter}
-                                month={month}
-                                year={year}
+                        <Section03Editor
+                            report={currentReport}
+                            center={selectedCenter}
+                            month={month}
+                            year={year}
+                            canEdit={canEdit && editMode}
+                            onDataChange={() => {
+                            handleSectionDataChange()
 
-                                canEdit={
-                                    canEdit &&
-                                    editMode
-                                }
-
-                                onDataChange={
-                                    handleSectionDataChange
-                                }
-                            />
+                            setSection03ExportVersion(
+                                previous => previous + 1
+                            )
+                            }}
+                        />
 
                         ) : (
+
 
 
                         <div className="monthly-editor-placeholder">
