@@ -1904,45 +1904,20 @@
 
 .cover-security-body {
   height: 81%;
-
   position: relative;
-
   display: grid;
-  grid-template-columns:
-    1fr 2.3fr 1fr;
-
+  grid-template-columns: 1fr 2.3fr 1fr;
   overflow: hidden;
 
-  background: #ffffff;
+  background-color: #ffffff;
+  background-image: url('/cover-security-bg.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
 }
 
 .cover-security-body::before {
-  content: '';
-
-  position: absolute;
-  inset: 0;
-
-  opacity: .48;
-
-  background-image:
-    linear-gradient(
-      rgba(25, 53, 78, .07) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(25, 53, 78, .07) 1px,
-      transparent 1px
-    );
-
-  background-size: 24px 24px;
-
-  mask-image:
-    radial-gradient(
-      circle at center,
-      #000 20%,
-      transparent 78%
-    );
+  display: none;
 }
 
 
@@ -2603,3 +2578,4 @@
 .cover-side-info.cover-side-right {
   visibility: hidden;
 }
+
