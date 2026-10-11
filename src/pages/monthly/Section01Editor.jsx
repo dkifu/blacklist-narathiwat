@@ -623,32 +623,43 @@ const Section01Editor = forwardRef(
 
             }
 
+          
           /*
-           * HERO IMAGE
-           */
+          * HERO IMAGE ประจำศูนย์
+          * ใช้ภาพเดียวกันทุกเดือน
+          */
           let nextHero = ''
 
-          if (
-            nextForm.heroImagePath
-          ) {
+          const centerHeroPath = `${centerId}/monthly-cover`
 
-            try {
+          try {
+            // โหลดภาพหลักของศูนย์ก่อนเสมอ
+            nextHero = await loadStorageImage(centerHeroPath)
 
-              nextHero =
-                await loadStorageImage(
+            nextForm = {
+              ...nextForm,
+              heroImagePath: centerHeroPath,
+            }
+          } catch (error) {
+            // รองรับภาพจากรายงานเก่า
+            // กรณียังไม่มีภาพกลางของศูนย์
+            if (
+              nextForm.heroImagePath &&
+              nextForm.heroImagePath !== centerHeroPath
+            ) {
+              try {
+                nextHero = await loadStorageImage(
                   nextForm.heroImagePath
                 )
-
-            } catch (error) {
-
-              console.warn(
-                'Load cover image:',
-                error
-              )
-
+              } catch (fallbackError) {
+                console.warn(
+                  'Load previous cover image:',
+                  fallbackError
+                )
+              }
             }
-
           }
+
 
 
           if (cancelled) {
