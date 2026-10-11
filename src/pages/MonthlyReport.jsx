@@ -11,6 +11,8 @@ import './MonthlyReport.css'
 import Section01Editor from './monthly/Section01Editor'
 import Section02Editor from './monthly/Section02Editor'
 import Section03Editor from './monthly/Section03Editor'
+import Section04Editor from './monthly/Section04Editor'
+
 
 const MONTHS = [
   { value: 1, label: 'มกราคม' },
@@ -105,9 +107,11 @@ function MonthlyReport({ profile }) {
   const section01ExportRef = useRef(null)
   const section02ExportRef = useRef(null)
   const section03ExportRef = useRef(null)
+  const section04ExportRef = useRef(null)
 
   
   const [section03ExportVersion, setSection03ExportVersion] = useState(0)
+  const [section04ExportVersion, setSection04ExportVersion] = useState(0)
 
   const [exportingPdf, setExportingPdf] = useState(false)
 
@@ -774,6 +778,10 @@ function MonthlyReport({ profile }) {
             sectionNo: 3,
             exporter: section03ExportRef.current,
         },
+        {
+            sectionNo: 4,
+            exporter: section04ExportRef.current,
+        },
         ]
 
 
@@ -1207,6 +1215,17 @@ function MonthlyReport({ profile }) {
                 year={year}
                 canEdit={false}
                 />
+                
+                <Section04Editor
+                key={`section04-export-${currentReport.id}-${section04ExportVersion}`}
+                ref={section04ExportRef}
+                report={currentReport}
+                center={selectedCenter}
+                month={month}
+                year={year}
+                canEdit={false}
+                />
+
 
 
             </div>
@@ -1405,22 +1424,41 @@ function MonthlyReport({ profile }) {
                         
                         ) : activeSection.id === 3 ? (
 
-                        <Section03Editor
-                            report={currentReport}
-                            center={selectedCenter}
-                            month={month}
-                            year={year}
-                            canEdit={canEdit && editMode}
-                            onDataChange={() => {
-                            handleSectionDataChange()
+                            <Section03Editor
+                                report={currentReport}
+                                center={selectedCenter}
+                                month={month}
+                                year={year}
+                                canEdit={canEdit && editMode}
+                                onDataChange={() => {
+                                handleSectionDataChange()
 
-                            setSection03ExportVersion(
-                                previous => previous + 1
-                            )
-                            }}
-                        />
+                                setSection03ExportVersion(
+                                    previous => previous + 1
+                                )
+                                }}
+                            />
+                        
+                        ) : activeSection.id === 4 ? (
+
+                            <Section04Editor
+                                report={currentReport}
+                                center={selectedCenter}
+                                month={month}
+                                year={year}
+                                canEdit={canEdit && editMode}
+                                
+                                onDataChange={() => {
+                                handleSectionDataChange()
+                                setSection04ExportVersion(previous => previous + 1)
+                                }}
+
+                            />
 
                         ) : (
+    
+
+                        
 
 
 
