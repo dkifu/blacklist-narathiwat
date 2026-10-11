@@ -14,6 +14,10 @@ import Section03Editor from './monthly/Section03Editor'
 import Section04Editor from './monthly/Section04Editor'
 
 
+import Section09Editor from './monthly/Section09Editor'
+
+
+
 const MONTHS = [
   { value: 1, label: 'มกราคม' },
   { value: 2, label: 'กุมภาพันธ์' },
@@ -110,11 +114,19 @@ function MonthlyReport({ profile }) {
   const section04ExportRef = useRef(null)
 
   
+  const section09ExportRef = useRef(null)
+
+
+  
   const [section03ExportVersion, setSection03ExportVersion] = useState(0)
   const [section04ExportVersion, setSection04ExportVersion] = useState(0)
 
-  const [exportingPdf, setExportingPdf] = useState(false)
+  
+  const [section09ExportVersion, setSection09ExportVersion] = useState(0)
 
+
+
+  const [exportingPdf, setExportingPdf] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
 
   const [editMode, setEditMode] =
@@ -782,6 +794,13 @@ function MonthlyReport({ profile }) {
             sectionNo: 4,
             exporter: section04ExportRef.current,
         },
+
+        
+        {
+        sectionNo: 9,
+        exporter: section09ExportRef.current,
+        },
+
         ]
 
 
@@ -908,9 +927,13 @@ function MonthlyReport({ profile }) {
             const imageY =
             (pageHeight - imageHeight) / 2
 
+            
             pdf.addImage(
             page.dataUrl,
-            'PNG',
+            page.dataUrl.startsWith('data:image/jpeg')
+                ? 'JPEG'
+                : 'PNG',
+                    
             imageX,
             imageY,
             imageWidth,
@@ -1226,6 +1249,20 @@ function MonthlyReport({ profile }) {
                 canEdit={false}
                 />
 
+                
+
+
+
+
+                <Section09Editor
+                key={`section09-export-${currentReport.id}-${section09ExportVersion}`}
+                ref={section09ExportRef}
+                report={currentReport}
+                center={selectedCenter}
+                month={month}
+                year={year}
+                canEdit={false}
+                />
 
 
             </div>
@@ -1455,11 +1492,26 @@ function MonthlyReport({ profile }) {
 
                             />
 
+                                               
+                        ) : activeSection.id === 9 ? (
+                            <Section09Editor
+                                report={currentReport}
+                                center={selectedCenter}
+                                month={month}
+                                year={year}
+                                canEdit={canEdit && editMode}
+                                onDataChange={() => {
+                                handleSectionDataChange()
+                                setReportHasContent(true)
+                                setSection09ExportVersion(
+                                    previous => previous + 1
+                                )
+                                }}
+                            />
+
+
                         ) : (
-    
-
-                        
-
+                                         
 
 
                         <div className="monthly-editor-placeholder">

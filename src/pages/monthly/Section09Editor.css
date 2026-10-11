@@ -1,0 +1,797 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap');
+
+/* =========================================
+   SECTION 09 EDITOR
+========================================= */
+
+.s09-editor {
+  position: relative;
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  min-width: 0;
+  isolation: isolate;
+}
+
+.s09-editor.view-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* =========================================
+   LEFT EDIT PANEL
+========================================= */
+
+.s09-panel {
+  background: #11161f;
+  border: 1px solid #293241;
+  border-radius: 14px;
+  padding: 18px;
+  color: #e2e8f0;
+  box-sizing: border-box;
+
+  max-height: calc(100vh - 145px);
+  min-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #11161f;
+}
+
+.s09-panel h3 {
+  margin: 0 0 7px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.s09-panel > p {
+  margin: 0 0 15px;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.s09-panel > small {
+  display: block;
+  margin-top: 9px;
+  font-size: 10px;
+  line-height: 1.6;
+  color: #94a3b8;
+}
+
+.s09-upload {
+  width: 100%;
+  min-height: 43px;
+  padding: 9px 12px;
+
+  border: 1px solid #d52655;
+  border-radius: 9px;
+
+  background: #d52655;
+  color: white;
+
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.s09-upload:hover:not(:disabled) {
+  background: #e23665;
+}
+
+.s09-upload:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.s09-progress,
+.s09-message {
+  padding: 11px;
+  margin: 12px 0;
+
+  background: #1b2432;
+  border: 1px solid #334155;
+  border-radius: 8px;
+
+  font-size: 11px;
+  color: #cbd5e1;
+
+  overflow-wrap: anywhere;
+}
+
+.s09-case-count {
+  margin: 20px 0 12px;
+  padding-bottom: 10px;
+
+  border-bottom: 1px solid #334155;
+
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* =========================================
+   ACCORDION
+========================================= */
+
+.s09-accordion {
+  margin-bottom: 9px;
+  border: 1px solid #2d3747;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #171d27;
+}
+
+.s09-accordion-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  width: 100%;
+  min-height: 53px;
+  padding: 10px;
+
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.s09-accordion-head:hover {
+  background: #202a39;
+}
+
+.s09-accordion-head b {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+
+  border-radius: 8px;
+
+  color: #fff;
+  background: #90203c;
+  font-size: 11px;
+}
+
+.s09-accordion-head span {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.s09-accordion-head i {
+  font-size: 16px;
+  font-style: normal;
+  color: #94a3b8;
+}
+
+.s09-fields {
+  padding: 12px;
+  border-top: 1px solid #334155;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.s09-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  font-size: 11px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.s09-fields textarea {
+  width: 100%;
+  min-height: 78px;
+  box-sizing: border-box;
+
+  padding: 9px;
+  border: 1px solid #3a4658;
+  border-radius: 8px;
+
+  background: #0d121a;
+  color: #fff;
+
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.s09-fields textarea:focus {
+  outline: 2px solid #9f2744;
+  outline-offset: 1px;
+}
+
+.s09-fields > button {
+  min-height: 36px;
+
+  background: #166534;
+  border: none;
+  border-radius: 8px;
+
+  color: white;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.s09-fields > button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.s09-file-label {
+  padding: 10px;
+
+  background: #0d121a;
+  border: 1px solid #303b4a;
+  border-radius: 8px;
+}
+
+.s09-file-label input {
+  width: 100%;
+  max-width: 100%;
+  color: #cbd5e1;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.s09-file-label input::file-selector-button {
+  background: #293548;
+  border: 1px solid #41516a;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-right: 7px;
+
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.s09-files-summary {
+  padding: 9px;
+  border-radius: 7px;
+
+  color: #94a3b8;
+  background: #222c3c;
+  font-size: 10px;
+}
+
+/* =========================================
+   PREVIEW CONTAINER
+========================================= */
+
+.s09-preview {
+  min-width: 0;
+  min-height: 480px;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  padding: 14px;
+  box-sizing: border-box;
+
+  overflow: hidden;
+
+  border: 1px solid #293241;
+  border-radius: 14px;
+
+  background: #0f141c;
+}
+
+.s09-stage {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+
+
+/* =========================================
+   SECTION 09 — ROUNDED PAPER PREVIEW
+   ไม่กระทบ PDF EXPORT
+========================================= */
+
+.s09-stage > div {
+  width: 1120px;
+  height: 792px;
+  border-radius: 18px;
+  overflow: hidden;
+  clip-path: inset(0 round 18px);
+}
+
+
+
+
+/* =========================================
+   SECTION 09 — UPLOAD GUIDE
+========================================= */
+
+.s09-guide {
+  width: 100%;
+  max-width: 900px;
+  box-sizing: border-box;
+  padding: 28px;
+
+  background: #161d29;
+  border: 1px solid #303b4d;
+  border-radius: 14px;
+
+  color: #e2e8f0;
+  font-family: 'Noto Sans Thai', sans-serif;
+}
+
+/* HEADER */
+
+.s09-guide-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  padding-bottom: 20px;
+  margin-bottom: 22px;
+
+  border-bottom: 1px solid #354052;
+}
+
+.s09-guide-icon {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(190, 29, 67, 0.15);
+  border: 1px solid rgba(225, 44, 89, 0.35);
+  border-radius: 14px;
+
+  font-size: 28px;
+}
+
+.s09-guide-header h3 {
+  margin: 0 0 6px;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.s09-guide-header p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* SECTIONS */
+
+.s09-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.s09-guide-section {
+  min-width: 0;
+  margin-bottom: 18px;
+  padding: 18px;
+
+  background: #101722;
+  border: 1px solid #2a3648;
+  border-radius: 12px;
+}
+
+.s09-guide-section h4 {
+  margin: 0 0 12px;
+  color: #fda4b6;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.s09-guide-section p,
+.s09-guide-section li {
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.s09-guide-section p {
+  margin: 10px 0 0;
+}
+
+.s09-guide-section ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+/* FILE FORMAT BADGES */
+
+.s09-guide-formats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.s09-guide-formats span {
+  padding: 7px 14px;
+
+  border: 1px solid #7e2941;
+  border-radius: 7px;
+
+  background: #3d1b2a;
+  color: #fda4b6;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* FOLDER TREE */
+
+.s09-guide-tree {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 18px;
+
+  overflow-x: auto;
+
+  background: #090e17;
+  border: 1px solid #293548;
+  border-radius: 10px;
+
+  color: #8ee8ba;
+
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.9;
+
+  white-space: pre;
+}
+
+/* INCOMPLETE FILE NOTE */
+
+.s09-guide-note {
+  padding: 15px 18px;
+  margin-bottom: 18px;
+
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 10px;
+}
+
+.s09-guide-note strong {
+  display: block;
+  margin-bottom: 6px;
+
+  color: #fbbf24;
+  font-size: 13px;
+}
+
+.s09-guide-note p {
+  margin: 0;
+
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+/* FOOTER */
+
+.s09-guide-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.s09-guide-footer span {
+  padding: 6px 10px;
+
+  background: #152b25;
+  border: 1px solid #225c45;
+  border-radius: 7px;
+
+  color: #86efac;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 760px) {
+  .s09-guide {
+    padding: 15px;
+  }
+
+  .s09-guide-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .s09-guide-header h3 {
+    font-size: 17px;
+  }
+
+  .s09-guide-section {
+    padding: 13px;
+  }
+
+  .s09-guide-tree {
+    font-size: 10px;
+  }
+}
+
+
+/* =========================================
+   A4 LANDSCAPE PAGE
+   1120 x 792
+========================================= */
+
+.s09-paper {
+  width: 1120px;
+  height: 792px;
+  min-width: 1120px;
+  min-height: 792px;
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: #fff;
+  color: #1f2937;
+
+  font-family: 'Noto Sans Thai', sans-serif;
+}
+
+.s09-paper-top {
+  flex: 0 0 95px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  background: #fff;
+  border-top: 12px solid #89142b;
+}
+
+.s09-paper-top strong {
+  font-size: 23px;
+  font-weight: 900;
+  color: #8d142b;
+}
+
+.s09-paper-top span {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.s09-paper-title {
+  flex: 0 0 auto;
+  min-height: 52px;
+  max-height: 90px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 8px 21px;
+  margin: 7px 24px 14px;
+
+  background: #f4f0f1;
+  border-left: 7px solid #af1b39;
+  border-radius: 4px;
+
+  color: #212936;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.4;
+
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.s09-paper-columns {
+  flex: 1;
+  min-height: 0;
+
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 15px;
+
+  padding: 0 25px 25px;
+  box-sizing: border-box;
+}
+
+.s09-docs {
+  min-width: 0;
+  min-height: 0;
+
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+}
+
+.s09-docs.one-doc {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.s09-doc {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+
+  overflow: hidden;
+  box-sizing: border-box;
+
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.s09-docs.one-doc .s09-doc {
+  width: 62%;
+}
+
+.s09-doc img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.s09-cctvs {
+  min-width: 0;
+  min-height: 0;
+
+  display: grid;
+  grid-template-rows:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+}
+
+.s09-cctv {
+  min-height: 0;
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+  background: #e8edf3;
+  border: 1px solid #cbd5e1;
+
+  color: #64748b;
+  font-size: 12px;
+}
+
+.s09-cctv img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* =========================================
+   INVISIBLE PDF RENDER HOST
+========================================= */
+
+.s09-export-host {
+  position: absolute;
+  left: 0;
+  top: 0;
+
+  width: 1120px;
+  height: 792px;
+
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1000px) {
+  .s09-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .s09-panel {
+    max-height: 540px;
+  }
+}
+
+@media (max-width: 600px) {
+  .s09-panel {
+    padding: 13px;
+  }
+
+  .s09-preview {
+    padding: 8px;
+    min-height: 280px;
+  }
+}
+
+
+/* =========================================
+   SECTION 09 — FILE STATUS
+========================================= */
+
+.s09-accordion-head .s09-case-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.s09-accordion-head .s09-case-title {
+  display: block;
+  flex: none;
+  width: 100%;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.s09-case-incomplete,
+.s09-case-complete {
+  display: inline-block;
+  max-width: 100%;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.s09-case-incomplete {
+  color: #fda4af;
+}
+
+.s09-case-complete {
+  color: #4ade80;
+}
+
+.s09-accordion:has(.s09-case-incomplete) {
+  border-color: rgba(244, 114, 132, 0.45);
+}
+
+.s09-accordion:has(.s09-case-complete) {
+  border-color: rgba(74, 222, 128, 0.25);
+}
+
