@@ -25,6 +25,79 @@ import {
   CalendarDays,
 } from 'lucide-react'
 
+
+const makeDailyReportForm = (reportDate, unitName = '') => ({
+  reportTitle: 'รายงานประจำวัน',
+  unitName,
+  reportDate,
+
+  cameraReady: 0,
+  cameraBroken: 0,
+
+  avgCameraReady: 0,
+  avgCameraBroken: 0,
+
+  repairTotal: 0,
+  repair24: 0,
+  repair48: 0,
+  repair72: 0,
+
+  dailyUnrest: 0,
+  dailyAccident: 0,
+  dailyCrime: 0,
+  dailySystem: 0,
+
+  totalUnrest: 0,
+  totalAccident: 0,
+  totalCrime: 0,
+  totalSystem: 0,
+
+  dailyCctvTraffic: 0,
+  dailyCctvInvestigation: 0,
+  dailyCctvPrevention: 0,
+
+  cctvTraffic: 0,
+  cctvInvestigation: 0,
+  cctvPrevention: 0,
+})
+
+const makeFormFromSaved = (
+  savedData,
+  reportDate,
+  unitName,
+  resetDaily = false
+) => {
+  const saved =
+    savedData &&
+    typeof savedData === 'object' &&
+    !Array.isArray(savedData)
+      ? savedData
+      : {}
+
+  return {
+    ...makeDailyReportForm(reportDate, unitName),
+    ...saved,
+
+    reportDate,
+    unitName: resetDaily
+    ? (unitName || saved.unitName || '')
+    : (saved.unitName || unitName),
+
+    ...(resetDaily
+      ? {
+          dailyUnrest: 0,
+          dailyAccident: 0,
+          dailyCrime: 0,
+          dailySystem: 0,
+          dailyCctvTraffic: 0,
+          dailyCctvInvestigation: 0,
+          dailyCctvPrevention: 0,
+        }
+      : {}),
+  }
+}
+
+
 function DailyCctvReport({ profile }) {
 
   const getLocalToday = () => {
@@ -74,43 +147,9 @@ function DailyCctvReport({ profile }) {
   const liffId =
     import.meta.env.VITE_LIFF_ID
 
-  const [form, setForm] = useState({
-    reportTitle: 'รายงานประจำวัน',
-    unitName: 'สภ.เมืองนราธิวาส',
-    reportDate:
-        getLocalToday(),
-
-    cameraReady: 312,
-    cameraBroken: 0,
-
-    avgCameraReady: 307.92,
-    avgCameraBroken: 3.36,
-
-    repairTotal: 339,
-    repair24: 246,
-    repair48: 59,
-    repair72: 34,
-
-    dailyUnrest: 0,
-    dailyAccident: 0,
-    dailyCrime: 0,
-    dailySystem: 0,
-
-    totalUnrest: 26,
-    totalAccident: 610,
-    totalCrime: 153,
-    totalSystem: 242,
-
-    // CCTV แห่งชาติ - รายวัน
-    dailyCctvTraffic: 0,
-    dailyCctvInvestigation: 0,
-    dailyCctvPrevention: 0,
-
-    // CCTV แห่งชาติ - สะสม
-    cctvTraffic: 610,
-    cctvInvestigation: 196,
-    cctvPrevention: 225,
-  })
+  const [form, setForm] = useState(() =>
+    makeDailyReportForm(getLocalToday())
+  )
 
   const [logo, setLogo] = useState('')
   const [logoName, setLogoName] = useState('')
@@ -161,6 +200,15 @@ function DailyCctvReport({ profile }) {
 
     const [savedImageSize, setSavedImageSize] =
     useState(0)
+    
+    const [isReportLoading, setIsReportLoading] =
+      useState(false)
+
+    const [reportLoadError, setReportLoadError] =
+      useState('')
+
+    const reportLoadSeqRef = useRef(0)
+
 
     
 
@@ -379,19 +427,7 @@ function DailyCctvReport({ profile }) {
         String(selectedCenterId)
   )
 
-  useEffect(() => {
-
-    if (!selectedCenter) {
-        return
-    }
-
-    setForm((prev) => ({
-        ...prev,
-        unitName:
-        selectedCenter.name || '',
-    }))
-
-  }, [selectedCenter])
+  
 
   useEffect(() => {
 
@@ -519,122 +555,214 @@ function DailyCctvReport({ profile }) {
 
     }, [selectedCenterId])
 
-    useEffect(() => {
+  
+useEffect(() => {
+  let cancelled = false
 
-        let cancelled = false
+  const centerId = String(selectedCenterId || '')
+  const requestedDate = form.reportDate
+
+  const centerUnitName =
+    selectedCenter?.name ||
+    (isCenter ? profile?.agency || '' : '')
+
+  const sequence = ++reportLoadSeqRef.current
+
+  const isCurrent = () =>
+    !cancelled &&
+    sequence === reportLoadSeqRef.current
+
+  // ล้างค่าจากศูนย์หรือวันที่ก่อนหน้าทันที
+  setForm(
+    makeDailyReportForm(
+      requestedDate,
+      centerUnitName
+    )
+  )
+
+  setIsReportSaved(false)
+  setSavedImageSize(0)
+  setReportLoadError('')
+
+  if (!centerId || !requestedDate) {
+    setIsReportLoading(false)
+
+    return () => {
+      cancelled = true
+    }
+  }
+
+  setIsReportLoading(true)
+
+  const loadSavedDailyReport = async () => {
+    try {
+      // 1. ค้นหารายงานของศูนย์และวันที่เลือกก่อน
+      const {
+        data: exactReport,
+        error: exactError,
+      } = await supabase
+        .from('daily_reports')
+        .select(`
+          report_data,
+          image_path,
+          image_size_bytes
+        `)
+        .eq('center_id', centerId)
+        .eq('report_date', requestedDate)
+        .maybeSingle()
+
+      if (exactError) {
+        throw exactError
+      }
+
+      if (!isCurrent()) return
+
+      // 2. วันนั้นเคยบันทึกแล้ว
+      // ใช้ข้อมูลจริงของวันนั้น ไม่ใช้ค่าเริ่มต้น
+      if (exactReport) {
+        setForm(
+          makeFormFromSaved(
+            exactReport.report_data,
+            requestedDate,
+            centerUnitName
+          )
+        )
+
+        setSavedImageSize(
+          exactReport.image_size_bytes || 0
+        )
+
+        setIsReportSaved(
+          Boolean(exactReport.image_path)
+        )
+
+        return
+      }
+
+      // 3. วันที่เลือกยังไม่เคยบันทึก
+      // ค้นหาข้อมูลที่บันทึกล่าสุดของศูนย์นี้เท่านั้น
+      const {
+        data: latestReport,
+        error: latestError,
+      } = await supabase
+        .from('daily_reports')
+        .select('report_data')
+        .eq('center_id', centerId)
+        .order('updated_at', {
+          ascending: false,
+          nullsFirst: false,
+        })
+        .order('report_date', {
+          ascending: false,
+        })
+        .limit(1)
+        .maybeSingle()
+
+      if (latestError) {
+        throw latestError
+      }
+
+      if (!isCurrent()) return
+
+      // 4. นำข้อมูลล่าสุดมาเป็นฐาน
+      // แต่เริ่มยอดรายวันเป็นศูนย์
+      if (latestReport?.report_data) {
+        setForm(
+          makeFormFromSaved(
+            latestReport.report_data,
+            requestedDate,
+            centerUnitName,
+            true
+          )
+        )
+      }
+
+      // วันใหม่ยังไม่บันทึกเสมอ
+      setIsReportSaved(false)
+      setSavedImageSize(0)
+
+    } catch (error) {
+      if (!isCurrent()) return
+
+      console.error(
+        'Load daily report error:',
+        error
+      )
+
+      setReportLoadError(
+        'โหลดข้อมูลรายงานไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่'
+      )
+    } finally {
+      if (isCurrent()) {
+        setIsReportLoading(false)
+      }
+    }
+  }
+
+  void loadSavedDailyReport()
+
+  return () => {
+    cancelled = true
+  }
+}, [
+  selectedCenterId,
+  form.reportDate,
+  selectedCenter?.name,
+  isCenter,
+  profile?.agency,
+])
 
 
-        const loadSavedDailyReport =
-            async () => {
+const handleDailyCenterChange = (nextCenterId) => {
+  // ยกเลิกผลของคำขอโหลดข้อมูลเก่า
+  reportLoadSeqRef.current += 1
 
-            if (
-                !selectedCenterId ||
-                !form.reportDate
-            ) {
-                return
-            }
+  const center = centers.find(
+    (item) =>
+      String(item.id) === String(nextCenterId)
+  )
 
+  setSelectedCenterId(nextCenterId)
+  setIsReportLoading(Boolean(nextCenterId))
+  setReportLoadError('')
 
-            try {
+  setIsReportSaved(false)
+  setSavedImageSize(0)
 
-                const {
-                data,
-                error,
-                } = await supabase
-                .from('daily_reports')
-                .select(`
-                    report_data,
-                    image_path,
-                    image_size_bytes
-                `)
-                .eq(
-                    'center_id',
-                    String(
-                    selectedCenterId
-                    )
-                )
-                .eq(
-                    'report_date',
-                    form.reportDate
-                )
-                .maybeSingle()
+  // ไม่ให้ข้อมูลศูนย์ก่อนหน้าติดมาระหว่างโหลด
+  setForm((prev) =>
+    makeDailyReportForm(
+      prev.reportDate,
+      center?.name || ''
+    )
+  )
 
+  setLogo('')
+  setLogoName('')
+}
 
-                if (error) {
-                throw error
-                }
+const handleDailyDateChange = (nextDate) => {
+  reportLoadSeqRef.current += 1
 
+  setIsReportLoading(
+    Boolean(selectedCenterId && nextDate)
+  )
 
-                /*
-                * วันนี้ยังไม่เคยบันทึก
-                */
-                if (!data) {
+  setReportLoadError('')
+  setIsReportSaved(false)
+  setSavedImageSize(0)
 
-                if (!cancelled) {
-                    setIsReportSaved(false)
-                    setSavedImageSize(0)
-                }
+  // วันใหม่ต้องไม่ค้างค่าจากวันที่เปิดดูก่อน
+  setForm(
+    makeDailyReportForm(
+      nextDate,
+      selectedCenter?.name ||
+        (isCenter ? profile?.agency || '' : '')
+    )
+  )
+}
 
-                return
-                }
-
-
-                /*
-                * โหลดข้อมูลเดิมกลับเข้าฟอร์ม
-                */
-                if (
-                !cancelled &&
-                data.report_data
-                ) {
-
-                setForm((prev) => ({
-                    ...prev,
-                    ...data.report_data,
-
-                    /*
-                    * ป้องกันวันที่จาก JSON
-                    * ไปเปลี่ยนวันที่ที่กำลังเปิดอยู่
-                    */
-                    reportDate:
-                    prev.reportDate,
-                }))
-
-
-                setSavedImageSize(
-                    data.image_size_bytes ||
-                    0
-                )
-
-
-                setIsReportSaved(
-                    Boolean(
-                    data.image_path
-                    )
-                )
-                }
-
-
-            } catch (error) {
-
-                console.error(
-                'Load saved daily report error:',
-                error
-                )
-            }
-            }
-
-
-        loadSavedDailyReport()
-
-
-        return () => {
-            cancelled = true
-        }
-
-        }, [
-        selectedCenterId,
-        form.reportDate,
-        ])
+  
 
   const changeField = (
     field,
@@ -1156,6 +1284,14 @@ const projectDuration =
     const handleSaveReport =
         async () => {
 
+            if (isReportLoading || reportLoadError) {
+              alert(
+                reportLoadError ||
+                'กรุณารอโหลดข้อมูลรายงานให้เสร็จก่อน'
+              )
+              return
+            }
+
             if (!selectedCenterId) {
             alert(
                 'กรุณาเลือกศูนย์ก่อนบันทึก'
@@ -1652,7 +1788,11 @@ const projectDuration =
                 type="button"
                 className="daily-save-report-button"
                 onClick={handleSaveReport}
-                disabled={isSavingReport}
+                disabled={
+                  isSavingReport ||
+                  isReportLoading ||
+                  Boolean(reportLoadError)
+                }
             >
                 {isSavingReport
                 ? 'กำลังบันทึก...'
@@ -1714,14 +1854,15 @@ const projectDuration =
                 <label>
                     ศูนย์ที่จัดทำรายงาน
 
+                    
                     <select
-                    value={selectedCenterId}
-                    onChange={(e) =>
-                        setSelectedCenterId(
-                        e.target.value
-                        )
-                    }
+                      value={selectedCenterId}
+                      disabled={isSavingReport}
+                      onChange={(e) =>
+                        handleDailyCenterChange(e.target.value)
+                      }
                     >
+
 
                     <option value="">
                         -- เลือกศูนย์ --
@@ -1800,6 +1941,7 @@ const projectDuration =
               />
             </label>
 
+            
             <label>
               วันที่รายงาน
 
@@ -1807,13 +1949,24 @@ const projectDuration =
                 type="date"
                 value={form.reportDate}
                 onChange={(e) =>
-                  changeField(
-                    'reportDate',
-                    e.target.value
-                  )
+                  handleDailyDateChange(e.target.value)
                 }
+                disabled={isSavingReport}
               />
+
+              {isReportLoading && (
+                <small style={{ color: '#facc15' }}>
+                  กำลังโหลดข้อมูลของศูนย์และวันที่เลือก...
+                </small>
+              )}
+
+              {reportLoadError && (
+                <small style={{ color: '#f87171' }}>
+                  {reportLoadError}
+                </small>
+              )}
             </label>
+
 
           </section>
 
