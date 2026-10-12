@@ -1,0 +1,12 @@
+
+name = "cctv-ai-analysis"
+main = "src/index.js"
+compatibility_date = "2026-10-12"
+
+[vars]
+ALLOWED_ORIGINS = "http://localhost:5173,https://dkifu.github.io"
+SUPABASE_URL = "https://tplgbnfeabcissqefmkc.supabase.co"
+
+
+[ai]
+binding = "AI"

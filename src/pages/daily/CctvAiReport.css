@@ -1,0 +1,1625 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap');
+
+/* ==========================
+   PAGE
+========================== */
+
+.ai-cctv-page {
+  color: #e7edf7;
+  padding: 22px;
+  font-family: "Noto Sans Thai", sans-serif;
+}
+
+.ai-cctv-page * {
+  box-sizing: border-box;
+}
+
+.ai-page-header {
+  padding: 28px 32px;
+  border: 1px solid #29354b;
+  border-radius: 18px;
+  background: linear-gradient(
+    115deg,
+    #121e30 0%,
+    #121923 58%,
+    #291527 100%
+  );
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.ai-page-eyebrow {
+  color: #ff356c;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.ai-page-header h1 {
+  font-size: 26px;
+  margin: 8px 0;
+  color: #fff;
+}
+
+.ai-page-header p {
+  color: #91a8c8;
+  margin: 0;
+  font-size: 13px;
+}
+
+.ai-page-header-icon {
+  padding: 20px;
+  background: #291b31;
+  border-radius: 15px;
+  color: #ff356c;
+}
+
+.ai-upload-panel,
+.ai-editor-panel,
+.ai-preview-panel {
+  background: #121b29;
+  border: 1px solid #29364a;
+  border-radius: 18px;
+  padding: 22px;
+  min-width: 0;
+}
+
+.ai-upload-panel {
+  margin-bottom: 18px;
+}
+
+.ai-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ff426e;
+  margin-bottom: 19px;
+}
+
+.ai-section-title h2 {
+  font-size: 18px;
+  color: #fff;
+  margin: 0;
+}
+
+.ai-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.ai-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  margin-bottom: 10px;
+}
+
+.ai-field > span {
+  color: #a9bbd4;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ai-field input,
+.ai-field select,
+.ai-field textarea,
+.ai-readonly {
+  width: 100%;
+  background: #192637;
+  border: 1px solid #32435b;
+  border-radius: 10px;
+  color: #f4f7fb;
+  padding: 11px 12px;
+  outline: none;
+  font: inherit;
+  font-size: 13px;
+}
+
+.ai-field textarea {
+  resize: vertical;
+  min-height: 70px;
+  line-height: 1.6;
+}
+
+.ai-field input:focus,
+.ai-field select:focus,
+.ai-field textarea:focus {
+  border-color: #ff426e;
+}
+
+.ai-readonly {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 43px;
+}
+
+.ai-upload-mode {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.ai-upload-mode button {
+  border: 1px solid #34465c;
+  background: #192739;
+  color: #aabdd3;
+  border-radius: 10px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.ai-upload-mode button.active {
+  color: #ff4776;
+  background: #321d30;
+  border-color: #b83a61;
+}
+
+.ai-upload-zone {
+  border: 2px dashed #46617d;
+  border-radius: 15px;
+  background: #172539;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #a9bfd8;
+  cursor: pointer;
+  text-align: center;
+  padding: 20px;
+}
+
+.ai-upload-zone > strong {
+  color: #fff;
+  font-size: 15px;
+}
+
+.ai-upload-zone > span {
+  font-size: 12px;
+}
+
+.ai-upload-zone input {
+  margin-top: 9px;
+  max-width: 100%;
+  color: #dce6f5;
+}
+
+.ai-upload-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 15px 0;
+  flex-wrap: wrap;
+}
+
+.ai-upload-status span,
+.ai-upload-status button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+}
+
+.ai-upload-status span {
+  color: #4cdd9f;
+}
+
+.ai-upload-status button {
+  background: transparent;
+  border: 0;
+  color: #aabbd1;
+  cursor: pointer;
+}
+
+.ai-upload-thumbnails {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 17px;
+}
+
+.ai-upload-thumbnail {
+  position: relative;
+  height: 115px;
+  background: #0c1521;
+  border: 1px solid #33435a;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #637a97;
+  overflow: hidden;
+}
+
+.ai-upload-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ai-upload-thumbnail > span {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #101b2b;
+  color: #fff;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.ai-analyze-button {
+  width: 100%;
+  border: 0;
+  border-radius: 11px;
+  background: linear-gradient(100deg, #b41a4b, #ef396b);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  font-size: 15px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  cursor: pointer;
+}
+
+.ai-analyze-button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.ai-message {
+  margin-top: 12px;
+  color: #e6cf88;
+  background: #2b2930;
+  padding: 12px;
+  border-radius: 9px;
+  font-size: 13px;
+}
+
+.ai-workspace {
+  display: grid;
+  grid-template-columns: 350px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.ai-editor-panel {
+  max-height: 1100px;
+  overflow-y: auto;
+}
+
+.ai-editor-group {
+  border-top: 1px solid #29384e;
+  padding-top: 14px;
+  margin-top: 18px;
+}
+
+.ai-editor-group h4 {
+  font-size: 14px;
+  color: #ff4776;
+  margin: 0 0 13px;
+}
+
+.ai-preview-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.ai-preview-toolbar h2 {
+  font-size: 17px;
+  margin: 0;
+  color: #fff;
+}
+
+.ai-preview-toolbar p {
+  color: #819ab7;
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+.ai-preview-scale {
+  color: #92abc7;
+  font-size: 12px;
+}
+
+.ai-preview-wrapper {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.ai-export-actions button {
+  background: #24364b;
+  color: #fff;
+  border: 1px solid #3c526a;
+  border-radius: 9px;
+  padding: 11px 15px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ai-export-actions button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.ai-export-actions button:hover:not(:disabled) {
+  background: #334b65;
+}
+
+.ai-report-note {
+  color: #95a9c4;
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 15px;
+}
+
+.ai-export-render {
+  position: absolute;
+  left: -20000px;
+  top: 0;
+  width: 1600px;
+  pointer-events: none;
+}
+
+/* ==========================
+   REPORT SHEET
+========================== */
+
+.ai-sheet {
+  width: 1600px;
+  height: 900px;
+  padding: 13px;
+  display: grid;
+  grid-template-rows: 135px 476px 194px 36px;
+  gap: 8px;
+  background: #f0f4f9;
+  color: #12243b;
+  font-family: "Noto Sans Thai", Tahoma, sans-serif !important;
+  overflow: hidden;
+}
+
+.ai-sheet * {
+  box-sizing: border-box;
+}
+
+.ai-sheet-header {
+  background: linear-gradient(
+    115deg,
+    #09223d 0%,
+    #173a5c 43%,
+    #6b102c 100%
+  );
+  color: #fff;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 135px 1fr 180px;
+  align-items: center;
+  overflow: hidden;
+}
+
+.ai-sheet-emblem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #e7c780;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.ai-sheet-title {
+  text-align: center;
+}
+
+.ai-sheet-title h1 {
+  color: #fff;
+  font-size: 39px;
+  line-height: 1.25;
+  margin: 0 0 9px;
+  font-weight: 900;
+}
+
+.ai-sheet-subtitle {
+  background: #780e30;
+  padding: 6px;
+  border-radius: 6px;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.ai-sheet-title p {
+  margin: 5px 0 0;
+  font-size: 13px;
+  color: #e2eaf5;
+}
+
+.ai-sheet-header-mark {
+  text-align: center;
+  font-size: 19px;
+  letter-spacing: 1px;
+  font-weight: 900;
+  opacity: .85;
+}
+
+.ai-sheet-header-mark strong {
+  display: block;
+  font-size: 15px;
+}
+
+.ai-sheet-main {
+  display: grid;
+  grid-template-columns: 46% minmax(0, 1fr);
+  gap: 9px;
+  min-height: 0;
+}
+
+
+.ai-sheet-right {
+  display: grid;
+  grid-template-rows: 215px minmax(0, 1fr);
+  gap: 8px;
+  min-height: 0;
+}
+
+
+.ai-sheet-panel {
+  background: #fff;
+  border: 1px solid #b8c8d9;
+  border-radius: 9px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ai-sheet-bar {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: #092b4b;
+  color: #fff;
+  padding: 0 12px;
+  height: 46px;
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.ai-sheet-index {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #7a102c;
+  border: 1px solid #cb4c66;
+  border-radius: 7px;
+  width: 33px;
+  height: 33px;
+  font-size: 21px;
+  color: #fff;
+}
+
+.ai-sheet-cameras {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 6px;
+  background: #081b31;
+}
+
+.ai-sheet-cameras .ai-sheet-bar {
+  flex: 0 0 46px;
+}
+
+.ai-sheet-camera-grid {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  min-height: 0;
+}
+
+.ai-sheet-camera {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+  background: #1e344b;
+}
+
+.ai-sheet-camera img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ai-sheet-no-image {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9ab0c6;
+  font-size: 12px;
+}
+
+.ai-sheet-camera-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #09223b;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 7px;
+}
+
+.ai-sheet-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
+.ai-sheet-status {
+  background: #f4f9ff;
+  border: 1px solid #adc6df;
+  border-radius: 8px;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 6px;
+  overflow-wrap: anywhere;
+}
+
+.ai-sheet-status small {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ai-sheet-status strong {
+  color: #087c48;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.ai-sheet-overall {
+  margin-left: auto;
+  border-radius: 30px;
+  padding: 7px 18px;
+  color: #fff;
+  background: #777e88;
+  font-size: 15px;
+}
+
+
+/* =========================================
+   AI CCTV — OVERALL STATUS
+   4 SEVERITY LEVELS
+========================================= */
+
+/* ระดับ 1 — ปกติ */
+
+.ai-sheet .ai-sheet-overall.normal {
+  background: #168653;
+  color: #ffffff;
+}
+
+/* ระดับ 2 — เฝ้าระวัง */
+
+.ai-sheet .ai-sheet-overall.watch {
+  background: #ae830e;
+  color: #ffffff;
+}
+
+/* ระดับ 3 — ผิดปกติ */
+
+.ai-sheet .ai-sheet-overall.abnormal {
+  background: #d26916;
+  color: #ffffff;
+}
+
+/* ระดับ 4 — ฉุกเฉิน */
+
+.ai-sheet .ai-sheet-overall.emergency {
+  background: #c52f3b;
+  color: #ffffff;
+}
+
+/* ยังไม่ประเมิน / ไม่สามารถประเมินได้ */
+
+.ai-sheet .ai-sheet-overall.pending {
+  background: #64748b;
+  color: #ffffff;
+}
+
+
+.ai-sheet-lines {
+  padding: 10px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-sheet-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 20px;
+  line-height: 1.6;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ai-sheet-line-number {
+  flex: 0 0 23px;
+  height: 23px;
+  background: #0c3458;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.ai-sheet-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.18fr;
+  gap: 8px;
+  min-height: 0;
+}
+
+.ai-sheet-bottom .ai-sheet-bar {
+  font-size: 18px;
+}
+
+.ai-sheet-bottom .ai-sheet-lines {
+  gap: 7px;
+  padding: 10px;
+}
+
+.ai-sheet-bottom .ai-sheet-line {
+  font-size: 18px;
+  line-height: 1.58;
+}
+
+.ai-sheet-conclusion {
+  border-color: #a94356;
+}
+
+.ai-sheet-conclusion .ai-sheet-bar {
+  background: #76152e;
+}
+
+.ai-sheet-line-number {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  background: #0c3458;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.ai-sheet-footer {
+  background: #08233e;
+  color: #fff;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 15px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+
+.ai-sheet-conclusion p {
+  padding: 10px 13px;
+  margin: 0;
+  color: #6b1830;
+  font-size: 18px;
+  line-height: 1.45;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media (max-width: 1150px) {
+  .ai-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-editor-panel {
+    max-height: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .ai-cctv-page {
+    padding: 12px;
+  }
+
+  .ai-page-header {
+    padding: 20px;
+  }
+
+  .ai-page-header h1 {
+    font-size: 20px;
+  }
+
+  .ai-page-header-icon {
+    display: none;
+  }
+
+  .ai-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-upload-panel,
+  .ai-editor-panel,
+  .ai-preview-panel {
+    padding: 14px;
+  }
+
+  .ai-upload-thumbnails {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@keyframes ai-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ai-spin {
+  animation: ai-spin 1s linear infinite;
+}
+
+
+
+/* ==============================
+   CAMERA OBSERVATIONS
+============================== */
+
+.ai-camera-observations {
+  margin-bottom: 18px;
+}
+
+.ai-camera-observations-note {
+  color: #96aac4;
+  font-size: 13px;
+  margin: -5px 0 18px;
+  line-height: 1.7;
+}
+
+.ai-camera-observations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ai-camera-observation-card {
+  background: #192637;
+  border: 1px solid #34465e;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ai-camera-observation-card summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.ai-camera-observation-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.ai-camera-observation-card[open] {
+  border-color: #d0446d;
+}
+
+.ai-camera-observation-card[open] summary {
+  background: #342038;
+  color: #ff668e;
+}
+
+.ai-camera-observation-card p {
+  padding: 15px;
+  margin: 0;
+  border-top: 1px solid #34465e;
+  color: #cbd8ea;
+  font-size: 13px;
+  line-height: 1.85;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1000px) {
+  .ai-camera-observations-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .ai-camera-observations-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ========================================
+   CCTV AI — SUMMARY STATUS V2
+   Fixed 4-column layout for 1600x900 sheet
+======================================== */
+
+
+.ai-sheet .ai-sheet-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  height: calc(100% - 46px);
+  align-items: stretch;
+  gap: 9px;
+}
+
+
+
+.ai-sheet .ai-sheet-status {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 9px 6px;
+
+
+  display: grid;
+  grid-template-rows: 25px minmax(0, 1fr);
+  row-gap: 5px;
+  justify-items: center;
+  align-items: start;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f3f7fb;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* ชื่อหัวข้ออยู่ระดับเดียวกันทั้งหมด */
+
+
+.ai-sheet .ai-sheet-status small {
+  display: flex;
+  width: 100%;
+  margin: 0;
+
+  align-items: center;
+  justify-content: center;
+
+  color: #20354d;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+  white-space: normal;
+}
+
+
+/* ข้อความผลประเมิน สูงสุด 3 บรรทัด */
+
+.ai-sheet .ai-sheet-status strong {
+  display: -webkit-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+
+  overflow: hidden;
+  overflow-wrap: anywhere;
+
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+/* ระดับ 1 — ปกติ */
+
+.ai-sheet .ai-sheet-status--green {
+  background: #f1faf5;
+  border-color: #b9e2ca;
+}
+
+.ai-sheet .ai-sheet-status--green strong {
+  color: #13834d;
+}
+
+/* ระดับ 2 — เฝ้าระวัง */
+
+.ai-sheet .ai-sheet-status--yellow {
+  background: #fff9e5;
+  border-color: #efda8e;
+}
+
+.ai-sheet .ai-sheet-status--yellow strong {
+  color: #967000;
+}
+
+/* ระดับ 3 — ไม่ปกติ */
+
+.ai-sheet .ai-sheet-status--orange {
+  background: #fff2e8;
+  border-color: #efbd95;
+}
+
+.ai-sheet .ai-sheet-status--orange strong {
+  color: #c45a12;
+}
+
+/* ระดับ 4 — ฉุกเฉิน */
+
+.ai-sheet .ai-sheet-status--red {
+  background: #fff0f0;
+  border-color: #eba9ad;
+}
+
+.ai-sheet .ai-sheet-status--red strong {
+  color: #b91c1c;
+}
+
+
+.ai-sheet .ai-sheet-status--neutral {
+  background: #f3f6fa;
+  border-color: #cbd5e1;
+}
+
+.ai-sheet .ai-sheet-status--neutral strong {
+  color: #64748b;
+}
+
+
+/* =========================================
+   CCTV AI — DYNAMIC LIST COLORS
+   ใช้กับหมวด 2, 3 และ 4
+========================================= */
+
+/* รักษาขนาดวงกลมเดิม */
+
+.ai-sheet .ai-sheet-line-number {
+  flex: 0 0 23px;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+/* ระดับ 1 — เขียว: ปกติ */
+
+.ai-sheet .ai-sheet-line-number--green {
+  background: #168653;
+  color: #ffffff;
+}
+
+.ai-sheet .ai-sheet-line-text--green {
+  color: #243449;
+}
+
+/* ระดับ 2 — เหลือง: เฝ้าระวัง */
+
+.ai-sheet .ai-sheet-line-number--yellow {
+  background: #a57b08;
+  color: #ffffff;
+}
+
+.ai-sheet .ai-sheet-line-text--yellow {
+  color: #856100;
+}
+
+/* ระดับ 3 — ส้ม: ไม่ปกติ */
+
+.ai-sheet .ai-sheet-line-number--orange {
+  background: #d26916;
+  color: #ffffff;
+}
+
+.ai-sheet .ai-sheet-line-text--orange {
+  color: #a44910;
+}
+
+/* ระดับ 4 — แดง: ฉุกเฉิน */
+
+.ai-sheet .ai-sheet-line-number--red {
+  background: #c52f3b;
+  color: #ffffff;
+}
+
+.ai-sheet .ai-sheet-line-text--red {
+  color: #a52130;
+}
+
+/* ยังไม่มีผลประเมิน */
+
+.ai-sheet .ai-sheet-line-number--neutral {
+  background: #77869a;
+  color: #ffffff;
+}
+
+.ai-sheet .ai-sheet-line-text--neutral {
+  color: #64748b;
+}
+
+
+/* =========================================
+   CCTV AI — AUTO FIT TEXT
+   ใช้ร่วมกันกับหมวด 1-5
+========================================= */
+
+.ai-sheet .ai-auto-fit {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ai-sheet .ai-auto-fit-content {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   หมวด 1 — สรุปผลการประเมิน
+========================================= */
+
+.ai-sheet .ai-sheet-status-grid {
+  height: calc(100% - 46px);
+  align-items: stretch;
+}
+
+.ai-sheet .ai-sheet-status {
+  height: 100%;
+  min-height: 0;
+}
+
+.ai-sheet .ai-auto-fit--summary {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-sheet .ai-auto-fit--summary .ai-auto-fit-content {
+  text-align: center;
+}
+
+.ai-sheet .ai-auto-fit--summary strong {
+  display: block;
+  width: 100%;
+
+  font-size: inherit;
+  line-height: 1.23;
+  font-weight: 800;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+
+  overflow: visible;
+  max-height: none;
+
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  -webkit-box-orient: initial;
+}
+
+/* =========================================
+   หมวด 2, 3, 4 — รายการวิเคราะห์
+========================================= */
+
+.ai-sheet .ai-sheet-panel > .ai-auto-fit--list {
+  height: calc(100% - 46px);
+}
+
+.ai-sheet .ai-auto-fit--list .ai-sheet-line {
+  font-size: inherit;
+  line-height: 1.48;
+}
+
+/* รักษาขนาดและสีวงกลม */
+
+.ai-sheet .ai-auto-fit--list .ai-sheet-line-number {
+  font-size: 13px;
+}
+
+/* =========================================
+   หมวด 5 — ข้อสรุปผู้บังคับบัญชา
+========================================= */
+
+.ai-sheet .ai-sheet-panel > .ai-auto-fit--conclusion {
+  height: calc(100% - 46px);
+}
+
+.ai-sheet .ai-auto-fit--conclusion p {
+  font-size: inherit;
+  line-height: 1.45;
+  font-weight: 700;
+
+  margin: 0;
+  padding: 10px 13px;
+
+  color: #6b1830;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+
+/* =====================================
+   CCTV AI — SUMMARY FULL TEXT
+===================================== */
+
+.ai-sheet .ai-auto-fit--summary {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-sheet .ai-auto-fit--summary .ai-auto-fit-content {
+  width: 100%;
+  min-width: 0;
+}
+
+.ai-sheet .ai-auto-fit--summary strong {
+  display: block;
+  width: 100%;
+
+  font-size: inherit;
+  line-height: 1.25;
+  font-weight: 800;
+  text-align: center;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+
+  max-height: none;
+  overflow: visible;
+
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  -webkit-box-orient: initial;
+}
+
+/* =========================================
+   CCTV AI : กรอบ 1 ให้ข้อความเริ่มเสมอกัน
+========================================= */
+
+.ai-sheet .ai-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.ai-sheet .ai-summary-card {
+  min-height: 112px;
+  height: 112px;
+  padding: 10px 12px;
+  border-radius: 12px;
+
+  display: grid;
+  grid-template-rows: 24px 1fr;
+  align-items: start;
+}
+
+.ai-sheet .ai-summary-card-label {
+  min-height: 24px;
+  height: 24px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+
+  text-align: center;
+  line-height: 1.1;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ai-sheet .ai-summary-card-value {
+  height: 100%;
+  min-height: 0;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+
+  padding-top: 6px;
+  text-align: center;
+}
+
+.ai-sheet .ai-auto-fit--summary {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+
+  display: flex;
+  align-items: flex-start !important;
+  justify-content: center !important;
+}
+
+.ai-sheet .ai-auto-fit--summary .ai-auto-fit-content {
+  width: 100%;
+  min-width: 0;
+}
+
+.ai-sheet .ai-auto-fit--summary strong {
+  display: block;
+  width: 100%;
+
+  text-align: center;
+  line-height: 1.18;
+  font-weight: 800;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+
+  max-height: none;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+
+/* =========================================
+   CCTV AI — EDITOR SCROLLBAR V2
+   Modern scrollbar + Auto height textarea
+========================================= */
+
+/* บาร์เลื่อนหลักของแถบแก้ไข */
+
+.ai-cctv-page .ai-editor-panel {
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  scrollbar-width: thin;
+  scrollbar-color: #536d8a transparent;
+  scrollbar-gutter: stable;
+}
+
+/* สำหรับเบราว์เซอร์ WebKit */
+
+.ai-cctv-page .ai-editor-panel::-webkit-scrollbar {
+  width: 7px;
+}
+
+.ai-cctv-page .ai-editor-panel::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.ai-cctv-page .ai-editor-panel::-webkit-scrollbar-thumb {
+  background: #536d8a;
+  border-radius: 10px;
+}
+
+.ai-cctv-page .ai-editor-panel::-webkit-scrollbar-thumb:hover {
+  background: #7599bd;
+}
+
+/* ช่องข้อความขยายตามเนื้อหา
+   ไม่ต้องมีบาร์เลื่อนซ้อนด้านใน */
+
+.ai-cctv-page .ai-editor-panel .ai-field textarea {
+  field-sizing: content;
+
+  min-height: 76px;
+  max-height: none;
+
+  overflow-y: hidden;
+  overflow-x: hidden;
+
+  resize: none;
+
+  line-height: 1.65;
+  padding: 12px 14px;
+}
+
+/* สีขอบช่องข้อความเมื่อกำลังแก้ไข */
+
+.ai-cctv-page .ai-editor-panel .ai-field textarea:focus {
+  border-color: #c1456e;
+  box-shadow: 0 0 0 2px rgba(193, 69, 110, 0.12);
+}
+
+
+/* =========================================
+   CCTV AI — MODERN UPLOAD ZONE
+   Click / Drag & Drop / Clipboard Paste
+========================================= */
+
+.ai-cctv-page .ai-upload-zone {
+  position: relative;
+  width: 100%;
+  min-height: 190px;
+  padding: 24px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  background: #17263a;
+  border: 2px dashed #506e91;
+  border-radius: 15px;
+
+  cursor: pointer;
+  text-align: center;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.ai-cctv-page .ai-upload-zone:hover {
+  background: #1b2e45;
+  border-color: #8baed3;
+}
+
+/* เน้นกรอบเมื่อลากภาพเข้ามา */
+
+.ai-cctv-page .ai-upload-zone--dragging,
+.ai-cctv-page .ai-upload-zone--dragging:hover {
+  background: #183c37;
+  border-color: #35cf96;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(53, 207, 150, 0.25),
+    0 0 22px rgba(53, 207, 150, 0.12);
+}
+
+/* ไอคอนด้านบน */
+
+.ai-cctv-page .ai-upload-zone-icon {
+  width: 54px;
+  height: 54px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #a5bfdc;
+  background: #213953;
+  border-radius: 14px;
+
+  margin-bottom: 3px;
+}
+
+.ai-cctv-page
+.ai-upload-zone--dragging
+.ai-upload-zone-icon {
+  color: #35cf96;
+  background: #1b4a3d;
+}
+
+/* ข้อความหลัก */
+
+.ai-cctv-page .ai-upload-zone > strong {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.ai-cctv-page .ai-upload-zone-description {
+  color: #a9c0dc;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ปุ่มเลือกไฟล์ */
+
+.ai-cctv-page .ai-upload-select-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  min-height: 43px;
+  margin-top: 7px;
+  padding: 10px 20px;
+
+  color: #ffffff;
+  background: #9e1845;
+  border: 1px solid #e14176;
+  border-radius: 10px;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.ai-cctv-page
+.ai-upload-zone:hover
+.ai-upload-select-btn {
+  background: #bd2457;
+}
+
+.ai-cctv-page
+.ai-upload-zone--dragging
+.ai-upload-select-btn {
+  background: #18865d;
+  border-color: #35cf96;
+}
+
+/* ประเภทไฟล์ที่รองรับ */
+
+.ai-cctv-page .ai-upload-zone-formats {
+  color: #809bb9;
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+/* ซ่อน input แบบดั้งเดิม */
+
+.ai-cctv-page .ai-upload-native-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ใช้งานด้วยคีย์บอร์ด */
+
+.ai-cctv-page .ai-upload-zone:focus-visible {
+  outline: 3px solid #81afe2;
+  outline-offset: 3px;
+}
+
+/* ระหว่างระบบกำลังทำงาน */
+
+.ai-cctv-page .ai-upload-zone--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (max-width: 600px) {
+  .ai-cctv-page .ai-upload-zone {
+    padding: 20px 12px;
+    min-height: 200px;
+  }
+
+  .ai-cctv-page .ai-upload-zone > strong {
+    font-size: 15px;
+  }
+
+  .ai-cctv-page .ai-upload-select-btn {
+    width: min(100%, 250px);
+  }
+}
+
+
+/* =========================================
+   AI CCTV — CENTER LOGO FINAL
+========================================= */
+
+/* พื้นที่โลโก้ฝั่งซ้าย */
+.ai-sheet .ai-sheet-header .ai-sheet-emblem {
+  width: 135px;
+  height: 100%;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  padding: 4px 3px;
+  text-align: center;
+}
+
+/* โลโก้จริงจากศูนย์ */
+.ai-sheet .ai-sheet-header .ai-sheet-emblem-image {
+  width: 110px;
+  height: 90px;
+  max-width: none;
+
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* ไอคอนสำรอง กรณีไม่มีโลโก้ */
+.ai-sheet .ai-sheet-header .ai-sheet-emblem-fallback {
+  width: 85px;
+  height: 85px;
+  flex-shrink: 0;
+}
+
+/* ชื่อศูนย์ใต้โลโก้ */
+.ai-sheet .ai-sheet-header .ai-sheet-emblem-text {
+  display: block;
+  width: 100%;
+  max-width: 132px;
+
+  color: #f6d36a;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.15;
+
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

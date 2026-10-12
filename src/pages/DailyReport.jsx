@@ -1,13 +1,17 @@
 import { useState } from 'react'
+
 import {
   ArrowLeft,
   Cctv,
   ChevronRight,
+  ScanEye,
 } from 'lucide-react'
+
 
 import DailyCctvReport from './daily/DailyCctvReport'
 import AlertReport from './daily/AlertReport'
 import UsageStatisticsReport from './daily/UsageStatisticsReport'
+import CctvAiReport from './daily/CctvAiReport'
 import './DailyReport.css'
 
 
@@ -145,7 +149,40 @@ function DailyReport({ profile }) {
         )
 
       }
+  
 
+  
+      /* =========================
+        AI CCTV ANALYSIS
+      ========================= */
+
+      if (activeReport === 'cctv-ai') {
+        return (
+          <div className="daily-hub-report-view">
+            <div className="daily-hub-backbar">
+
+              <button
+                type="button"
+                className="daily-hub-back-button"
+                onClick={() => setActiveReport(null)}
+              >
+                <ArrowLeft size={18} />
+                กลับไปหน้ารายงานประจำวัน
+              </button>
+
+              <div className="daily-hub-current-report">
+                <ScanEye size={18} />
+                <span>AI CCTV ANALYSIS</span>
+                <span>วิเคราะห์ภาพกล้องวงจรปิด</span>
+              </div>
+
+            </div>
+
+            <CctvAiReport profile={profile} />
+          </div>
+        )
+      }
+        
 
  
 
@@ -333,7 +370,48 @@ function DailyReport({ profile }) {
                 </div>
               </button>
 
+              
+                
+
+              {/* =====================
+                  AI CCTV ANALYSIS
+              ====================== */}
+
+              <button
+                type="button"
+                className="daily-hub-card"
+                onClick={() => setActiveReport('cctv-ai')}
+              >
+                <div className="daily-hub-card-number-box">
+                  <ScanEye size={27} />
+                </div>
+
+                <div className="daily-hub-card-content">
+                  <span className="daily-hub-card-number">
+                    AI CCTV ANALYSIS
+                  </span>
+
+                  <h3>
+                    วิเคราะห์สถานการณ์จากภาพ CCTV
+                  </h3>
+
+                  <p>
+                    วิเคราะห์ความเรียบร้อย การจราจร
+                    และเหตุการณ์น่าสนใจจากภาพกล้องวงจรปิด
+                    พร้อมจัดทำรายงานเสนอผู้บังคับบัญชา
+                  </p>
+                </div>
+
+                <div className="daily-hub-card-arrow">
+                  <ChevronRight size={22} />
+                </div>
+              </button>
+
+
               </div>
+
+
+              
 
            
 

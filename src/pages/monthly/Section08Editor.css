@@ -1,0 +1,88 @@
+
+/* =========================================
+   SECTION 08 — APPENDIX COVER
+   A4 LANDSCAPE
+   ========================================= */
+
+.section08-paper {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 1120px;
+  height: 792px;
+  box-sizing: border-box;
+
+  background: #ffffff;
+  color: #111827;
+  font-family: 'Noto Sans Thai', sans-serif;
+
+  transform-origin: top left;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+/* กรอบข้อความตรงกลางกระดาษ */
+
+.section08-title-frame {
+  position: absolute;
+  top: 43%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 480px;
+  min-height: 250px;
+  padding: 30px 24px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  background: #ffffff;
+  border: 2px solid #909090;
+  border-radius: 42px;
+
+  text-align: center;
+}
+
+/* บรรทัดที่ 1 */
+
+.section08-line1 {
+  margin: 0;
+  width: 100%;
+
+  color: #111111;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* บรรทัดที่ 2 */
+
+.section08-line2 {
+  margin: 0;
+  width: 100%;
+
+  color: #111111;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+/* บรรทัดที่ 3 */
+
+.section08-line3 {
+  margin: 0;
+  width: 100%;
+
+  color: #111111;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
