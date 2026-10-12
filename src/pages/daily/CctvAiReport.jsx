@@ -50,8 +50,11 @@ const STATIONS = {
   'ศูนย์เบตง': 'สภ.เบตง',
 }
 
+
 const AI_URL =
-  import.meta.env.VITE_CCTV_AI_URL || ''
+  import.meta.env.VITE_CCTV_AI_URL ||
+  'https://cctv-ai-analysis.dkifu-vss.workers.dev'
+
 
 const pad = (n) => String(n).padStart(2, '0')
 
