@@ -1,0 +1,1873 @@
+/* SECTION 05 — PREVIEW */
+
+.section05-editor {
+  width: 100%;
+  min-width: 0;
+  font-family: 'Noto Sans Thai', sans-serif;
+}
+
+.section05-editor.section05-editing {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.section05-preview {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 20px;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  overflow: hidden;
+  background: #0f141c;
+  border: 1px solid #293241;
+  border-radius: 14px;
+}
+
+.section05-paper-stage {
+  position: relative;
+  flex: 0 0 auto;
+  margin: 0 auto;
+}
+
+.section05-paper {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 1120px;
+  height: 792px;
+  box-sizing: border-box;
+  padding: 20px 20px 14px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  transform-origin: top left;
+  overflow: hidden;
+
+  background: #ffffff;
+  color: #17283f;
+  border-radius: 8px;
+}
+
+/* =========================================
+   SECTION 05 — REPORT HEADING
+   SAME STYLE AS SECTION 03 / 04
+========================================= */
+
+.section05-heading {
+  flex-shrink: 0;
+}
+
+.section05-heading h2 {
+  margin: 0;
+
+  font-size: 27px;
+  font-weight: 900;
+  line-height: 1.35;
+
+  color: #831329;
+}
+
+.section05-heading p {
+  margin: 5px 0 0;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+
+  color: #667085;
+}
+
+/* SUMMARY */
+
+.section05-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  height: 122px;
+  flex-shrink: 0;
+}
+
+.section05-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  padding: 16px 18px;
+  border: 1px solid #efc5d0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.section05-summary-icon {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border-radius: 999px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 30px;
+  color: #b2163c;
+  background: #f8e9ee;
+}
+
+.section05-summary-content {
+  min-width: 0;
+}
+
+.section05-summary-content > span {
+  display: block;
+  color: #213555;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.section05-summary-value {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.section05-summary-value strong {
+  color: #b01239;
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.section05-summary-value small {
+  color: #213555;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* CONTENT */
+
+.section05-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, .98fr);
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.section05-chart-card,
+.section05-status-card {
+  min-width: 0;
+  min-height: 0;
+  background: #ffffff;
+  border: 1px solid #e3e7ee;
+  border-radius: 12px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* CARD HEAD */
+
+.section05-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.section05-card-title-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.section05-card-icon {
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #f8e9ee;
+  color: #b0133a;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.section05-card-title-group h3 {
+  margin: 4px 0 0;
+  color: #15345a;
+  font-size: 18px;
+  line-height: 1.15;
+  font-weight: 900;
+}
+
+.section05-card-title-group p {
+  margin: 6px 0 0;
+  color: #5f6f87;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.section05-card-unit {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 10px;
+  padding: 8px 14px;
+
+  border-radius: 999px;
+  background: #f8e9ee;
+  color: #b0133a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+/* CHART SIDE */
+
+.section05-chart-inner {
+  padding: 12px 16px 12px;
+  height: calc(100% - 85px);
+  box-sizing: border-box;
+}
+
+.section05-chart-block {
+  height: 100%;
+  min-height: 0;
+
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 12px;
+  align-items: center;
+}
+
+.section05-chart-placeholder {
+  grid-column: 1 / -1;
+  height: 100%;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+
+  color: #8a95a6;
+}
+
+.section05-chart-placeholder strong {
+  font-size: 20px;
+  color: #6f7d90;
+}
+
+.section05-donut-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.section05-donut-svg {
+  width: 100%;
+  max-width: 430px;
+  height: auto;
+  overflow: visible;
+}
+
+.section05-donut-label-count {
+  fill: #ffffff;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.section05-donut-label-percent {
+  fill: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.section05-donut-center-top {
+  fill: #183355;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.section05-donut-center-value {
+  fill: #b0133a;
+  font-size: 66px;
+  font-weight: 900;
+}
+
+.section05-donut-center-bottom {
+  fill: #183355;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.section05-chart-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.section05-legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.section05-legend-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.section05-legend-text {
+  min-width: 0;
+}
+
+.section05-legend-text strong {
+  display: block;
+  color: #183355;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.section05-legend-text span {
+  display: block;
+  margin-top: 3px;
+  color: #183355;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* TABLE SIDE */
+
+.section05-table-wrap {
+  height: calc(100% - 72px);
+  box-sizing: border-box;
+  padding: 0 10px 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.section05-table-header {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1.35fr) minmax(0, 1.45fr) 116px;
+  gap: 0;
+
+  align-items: center;
+  min-height: 38px;
+  padding: 0 0;
+
+  background: #f0f3f7;
+  color: #50617a;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 0;
+}
+
+.section05-table-header > span {
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.section05-table-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.section05-table-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1.35fr) minmax(0, 1.45fr) 116px;
+  align-items: center;
+
+  min-height: 29px;
+  border-bottom: 1px solid #eff3f7;
+  font-size: 12px;
+}
+
+.section05-table-row:nth-child(even) {
+  background: #f8fafc;
+}
+
+.section05-col-order,
+.section05-col-name,
+.section05-col-bar,
+.section05-col-status {
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.section05-col-order {
+  text-align: center;
+  color: #183355;
+  font-weight: 700;
+}
+
+.section05-col-name {
+  color: #183355;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.section05-col-bar {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) 40px;
+  gap: 10px;
+  align-items: center;
+}
+
+.section05-col-count {
+  text-align: center;
+  color: #b0133a;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.section05-bar-track {
+  width: 100%;
+  height: 18px;
+  border-radius: 4px;
+  background: #dfe4ea;
+  overflow: hidden;
+}
+
+.section05-bar-fill {
+  height: 100%;
+  width: 0;
+  background: transparent;
+}
+
+.section05-bar-fill.has-value {
+  background: linear-gradient(90deg, #f26296 0%, #c51747 100%);
+}
+
+.section05-col-percent {
+  text-align: right;
+  color: #183355;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.section05-col-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.section05-status-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.section05-status-icon.success {
+  border-radius: 999px;
+  background: #19af3f;
+  color: #ffffff;
+}
+
+.section05-status-icon.danger {
+  color: #b0133a;
+  font-size: 16px;
+}
+
+.section05-status-value {
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.section05-status-value.success {
+  color: #19af3f;
+}
+
+.section05-status-value.danger {
+  color: #b0133a;
+}
+
+/* FOOTER */
+
+.section05-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 2px solid #c82a4d;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.section05-footer span {
+  color: #183355;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.section05-footer strong {
+  color: #68798d;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .2px;
+}
+
+/* EDITOR PANEL */
+
+.section05-panel {
+  overflow: hidden;
+  background: #151a23;
+  border: 1px solid #2b3547;
+  border-radius: 14px;
+  color: #ffffff;
+}
+
+.section05-panel-head {
+  padding: 20px 18px;
+  border-bottom: 1px solid #2b3547;
+}
+
+.section05-panel-head > span {
+  color: #ff426a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.section05-panel-head h3 {
+  margin: 8px 0 4px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.section05-panel-head p,
+.section05-panel-notice {
+  margin: 0;
+  color: #8494ae;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.section05-panel-body {
+  padding: 18px;
+}
+
+.section05-field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.section05-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.section05-edit-field > span {
+  color: #e5e7eb;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.section05-edit-field input {
+  width: 100%;
+  height: 42px;
+  box-sizing: border-box;
+  padding: 0 13px;
+
+  background: #10151d;
+  color: #ffffff;
+  border: 1px solid #344155;
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.section05-edit-field input:focus {
+  border-color: #e11d48;
+  box-shadow: 0 0 0 3px rgba(225,29,72,.12);
+}
+
+.section05-edit-field input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.section05-edit-field input::placeholder {
+  color: #64748b;
+}
+
+.section05-save-actions {
+  margin: 22px 0 12px;
+}
+
+.section05-save-button {
+  width: 100%;
+  min-height: 44px;
+
+  padding: 10px 16px;
+
+  background: #be1e48;
+  color: #ffffff;
+
+  border: 1px solid #d52a58;
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.section05-save-button:hover:not(:disabled) {
+  background: #dc2858;
+}
+
+.section05-save-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.section05-save-message {
+  margin: 14px 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.section05-save-message.success {
+  color: #4ade80;
+}
+
+.section05-save-message.error {
+  color: #fb7185;
+}
+
+.section05-export-block {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #344155;
+}
+
+.section05-export-block h4 {
+  margin: 0 0 12px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.section05-export-button {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 14px;
+  background: #202939;
+  color: #e5eaf3;
+  border: 1px solid #344155;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.section05-export-button + .section05-export-button {
+  margin-top: 10px;
+}
+
+.section05-export-button.alt {
+  background: #30394a;
+}
+
+.section05-export-button:hover:not(:disabled) {
+  background: #2b374a;
+  border-color: #52617a;
+}
+
+.section05-export-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.section05-export-block small {
+  display: block;
+  margin-top: 9px;
+  color: #8494ae;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .section05-editor.section05-editing {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================
+   SECTION 05 — LAYOUT FIX V2
+   A4 LANDSCAPE / 15 EQUIPMENT ROWS
+   MATCH SECTION 03 / 04
+========================================= */
+
+/* 1. ขนาดกระดาษและระยะขอบ */
+
+.section05-paper {
+  padding: 34px;
+  gap: 12px;
+}
+
+/* 2. ลดความสูงการ์ดสรุป */
+
+.section05-summary {
+  height: 86px;
+  gap: 10px;
+}
+
+.section05-summary-card {
+  padding: 10px 12px;
+  gap: 10px;
+}
+
+.section05-summary-icon {
+  width: 48px;
+  height: 48px;
+  font-size: 21px;
+}
+
+.section05-summary-content > span {
+  font-size: 12px;
+}
+
+.section05-summary-value {
+  margin-top: 3px;
+  gap: 6px;
+}
+
+.section05-summary-value strong {
+  font-size: 34px;
+}
+
+.section05-summary-value small {
+  font-size: 11px;
+}
+
+/* 3. ปรับสัดส่วนกราฟและตาราง */
+
+.section05-content {
+  grid-template-columns:
+    minmax(0, 1.03fr)
+    minmax(0, 1.08fr);
+
+  gap: 12px;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.section05-chart-card,
+.section05-status-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* 4. ลดความสูงส่วนหัวของกราฟ/ตาราง */
+
+.section05-card-head {
+  flex: 0 0 60px;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  gap: 6px;
+}
+
+.section05-card-title-group {
+  align-items: center;
+  gap: 8px;
+}
+
+.section05-card-icon {
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+}
+
+.section05-card-title-group h3 {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.section05-card-title-group p {
+  margin-top: 2px;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.section05-card-unit {
+  margin-top: 3px;
+  padding: 5px 8px;
+  font-size: 10px;
+}
+
+/* 5. ให้กราฟใช้พื้นที่ที่เหลือ */
+
+.section05-chart-inner {
+  height: auto;
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 8px 10px;
+}
+
+.section05-chart-block {
+  grid-template-columns:
+    minmax(0, 1fr) 170px;
+  gap: 8px;
+}
+
+.section05-chart-legend {
+  gap: 5px;
+}
+
+.section05-legend-item {
+  gap: 7px;
+}
+
+.section05-legend-dot {
+  width: 12px;
+  height: 12px;
+}
+
+.section05-legend-text strong {
+  font-size: 11px;
+}
+
+.section05-legend-text span {
+  font-size: 10px;
+  margin-top: 1px;
+}
+
+/* 6. ให้ตารางใช้พื้นที่ทั้งหมดที่เหลือ */
+
+.section05-table-wrap {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+  padding: 0 7px 7px;
+}
+
+/* 7. หัวตาราง */
+
+.section05-table-header {
+  grid-template-columns:
+    32px
+    minmax(0, 1.3fr)
+    minmax(0, 1.5fr)
+    86px;
+
+  flex: 0 0 31px;
+  min-height: 0;
+  font-size: 10px;
+}
+
+.section05-table-header > span {
+  padding: 0 4px;
+}
+
+/* 8. บังคับพื้นที่ 15 แถวเท่ากัน */
+
+.section05-table-body {
+  display: grid;
+  grid-template-rows:
+    repeat(15, minmax(0, 1fr));
+
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.section05-table-row {
+  grid-template-columns:
+    32px
+    minmax(0, 1.3fr)
+    minmax(0, 1.5fr)
+    86px;
+
+  height: 100%;
+  min-height: 0;
+  font-size: 10.5px;
+  line-height: 1.2;
+}
+
+/* 9. ระยะห่างภายในคอลัมน์ */
+
+.section05-col-order,
+.section05-col-name,
+.section05-col-bar,
+.section05-col-status {
+  padding: 0 4px;
+}
+
+.section05-col-name {
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 10. แถบปริมาณ */
+
+.section05-col-bar {
+  grid-template-columns:
+    17px
+    minmax(0, 1fr)
+    29px;
+
+  gap: 4px;
+}
+
+.section05-col-count {
+  font-size: 11px;
+}
+
+.section05-bar-track {
+  height: 13px;
+  border-radius: 3px;
+}
+
+.section05-col-percent {
+  font-size: 10px;
+}
+
+/* 11. สถานะอุปกรณ์ */
+
+.section05-col-status {
+  gap: 4px;
+}
+
+.section05-status-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 11px;
+}
+
+.section05-status-icon.danger {
+  font-size: 13px;
+}
+
+.section05-status-value {
+  font-size: 10px;
+}
+
+/* 12. Footer */
+
+.section05-footer {
+  margin-top: 0;
+  padding-top: 7px;
+  flex-shrink: 0;
+}
+
+.section05-footer span {
+  font-size: 10px;
+}
+
+.section05-footer strong {
+  font-size: 9px;
+}
+
+
+/* =========================================
+   SECTION 05 — CARD HEADER REFINEMENT
+   MATCH SECTION 03 / 04
+========================================= */
+
+.section05-card-head {
+  flex: 0 0 60px;
+  min-height: 60px;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+  padding: 10px 15px;
+
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #fcfafb 100%
+  );
+
+  border-bottom: 1px solid #e4e8ef;
+}
+
+.section05-card-title-group {
+  display: block;
+  min-width: 0;
+  flex: 1;
+}
+
+.section05-card-title-group h3 {
+  margin: 0;
+
+  color: #831329;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.section05-card-title-group p {
+  margin: 3px 0 0;
+
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.section05-card-icon {
+  display: none;
+}
+
+.section05-card-unit {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 5px 10px;
+
+  color: #831329;
+  background: #f7e9ed;
+  border: 1px solid #f0dbe1;
+  border-radius: 7px;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+
+/* =========================================
+   SECTION 05 — DONUT CHART FIX
+========================================= */
+
+.section05-donut-svg {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  overflow: visible;
+}
+
+.section05-donut-label-count {
+  font-size: 19px;
+  font-weight: 900;
+  fill: #ffffff;
+  paint-order: stroke fill;
+  stroke: #831329;
+  stroke-width: 2px;
+  stroke-linejoin: round;
+}
+
+.section05-donut-label-percent {
+  font-size: 12px;
+  font-weight: 800;
+  fill: #ffffff;
+  paint-order: stroke fill;
+  stroke: #831329;
+  stroke-width: 1.5px;
+  stroke-linejoin: round;
+}
+
+.section05-donut-center-top {
+  font-size: 16px;
+  font-weight: 800;
+  fill: #183355;
+}
+
+.section05-donut-center-value {
+  font-size: 45px;
+  font-weight: 900;
+  fill: #831329;
+}
+
+.section05-donut-center-bottom {
+  font-size: 15px;
+  font-weight: 800;
+  fill: #183355;
+}
+
+/* กรณีมีอุปกรณ์เสียหลายประเภท */
+
+.section05-chart-block.is-dense .section05-chart-legend {
+  gap: 3px;
+}
+
+.section05-chart-block.is-dense .section05-legend-item {
+  gap: 5px;
+  align-items: center;
+}
+
+.section05-chart-block.is-dense .section05-legend-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 0;
+}
+
+.section05-chart-block.is-dense .section05-legend-text {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+}
+
+.section05-chart-block.is-dense .section05-legend-text strong {
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.section05-chart-block.is-dense .section05-legend-text span {
+  font-size: 8px;
+  line-height: 1.3;
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+
+/* =========================================
+   SECTION 05 — STATUS FINISHING
+========================================= */
+
+.section05-status-icon.danger {
+  color: #b0133a;
+  background: transparent;
+}
+
+.section05-status-icon.danger svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.section05-status-icon.pending {
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.section05-status-value.pending {
+  color: #94a3b8;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.section05-col-count,
+.section05-col-percent {
+  font-variant-numeric: tabular-nums;
+}
+
+.section05-table-row {
+  min-height: 0;
+}
+
+.section05-table-body {
+  grid-template-rows: repeat(15, minmax(0, 1fr));
+}
+
+
+/* =========================================
+   SECTION 05 — DONUT COLOR & LABEL FIX
+========================================= */
+
+.section05-donut-svg {
+  display: block;
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+  overflow: visible;
+}
+
+.section05-donut-label-count {
+  font-size: 17px;
+  font-weight: 900;
+  fill: #ffffff;
+  stroke: #253047;
+  stroke-width: 1.5px;
+  paint-order: stroke fill;
+}
+
+.section05-donut-label-percent {
+  font-size: 12px;
+  font-weight: 800;
+  fill: #ffffff;
+  stroke: #253047;
+  stroke-width: 1px;
+  paint-order: stroke fill;
+}
+
+.section05-donut-outside-label {
+  font-size: 12px;
+  font-weight: 800;
+  fill: #334155;
+}
+
+.section05-donut-center-top {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.section05-donut-center-value {
+  font-size: 45px;
+  font-weight: 900;
+}
+
+.section05-donut-center-bottom {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* คำอธิบายสี */
+
+.section05-chart-legend {
+  gap: 5px;
+}
+
+.section05-legend-item {
+  align-items: center;
+  gap: 6px;
+  min-height: 17px;
+}
+
+.section05-legend-dot {
+  width: 11px;
+  height: 11px;
+  margin-top: 0;
+}
+
+.section05-legend-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.section05-legend-text strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+.section05-legend-text span {
+  flex-shrink: 0;
+  margin-top: 0;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.section05-chart-block.is-dense .section05-chart-legend {
+  gap: 2px;
+}
+
+.section05-chart-block.is-dense .section05-legend-text strong {
+  font-size: 9px;
+}
+
+.section05-chart-block.is-dense .section05-legend-text span {
+  font-size: 8px;
+}
+
+
+/* =========================================
+   SECTION 05 — EDITOR SCROLLBAR
+========================================= */
+
+.section05-field-list {
+  max-height: min(470px, 55vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding-right: 8px;
+  scrollbar-gutter: stable;
+
+  scrollbar-width: thin;
+  scrollbar-color: #94425b #151a23;
+
+  overscroll-behavior: contain;
+}
+
+/* Chrome / Edge */
+
+.section05-field-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.section05-field-list::-webkit-scrollbar-track {
+  background: #10151d;
+  border-radius: 10px;
+}
+
+.section05-field-list::-webkit-scrollbar-thumb {
+  background: #94425b;
+  border-radius: 10px;
+}
+
+.section05-field-list::-webkit-scrollbar-thumb:hover {
+  background: #c52c58;
+}
+
+.section05-field-list::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* รักษาความกว้างช่องกรอก */
+
+.section05-edit-field {
+  min-width: 0;
+}
+
+.section05-edit-field input {
+  min-width: 0;
+}
+
+/* =========================================
+   SECTION 05 — REMOVE FOOTER / EXPAND BODY
+   MAKE LOWER AREA LIKE SECTION 04
+========================================= */
+
+.section05-paper {
+  padding-bottom: 34px;
+}
+
+.section05-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.section05-chart-card,
+.section05-status-card {
+  height: 100%;
+  min-height: 0;
+}
+
+.section05-chart-inner,
+.section05-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.section05-footer {
+  display: none;
+}
+
+
+/* =========================================
+   SECTION 05 — COMPACT BOTTOM LEGEND
+========================================= */
+
+.section05-chart-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 10px;
+
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+/* Legend อยู่ใต้กราฟ */
+
+.section05-chart-legend,
+.section05-chart-block.is-dense .section05-chart-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+
+  width: 100%;
+  min-width: 0;
+  padding-top: 8px;
+
+  border-top: 1px solid #edf0f4;
+  align-content: end;
+}
+
+/* กล่องคำอธิบายสี */
+
+.section05-legend-item,
+.section05-chart-block.is-dense .section05-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 0;
+  min-height: 24px;
+  gap: 5px;
+  padding: 3px 5px;
+
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+/* แถบสีสั้นแบบหัวข้อ 04 */
+
+.section05-legend-dot,
+.section05-chart-block.is-dense .section05-legend-dot {
+  width: 17px;
+  height: 4px;
+  flex: 0 0 17px;
+
+  border-radius: 99px;
+  margin: 0;
+}
+
+/* ชื่ออุปกรณ์ */
+
+.section05-legend-text,
+.section05-chart-block.is-dense .section05-legend-text {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.section05-legend-text strong,
+.section05-chart-block.is-dense .section05-legend-text strong {
+  display: block;
+  margin: 0;
+
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* กรณีมีข้อมูลหลายประเภท */
+
+.section05-chart-block.is-dense .section05-legend-text strong {
+  font-size: 9px;
+}
+
+
+/* =========================================
+   SECTION 05 — DONUT RESIZE & CENTER
+========================================= */
+
+/* พื้นที่หลักของกราฟ */
+
+.section05-chart-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
+
+  padding: 12px 14px;
+}
+
+/* จัดโดนัทให้อยู่กลางพื้นที่ */
+
+.section05-donut-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  overflow: visible;
+}
+
+/* SVG ขยายตามพื้นที่ที่เหลือ */
+
+.section05-donut-svg {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  max-width: 440px;
+  max-height: 100%;
+
+  overflow: visible;
+}
+
+/* กรณีไม่มีข้อมูล */
+
+.section05-chart-placeholder {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+/* =========================================
+   SECTION 05 — COLOR CARD LEGEND
+========================================= */
+
+.section05-chart-legend,
+.section05-chart-block.is-dense .section05-chart-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+
+  width: 100%;
+  min-width: 0;
+  padding-top: 8px;
+
+  border-top: 1px solid #edf0f4;
+  align-content: start;
+}
+
+.section05-legend-item,
+.section05-chart-block.is-dense .section05-legend-item {
+  min-width: 0;
+}
+
+.section05-legend-card,
+.section05-chart-block.is-dense .section05-legend-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 28px;
+  padding: 5px 8px;
+  box-sizing: border-box;
+
+  border-radius: 8px;
+  border: none;
+
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
+}
+
+.section05-legend-card-text,
+.section05-chart-block.is-dense .section05-legend-card-text {
+  display: block;
+  width: 100%;
+
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ไม่ใช้ขีดสีแบบเดิมแล้ว */
+.section05-legend-dot {
+  display: none !important;
+}
+
+/* ไม่ใช้ wrapper เดิม */
+.section05-legend-text {
+  display: none !important;
+}
+
+/* กรณีข้อมูลแน่นมาก */
+.section05-chart-block.is-dense .section05-chart-legend {
+  gap: 5px;
+}
+
+.section05-chart-block.is-dense .section05-legend-card {
+  min-height: 26px;
+  padding: 4px 6px;
+}
+
+.section05-chart-block.is-dense .section05-legend-card-text {
+  font-size: 9px;
+}
+
+
+/* =========================================
+   SECTION 05 — MINIMAL DOT LEGEND
+   Clean / Professional / Compact
+========================================= */
+
+.section05-chart-legend,
+.section05-chart-block.is-dense .section05-chart-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  column-gap: 12px;
+  row-gap: 5px;
+
+  width: 100%;
+  min-width: 0;
+  padding: 10px 4px 4px;
+
+  background: transparent;
+  border-top: 1px solid #e5eaf0;
+  align-content: center;
+}
+
+/* รายการอุปกรณ์ */
+
+.section05-legend-simple {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  gap: 7px;
+  min-width: 0;
+  min-height: 22px;
+  padding: 2px 4px;
+
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* จุดสีประจำอุปกรณ์ */
+
+.section05-legend-color-dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  min-height: 10px;
+
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+/* ชื่ออุปกรณ์ */
+
+.section05-legend-simple-label {
+  display: block;
+  min-width: 0;
+
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* กรณีแสดงครบ 15 ประเภท */
+
+.section05-chart-block.is-dense .section05-legend-simple {
+  min-height: 20px;
+  gap: 6px;
+}
+
+.section05-chart-block.is-dense .section05-legend-simple-label {
+  font-size: 10px;
+}
+
+
+/* =========================================
+   SECTION 05 — SUMMARY STYLE V3
+   MATCH SECTION 04
+========================================= */
+
+/* กลุ่มการ์ดสรุป */
+
+.section05-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+
+  height: 110px;
+  flex-shrink: 0;
+}
+
+/* รูปแบบการ์ดเหมือน Section 04 */
+
+.section05-summary-card {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+
+  min-width: 0;
+  padding: 10px 18px;
+  gap: 0;
+
+  background: #ffffff;
+  border: 1px solid #e2e6ed;
+  border-radius: 12px;
+  box-sizing: border-box;
+
+  overflow: hidden;
+}
+
+/* แถบสีด้านบน */
+
+.section05-summary-card::before {
+  content: '';
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 5px;
+  background: var(--summary-color);
+}
+
+/* สีประจำการ์ด */
+
+.section05-summary-card--blue {
+  --summary-color: #2563eb;
+}
+
+.section05-summary-card--orange {
+  --summary-color: #d97706;
+}
+
+.section05-summary-card--red {
+  --summary-color: #dc2626;
+}
+
+/* ซ่อนไอคอนเดิม */
+
+.section05-summary-icon {
+  display: none;
+}
+
+/* เนื้อหาการ์ด */
+
+.section05-summary-content {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.section05-summary-content > span {
+  display: block;
+
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* ตัวเลข */
+
+.section05-summary-value {
+  display: flex;
+  align-items: baseline;
+
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.section05-summary-value strong {
+  color: var(--summary-color);
+
+  font-size: 35px;
+  font-weight: 900;
+  line-height: 1.15;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.section05-summary-value small {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+
+  white-space: nowrap;
+}
+
+/* ชื่อหรือจำนวนประเภทที่เสียสูงสุด */
+
+.section05-summary-detail {
+  margin-top: 3px;
+
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+
+/* =========================================
+   SECTION 05 — AUTO SHRINK SUMMARY DETAIL
+========================================= */
+
+/* ปกติแสดง 1 บรรทัด */
+.section05-summary-detail {
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* ถ้าขึ้น 2 บรรทัด ลดขนาดฟอนต์ */
+.section05-summary-detail.is-compact {
+  font-size: 9px;
+  line-height: 1.2;
+}
+
