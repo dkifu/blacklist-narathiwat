@@ -13,7 +13,7 @@ import Section02Editor from './monthly/Section02Editor'
 import Section03Editor from './monthly/Section03Editor'
 import Section04Editor from './monthly/Section04Editor'
 
-
+import Section08Editor from './monthly/Section08Editor'
 import Section09Editor from './monthly/Section09Editor'
 
 
@@ -113,7 +113,7 @@ function MonthlyReport({ profile }) {
   const section03ExportRef = useRef(null)
   const section04ExportRef = useRef(null)
 
-  
+  const section08ExportRef = useRef(null)
   const section09ExportRef = useRef(null)
 
 
@@ -121,7 +121,7 @@ function MonthlyReport({ profile }) {
   const [section03ExportVersion, setSection03ExportVersion] = useState(0)
   const [section04ExportVersion, setSection04ExportVersion] = useState(0)
 
-  
+  const [section08ExportVersion, setSection08ExportVersion] = useState(0)
   const [section09ExportVersion, setSection09ExportVersion] = useState(0)
 
 
@@ -795,10 +795,15 @@ function MonthlyReport({ profile }) {
             exporter: section04ExportRef.current,
         },
 
-        
+
+
         {
-        sectionNo: 9,
-        exporter: section09ExportRef.current,
+            sectionNo: 8,
+            exporter: section08ExportRef.current,
+        },
+        {
+            sectionNo: 9,
+            exporter: section09ExportRef.current,
         },
 
         ]
@@ -1252,8 +1257,17 @@ function MonthlyReport({ profile }) {
                 
 
 
-
-
+                
+                <Section08Editor
+                key={`section08-export-${currentReport.id}-${section08ExportVersion}`}
+                ref={section08ExportRef}
+                report={currentReport}
+                center={selectedCenter}
+                month={month}
+                year={year}
+                canEdit={false}
+                />
+                
                 <Section09Editor
                 key={`section09-export-${currentReport.id}-${section09ExportVersion}`}
                 ref={section09ExportRef}
@@ -1492,7 +1506,25 @@ function MonthlyReport({ profile }) {
 
                             />
 
-                                               
+                        
+                        ) : activeSection.id === 8 ? (
+
+                            <Section08Editor
+                                report={currentReport}
+                                center={selectedCenter}
+                                month={month}
+                                year={year}
+                                canEdit={canEdit && editMode}
+                                onDataChange={() => {
+                                handleSectionDataChange()
+
+                                setSection08ExportVersion(
+                                    previous => previous + 1
+                                )
+                                }}
+                            />
+
+                       
                         ) : activeSection.id === 9 ? (
                             <Section09Editor
                                 report={currentReport}
