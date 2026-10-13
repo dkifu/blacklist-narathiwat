@@ -9,7 +9,7 @@ import { jsPDF } from 'jspdf'
 import { supabase } from '../../lib/supabase'
 import './CctvAiReport.css'
 
-// CCTV AI V7 — AI severity only, no keyword matching
+// CCTV AI V13 — AI severity only, no keyword matching
 
 const GRID_OPTIONS = {
   4: [2, 2],
@@ -950,6 +950,9 @@ function ReportSheet({
 function CctvAiReport({ profile }) {
   const [count, setCount] = useState(9)
 
+  // V13 — AI Model Selection
+  const [aiModel, setAiModel] = useState('gemma4')
+
   const [uploadMode, setUploadMode] =
     useState('collage')
 
@@ -1405,7 +1408,7 @@ function CctvAiReport({ profile }) {
   })
 
   /* =================================
-     AI ANALYSIS V7
+     AI ANALYSIS V13
   ================================= */
 
   const handleAnalyze = async () => {
@@ -1464,6 +1467,7 @@ function CctvAiReport({ profile }) {
           },
 
           body: JSON.stringify({
+            model: aiModel,
             count,
             station: report.station,
             location: report.location,
@@ -1969,7 +1973,7 @@ function CctvAiReport({ profile }) {
       <header className="ai-page-header">
         <div>
           <div className="ai-page-eyebrow">
-            AI CCTV ANALYSIS V7
+            AI CCTV ANALYSIS V13
           </div>
 
           <h1>
@@ -1999,6 +2003,31 @@ function CctvAiReport({ profile }) {
         </div>
 
         <div className="ai-form-grid">
+
+          <label className="ai-field">
+            <span>โมเดล AI สำหรับวิเคราะห์ภาพ</span>
+
+            <select
+              value={aiModel}
+              disabled={!!busy}
+              onChange={e => {
+                setAiModel(e.target.value)
+                setMessage('')
+              }}
+            >
+              <option value="gemma4">
+                Google Gemma 4 26B (ค่าเริ่มต้น)
+              </option>
+
+              <option value="qwen38">
+                Qwen 3.8 27B
+              </option>
+
+              <option value="llama4">
+                Meta Llama 4 Scout
+              </option>
+            </select>
+          </label>
 
           <label className="ai-field">
             <span>จำนวนกล้อง</span>

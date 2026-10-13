@@ -1,6 +1,6 @@
 
 /*
- CCTV AI ANALYSIS V12.5
+ CCTV AI ANALYSIS V13
  Production Stability / Normal Scene Reporting
  Cloudflare Workers AI — Gemma 4
 
@@ -16,7 +16,39 @@
  - Compatible with existing React report
 */
 
-const MODEL = '@cf/google/gemma-4-26b-a4b-it';
+/* =========================================
+   CCTV AI V13 — MODEL SELECTION
+========================================= */
+
+const DEFAULT_MODEL = 'gemma4';
+
+
+const AI_MODELS = {
+  gemma4: {
+    id: '@cf/google/gemma-4-26b-a4b-it',
+    name: 'Google Gemma 4 26B',
+  },
+
+  qwen38: {
+    id: '@cf/qwen/qwen3.8-27b',
+    name: 'Qwen 3.8 27B',
+  },
+
+  llama4: {
+    id: '@cf/meta/llama-4-scout-17b-16e-instruct',
+    name: 'Meta Llama 4 Scout',
+  },
+};
+
+
+function resolveAIModel(value) {
+  const key =
+    typeof value === 'string'
+      ? value.trim().toLowerCase()
+      : DEFAULT_MODEL;
+
+  return AI_MODELS[key] || null;
+}
 
 const COUNTS = [4, 6, 9, 12, 16];
 
@@ -3058,7 +3090,7 @@ function buildReport(data, count) {
     report,
 
     assessment: {
-      version: 'v12.5.1',
+      version: 'v13',
 
       cameraCoverage:
         `${camera.covered}/${camera.expected}`,
@@ -4014,6 +4046,24 @@ export default {
         );
       }
 
+      /* =========================================
+        V13 — SELECT AI MODEL
+      ========================================= */
+
+      const selectedModel = resolveAIModel(
+        body?.model ?? DEFAULT_MODEL
+      );
+
+      if (!selectedModel) {
+        return reply(
+          {
+            error: 'ไม่รองรับ AI Model ที่เลือก',
+          },
+          400,
+          cors
+        );
+      }
+
       /* Camera count */
 
       const count =
@@ -4079,7 +4129,7 @@ export default {
       ================================= */
 
       const output = await env.AI.run(
-        MODEL,
+        selectedModel.id,
         {
           messages: [
             {
@@ -4102,18 +4152,25 @@ export default {
             },
           ],
 
-          chat_template_kwargs: {
-            enable_thinking: false,
-          },
+          ...(selectedModel.id === '@cf/qwen/qwen3.8-27b'
+          ? {
+              reasoning_effort: 'low',
+            }
+          : selectedModel.id === '@cf/google/gemma-4-26b-a4b-it'
+            ? {
+                chat_template_kwargs: {
+                  enable_thinking: false,
+                },
+              }
+            : {}),
 
-          response_format: {
-            type: 'json_object',
-          },
+        response_format: {
+          type: 'json_object',
+        },
 
-          max_tokens:
-            MAX_OUTPUT_TOKENS,
+        max_tokens: MAX_OUTPUT_TOKENS,
 
-          temperature: 0.15,
+        temperature: 0.15,
         }
       );
 
@@ -4145,7 +4202,7 @@ export default {
           analysisMode:
             'overview',
 
-          model: MODEL,
+          model: selectedModel.id,
 
           usage,
         },
@@ -4228,7 +4285,7 @@ export default {
           : 'AI_UNEXPECTED_ERROR';
 
       console.error(
-        'CCTV AI V12.5:',
+        'CCTV AI V13:',
         code
       );
 
