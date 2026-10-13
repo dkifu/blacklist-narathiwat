@@ -1498,7 +1498,7 @@ function CctvAiReport({ profile }) {
         !result.itemSeverities
       ) {
         throw new Error(
-          'โปรดอัปเดต Cloudflare Worker เป็น V7 ก่อนใช้งาน'
+          'โปรดอัปเดต Cloudflare Worker เป็น V13 ก่อนใช้งาน'
         )
       }
 
