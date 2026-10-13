@@ -4174,21 +4174,60 @@ export default {
         }
       );
 
-      /* Usage */
+        /* Usage */
 
-      usage = output?.usage || null;
+        usage = output?.usage || null;
 
-      /* Build report */
+        /* =================================
+          V13 — AI JSON DIAGNOSTICS
+        ================================= */
 
-      const {
-        report,
-        assessment,
-      } = buildReport(
-        parseModel(
-          modelText(output)
-        ),
-        count
-      );
+        const aiText = modelText(output);
+
+        let parsedAI;
+
+        try {
+          parsedAI = parseModel(aiText);
+        } catch (error) {
+          const trimmed = aiText.trim();
+
+          console.error('CCTV AI V13 JSON DEBUG:', {
+            model: selectedModel.id,
+
+            finishReason:
+              output?.choices?.[0]?.finish_reason ??
+              output?.finish_reason ??
+              'unknown',
+
+            responseChars: aiText.length,
+
+            startsWithBrace:
+              trimmed.startsWith('{'),
+
+            endsWithBrace:
+              trimmed.endsWith('}'),
+
+            hasChoices:
+              Array.isArray(output?.choices),
+
+            outputTokens:
+              usage?.completion_tokens ??
+              usage?.output_tokens ??
+              null,
+          });
+
+          throw error;
+        }
+
+        /* Build report */
+
+        const {
+          report,
+          assessment,
+        } = buildReport(
+          parsedAI,
+          count
+        );
 
       /* Success */
 

@@ -2018,14 +2018,14 @@ function CctvAiReport({ profile }) {
               <option value="gemma4">
                 Google Gemma 4 26B (ค่าเริ่มต้น)
               </option>
-
+              {/*
               <option value="qwen38">
                 Qwen 3.8 27B
               </option>
 
               <option value="llama4">
                 Meta Llama 4 Scout
-              </option>
+              </option>*/}
             </select>
           </label>
 
