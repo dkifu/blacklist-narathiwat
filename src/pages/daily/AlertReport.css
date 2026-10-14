@@ -87,10 +87,10 @@
   display: grid;
 
   grid-template-columns:
-    1.2fr
-    1fr
-    1fr
-    1.5fr;
+    minmax(0, 1.2fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    minmax(0, 2.2fr);
 
   gap: 12px;
 }
@@ -326,8 +326,7 @@
 .vss05-action-buttons {
   display: grid;
 
-  grid-template-columns:
-    1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 
   gap: 8px;
 }
@@ -495,4 +494,46 @@
     min-height: 1400px;
   }
 
+}
+
+
+/* ปุ่มยืนยัน VSS05 */
+.vss05-confirm-button {
+  min-width: 0;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border: 1px solid #a96815;
+  border-radius: 9px;
+  background: #a96815;
+  color: #fff;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  cursor: pointer;
+}
+
+.vss05-confirm-button:disabled {
+  border-color: #2d394a;
+  background: #1a2431;
+  color: #576779;
+  cursor: not-allowed;
+}
+
+/* ให้ส่วนปุ่มมีพื้นที่เต็มแถวเมื่อจอแคบ */
+@media (max-width: 1200px) and (min-width: 701px) {
+  .vss05-tool-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+/* มือถือเรียงปุ่มตามลำดับ */
+@media (max-width: 700px) {
+  .vss05-action-buttons {
+    grid-template-columns: 1fr;
+  }
 }

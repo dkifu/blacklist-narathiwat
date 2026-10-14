@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Building2,
   UserRound,
+  CheckCircle2,
 } from 'lucide-react'
 
 import './AlertReport.css'
@@ -237,6 +238,9 @@ function AlertReport({ profile }) {
   const [convertedFile, setConvertedFile] =
     useState(null)
 
+  const [isVss05Confirmed, setIsVss05Confirmed] =
+    useState(false)  
+
 
   const isAdmin =
     profile?.role === 'admin'
@@ -317,6 +321,7 @@ function AlertReport({ profile }) {
       setSelectedInspector('')
       setInspectors([])
       setConvertedFile(null)
+      setIsVss05Confirmed(false)
 
       if (!selectedCenterId) {
         setInspectorsLoading(false)
@@ -380,6 +385,7 @@ function AlertReport({ profile }) {
       ให้ยกเลิกไฟล์ VSS05 เดิม
     */
     setConvertedFile(null)
+    setIsVss05Confirmed(false)
   }
 
 
@@ -387,6 +393,7 @@ function AlertReport({ profile }) {
 
     setSelectedFile(null)
     setConvertedFile(null)
+    setIsVss05Confirmed(false)
 
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
@@ -552,6 +559,8 @@ function AlertReport({ profile }) {
         groupedVehicles.set(
           key,
           {
+            vss05Key: key,
+
             plate,
             prov: province,
 
@@ -567,11 +576,7 @@ function AlertReport({ profile }) {
                 ''
               ).trim(),
 
-            action:
-              String(
-                row['แผนเผชิญเหตุ'] ||
-                ''
-              ).trim(),  
+             
 
             s: [],
 
@@ -611,15 +616,7 @@ function AlertReport({ profile }) {
       }
 
 
-      if (
-        !vehicle.action &&
-        row['แผนเผชิญเหตุ']
-      ) {
-        vehicle.action =
-          String(
-            row['แผนเผชิญเหตุ']
-          ).trim()
-      }
+      
 
 
       vehicle.s.push({
@@ -706,71 +703,50 @@ function AlertReport({ profile }) {
     /*
      * หาวันเริ่ม / วันจบ
      */
-    allDateTimes.sort()
+    
+        
+    /* =========================================
+      ค่าเริ่มต้นของวันที่รายงานประจำวัน
+      วันที่รายงาน = วันนี้
+      ช่วงสถิติ = เมื่อวาน 00:00 - 23:59
+    ========================================= */
 
+    const now = new Date()
 
-    const firstDateTime =
-      allDateTimes[0] || ''
+    const pad = (number) =>
+      String(number).padStart(2, '0')
 
-    const lastDateTime =
-      allDateTimes[
-        allDateTimes.length - 1
-      ] || ''
+    const toLocalISO = (date) =>
+      `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 
+    const yesterday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - 1
+    )
 
-    const now =
-      new Date()
-
-    const pad =
-      (number) =>
-        String(number)
-          .padStart(2, '0')
-
-    const today =
-      `${now.getFullYear()}-${pad(
-        now.getMonth() + 1
-      )}-${pad(now.getDate())}`
-
-
-    const reportDate =
-      lastDateTime
-        ? lastDateTime.slice(0, 10)
-        : today
-
+    const reportDate = toLocalISO(now)
+    const statisticsDate = toLocalISO(yesterday)
 
     return {
-
       reportDate,
 
       start: {
-        d:
-          firstDateTime
-            ? firstDateTime.slice(0, 10)
-            : reportDate,
-
-        t:
-          firstDateTime
-            ? firstDateTime.slice(11, 16)
-            : '',
+        d: statisticsDate,
+        t: '00:00',
       },
 
       end: {
-        d:
-          lastDateTime
-            ? lastDateTime.slice(0, 10)
-            : reportDate,
-
-        t:
-          lastDateTime
-            ? lastDateTime.slice(11, 16)
-            : '',
+        d: statisticsDate,
+        t: '23:59',
       },
 
       face: [],
-
-      lpr:
-        [...groupedVehicles.values()],
+      lpr: [...groupedVehicles.values()],
     }
+
+
+    
   }
 
   const sendToPhuketEyes =
@@ -837,6 +813,7 @@ function AlertReport({ profile }) {
   try {
 
     setConvertedFile(null)
+    setIsVss05Confirmed(false)
 
 
     /*
@@ -958,15 +935,38 @@ function AlertReport({ profile }) {
     /*
      * Mapping alert_export → VSS05
      */
-    const outputRows =
-      sourceRows
-        .filter(
-          (row) =>
-            String(
-              row['วันที่-เวลา'] || ''
-            ).trim()
-        )
-        .map((row) => {
+    // แถวข้อมูลที่ใช้สร้าง VSS05
+          const reportSourceRows = sourceRows.filter(
+            (row) =>
+              String(row['วันที่-เวลา'] || '').trim()
+          )
+
+          // สร้าง Key ตามลำดับแถวจริงใน Excel
+          const rowKeys = reportSourceRows.map(
+            (row) =>
+              makePlateMatchKey(
+                row['ทะเบียนรถ'],
+                row['จังหวัด']
+              )
+          )
+
+          // ตรวจสอบทะเบียนก่อนสร้างรายงาน
+          if (
+            reportSourceRows.some(
+              (row) =>
+                !String(row['ทะเบียนรถ'] || '').trim()
+            )
+          ) {
+            window.alert(
+              'พบรายการที่มีวันที่แจ้งเตือน แต่ไม่มีทะเบียนรถ\n' +
+              'กรุณาตรวจสอบไฟล์ Excel ก่อนแปลง'
+            )
+            return
+          }
+
+          // สร้างข้อมูล Excel
+          const outputRows = reportSourceRows.map(
+            (row) => {
 
           const dateTime =
             parseAlertDateTime(
@@ -997,7 +997,7 @@ function AlertReport({ profile }) {
                 .join(' '),
 
             'ผลการตรวจสอบข้อมูล':
-              'ถูกต้อง',
+              '',
 
             'หน่วยงานรับผิดชอบ':
               row['เจ้าของเรื่อง'] || '',
@@ -1009,7 +1009,7 @@ function AlertReport({ profile }) {
               row['แผนเผชิญเหตุ'] || '',
 
             'ผลการปฎิบัติงาน':
-              '-',
+              '',
 
             'ข้อมูลที่ผิด':
               '-',
@@ -1190,17 +1190,20 @@ function AlertReport({ profile }) {
 
 
     setConvertedFile({
-
       blob,
+
+      // เก็บ Workbook สำหรับแก้ข้อมูลหลังยืนยัน
+      workbook: outputWorkbook,
+
+      // Key ที่ตรงกับแถวใน Excel
+      rowKeys,
 
       fileName:
         `VSS05_${new Date()
           .toISOString()
           .slice(0, 10)}.xlsx`,
 
-      rowCount:
-        outputRows.length,
-
+      rowCount: outputRows.length,
     })
 
     /*
@@ -1210,7 +1213,7 @@ function AlertReport({ profile }) {
 
       const phuketEyesPayload =
         await buildPhuketEyesPayload(
-          sourceRows
+          reportSourceRows
         )
 
       sendToPhuketEyes(
@@ -1247,9 +1250,220 @@ function AlertReport({ profile }) {
 }
 
 
+const handleVss05Confirm = () => {
+  if (!convertedFile) return
+
+  reportFrameRef.current?.contentWindow?.postMessage(
+    {
+      type: 'REQUEST_VSS05_CONFIRMATION',
+    },
+    window.location.origin
+  )
+}
+
+
+/* ==================================================
+   VSS05 - รับข้อมูลที่ยืนยันแล้วจาก Phuket Eyes
+================================================== */
+
+useEffect(() => {
+
+  const handleVss05Message = (event) => {
+
+    // รับเฉพาะ iframe รายงานในเว็บไซต์เดียวกัน
+    if (
+      event.origin !== window.location.origin ||
+      event.source !== reportFrameRef.current?.contentWindow
+    ) {
+      return
+    }
+
+    const message = event.data
+
+    if (!message || typeof message !== 'object') {
+      return
+    }
+
+    // เมื่อผู้ใช้แก้ข้อมูลหลังยืนยัน
+    if (message.type === 'VSS05_CONFIRMATION_RESET') {
+      setIsVss05Confirmed(false)
+      return
+    }
+
+    if (message.type !== 'VSS05_DATA_CONFIRMED') {
+      return
+    }
+
+    // ตรวจสอบไฟล์ต้นฉบับที่แปลงไว้
+    if (
+      !convertedFile?.workbook ||
+      !Array.isArray(convertedFile.rowKeys) ||
+      !Array.isArray(message.lpr)
+    ) {
+      setIsVss05Confirmed(false)
+      return
+    }
+
+    try {
+
+      const resultMap = new Map()
+
+      // รับค่าล่าสุดที่ผู้ใช้ตรวจสอบแล้ว
+      for (const item of message.lpr) {
+
+        const key = String(
+          item.vss05Key || ''
+        ).trim()
+
+        // รถที่เพิ่มเองและไม่มีแถวใน Excel
+        if (!key) continue
+
+        if (resultMap.has(key)) {
+          throw new Error(
+            `พบรหัสทะเบียนซ้ำในข้อมูลยืนยัน: ${key}`
+          )
+        }
+
+        resultMap.set(key, {
+          result: String(item.result || '').trim(),
+          arrest: String(item.arrest || '').trim(),
+        })
+      }
+
+      // ตรวจสอบว่ารถจาก Excel ทุกคันได้รับผล
+      const missingKeys = [
+        ...new Set(convertedFile.rowKeys)
+      ].filter(
+        (key) => !resultMap.has(key)
+      )
+
+      if (missingKeys.length > 0) {
+        throw new Error(
+          `ไม่พบผลตรวจสอบของรถ ${missingKeys.length} ทะเบียน\n` +
+          'กรุณาตรวจสอบรายการรถใน Phuket Eyes'
+        )
+      }
+
+      const workbook = convertedFile.workbook
+
+      const sheet =
+        workbook.Sheets['รายละเอียดรถแจ้งเตือน']
+
+      if (!sheet) {
+        throw new Error(
+          'ไม่พบ Worksheet รายละเอียดรถแจ้งเตือน'
+        )
+      }
+
+      // เขียนค่าลง Excel ตามลำดับแถวต้นฉบับ
+      convertedFile.rowKeys.forEach((key, index) => {
+
+        const values = resultMap.get(key)
+
+        // Excel แถวแรกเป็น Header
+        const excelRow = index + 2
+
+        const updates = [
+          // F = ผลการตรวจสอบข้อมูล
+          [`F${excelRow}`, values.result],
+
+          // J = ผลการปฎิบัติงาน
+          [`J${excelRow}`, values.arrest],
+        ]
+
+        for (const [address, value] of updates) {
+
+          const cell = sheet[address] || {}
+
+          // อัปเดตค่าโดยรักษา Style เดิม
+          sheet[address] = {
+            ...cell,
+            t: 's',
+            v: value,
+            s: cell.s || {
+              alignment: {
+                horizontal: 'center',
+                vertical: 'center',
+                wrapText: true,
+              },
+            },
+          }
+        }
+      })
+
+      // สร้าง XLSX ใหม่จากข้อมูลที่ยืนยันแล้ว
+      const outputBuffer = XLSX.write(
+        workbook,
+        {
+          bookType: 'xlsx',
+          type: 'array',
+          cellDates: true,
+        }
+      )
+
+      const blob = new Blob(
+        [outputBuffer],
+        {
+          type:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }
+      )
+
+      // เปลี่ยนไฟล์ดาวน์โหลดเป็นฉบับล่าสุด
+      setConvertedFile((previous) => {
+
+        if (
+          !previous ||
+          previous.workbook !== workbook
+        ) {
+          return previous
+        }
+
+        return {
+          ...previous,
+          blob,
+        }
+      })
+
+      // ปลดล็อกปุ่มดาวน์โหลด
+      setIsVss05Confirmed(true)
+
+    } catch (error) {
+
+      console.error(
+        'VSS05 confirmation error:',
+        error
+      )
+
+      setIsVss05Confirmed(false)
+
+      window.alert(
+        'ยืนยันข้อมูล VSS05 ไม่สำเร็จ\n\n' +
+        (error.message || 'เกิดข้อผิดพลาด')
+      )
+    }
+  }
+
+  window.addEventListener(
+    'message',
+    handleVss05Message
+  )
+
+  return () => {
+    window.removeEventListener(
+      'message',
+      handleVss05Message
+    )
+  }
+
+}, [convertedFile])
+
+
+
+
   const handleDownload = () => {
 
-    if (!convertedFile?.blob) {
+    if (!convertedFile?.blob || !isVss05Confirmed) {
       return
     }
 
@@ -1436,6 +1650,7 @@ function AlertReport({ profile }) {
 
                   setSelectedInspector('')
                   setConvertedFile(null)
+                  setIsVss05Confirmed(false)
                 }}
               >
 
@@ -1508,6 +1723,7 @@ function AlertReport({ profile }) {
                 )
 
                 setConvertedFile(null)
+                setIsVss05Confirmed(false)
               }}
             >
 
@@ -1575,11 +1791,23 @@ function AlertReport({ profile }) {
 
               </button>
 
+              
+              <button
+                type="button"
+                className="vss05-confirm-button"
+                disabled={!convertedFile}
+                onClick={handleVss05Confirm}
+              >
+                <CheckCircle2 size={18} />
+                ยืนยันความถูกต้อง
+              </button>
+
+
 
               <button
                 type="button"
                 className="vss05-download-button"
-                disabled={!convertedFile}
+                disabled={!convertedFile || !isVss05Confirmed}
                 onClick={handleDownload}
               >
 
@@ -1618,7 +1846,9 @@ function AlertReport({ profile }) {
               {convertedFile.rowCount}
               {' '}
               รายการ
-              พร้อมดาวน์โหลด
+              {isVss05Confirmed
+                ? 'พร้อมดาวน์โหลด'
+                : 'รอการยืนยันความถูกต้อง'}
             </span>
 
           ) : selectedFile ? (

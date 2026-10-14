@@ -1,128 +1,147 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>โครงการ 6 หัวเมืองหลัก – สร้างรูปรายงานประจำวัน</title>
+<title>Phuket Eyes Daily Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f3f5fa; --card:#ffffff; --ink:#0f1b3d; --muted:#5b678a; --line:#d9deec;
-  --accent:#1e5bd8; --accent-ink:#ffffff; --warn-bg:#fff4d6; --warn-ink:#6a4a00; --ok:#0f7a3d;
-  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0a1122; --card:#111b35; --ink:#e8edfb; --muted:#93a0c4; --line:#22305a;
-    --accent:#3b7bff; --accent-ink:#fff; --warn-bg:#3a2e0c; --warn-ink:#ffd98a; --ok:#4cd98a;
-  }
+  --surface-base:#eef1f7; --surface-elevated:#ffffff; --surface-sunken:#f6f8fc; --surface-overlay:#ffffff;
+  --text-primary:#0f1b3d; --text-secondary:#4f5b7c; --border-hairline:#d8deeb;
+  --accent:#1e5bd8; --accent-muted:#174bb5; --on-accent:#ffffff;
+  --brand-bar:#0a1a44; --brand-bar-2:#12306f; --on-brand:#ffffff; --brand-gold:#b98300;
+  --face:#1e5bd8; --face-tint:#eaf0fc; --lpr:#c0303a; --lpr-tint:#fcecec;
+  --warn:#6a4a00; --warn-bg:#fff4d6; --status-ok:#0f7a3d; --status-bad:#c0303a; --status-bad-tint:#fcecec;
+  --thumb-bg:#0b1430; --brand-btn-bg:rgba(255,255,255,.1); --brand-btn-bg-hover:rgba(255,255,255,.18); --brand-btn-border:rgba(255,255,255,.3);
+  --shadow-raised:0 1px 2px rgba(15,27,61,.08),0 1px 3px rgba(15,27,61,.06);
+  --fs-h1:20px; --fs-h2:15px; --fs-body:14px; --fs-caption:12px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px;
+  --radius-s:8px; --radius-m:12px;
+  color-scheme:light;
 }
 :root[data-theme="dark"]{
-  --bg:#0a1122; --card:#111b35; --ink:#e8edfb; --muted:#93a0c4; --line:#22305a;
-  --accent:#3b7bff; --accent-ink:#fff; --warn-bg:#3a2e0c; --warn-ink:#ffd98a; --ok:#4cd98a;
+  --surface-base:#070f24; --surface-elevated:#0f1a36; --surface-sunken:#0b1530; --surface-overlay:#15224a;
+  --text-primary:#e8edfb; --text-secondary:#a3afd0; --border-hairline:#24345f;
+  --accent:#4d86ff; --accent-muted:#6b9bff; --on-accent:#07102a;
+  --brand-bar:#050d26; --brand-bar-2:#0a1a44; --on-brand:#ffffff; --brand-gold:#ffc21a;
+  --face:#5b8fff; --face-tint:#0f2150; --lpr:#ff6b75; --lpr-tint:#2b1219;
+  --warn:#ffd98a; --warn-bg:#3a2e0c; --status-ok:#4cd98a; --status-bad:#ff6b75; --status-bad-tint:#3a1219;
+  --thumb-bg:#050d26;
+  --shadow-raised:none;
+  color-scheme:dark;
 }
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,"Thonburi",sans-serif;line-height:1.5}
-.wrap{max-width:1500px;margin:0 auto;padding:16px}
-h1{font-size:22px;margin:4px 0 2px}
-.sub{color:var(--muted);font-size:14px;margin:0 0 14px}
-.grid{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:16px;align-items:start}
-@media (max-width:900px){.grid{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
-label.t{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
-textarea{width:100%;height:420px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:14px;background:transparent;color:var(--ink)}
-@media (max-width:900px){textarea{height:300px}}
-.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-button,.filebtn{font:inherit;font-size:14px;border:1px solid var(--line);background:transparent;color:var(--ink);padding:8px 12px;border-radius:9px;cursor:pointer}
-button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
-button:hover,.filebtn:hover{filter:brightness(1.08)}
-.filebtn input{display:none}
-.warn{background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:8px 12px;font-size:13px;margin-top:10px;display:none}
-.warn ul{margin:4px 0 0;padding-left:18px}
-.msg{font-size:13px;color:var(--ok);min-height:20px;margin-top:8px}
-.preview{overflow:auto}
-.preview img{display:block;width:100%;height:auto;border-radius:10px;background:#050d24}
-.hint{color:var(--muted);font-size:12.5px;margin-top:8px}
-
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--surface-base);color:var(--text-primary);font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,"Thonburi",sans-serif;font-size:var(--fs-body);line-height:1.5;padding-bottom:env(safe-area-inset-bottom,0px)}
 [hidden]{display:none!important}
-.grid{grid-template-columns:minmax(360px,540px) 1fr}
-@media (max-width:900px){.grid{grid-template-columns:1fr}}
-input,select{color-scheme:light dark}
-.tabs{display:flex;gap:6px;margin-bottom:10px}
-.tab{flex:1;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:transparent;font-weight:600}
-.tab.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.top-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-.formscroll{margin-top:10px}
-@media (min-width:901px){.formscroll{max-height:calc(100vh - 230px);overflow:auto;padding-right:6px}}
-.sec{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:12px}
-.sec>h3{font-size:15px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.sec>h3 .cnt{background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:0 10px;font-size:13px}
-.f{display:block;margin-bottom:8px}
-.f>span{display:block;font-size:12.5px;color:var(--muted);margin-bottom:2px}
-.f input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:14px}
-.f input.bad{border-color:#e0424b;background:rgba(224,66,75,.08)}
-.f input:focus{outline:2px solid var(--accent);outline-offset:0}
-.two{display:grid;grid-template-columns:1.3fr 1fr;gap:8px}
-.three{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.item{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px;background:rgba(127,140,180,.06)}
-.ihead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.sbox{border-top:1px dashed var(--line);margin-top:6px;padding-top:8px}
-.sbox>.lab{font-size:13px;font-weight:600;margin-bottom:6px}
-.srow{border:1px solid var(--line);border-radius:9px;padding:8px;margin-bottom:8px;position:relative}
-.srow .n{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:12px;align-items:center;justify-content:center;margin-right:6px}
-.srow .r1{display:flex;align-items:center;margin-bottom:6px}
+svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* app bar ใช้โทนเดียวกับหัวรูปรายงาน */
+.appbar{background:linear-gradient(90deg,var(--brand-bar),var(--brand-bar-2));color:var(--on-brand);padding:calc(var(--space-3) + env(safe-area-inset-top,0px)) var(--space-4) var(--space-3);border-bottom:4px solid var(--lpr)}
+.appbar .in{max-width:1500px;margin:0 auto;display:flex;align-items:center;gap:var(--space-3)}
+.appbar h1{font-size:var(--fs-h1);margin:0;font-weight:800;letter-spacing:.2px;flex:1;min-width:0}
+.appbar h1 small{display:block;font-size:var(--fs-caption);font-weight:500;opacity:.8;letter-spacing:0}
+.themebtn{display:inline-flex;align-items:center;gap:var(--space-2);font:inherit;font-size:var(--fs-caption);font-weight:600;color:var(--on-brand);background:var(--brand-btn-bg);border:1px solid var(--brand-btn-border);border-radius:999px;padding:var(--space-2) var(--space-3);cursor:pointer;flex:none}
+.themebtn:hover{background:var(--brand-btn-bg-hover)}
+
+.wrap{max-width:1500px;margin:0 auto;padding:var(--space-4)}
+.grid{display:grid;grid-template-columns:minmax(360px,540px) minmax(0,1fr);gap:var(--space-4);align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface-elevated);border:1px solid var(--border-hairline);border-radius:var(--radius-m);padding:var(--space-4);box-shadow:var(--shadow-raised);min-width:0}
+@media (min-width:901px){.preview{position:sticky;top:var(--space-4)}}
+.preview img{display:block;width:100%;height:auto;border-radius:var(--radius-s);background:var(--thumb-bg)}
+
+.top-actions,.btns{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.btns{margin-top:var(--space-3)}
+button,.filebtn{display:inline-flex;align-items:center;gap:var(--space-2);font:inherit;font-size:var(--fs-body);border:1px solid var(--border-hairline);background:var(--surface-elevated);color:var(--text-primary);padding:var(--space-2) var(--space-3);border-radius:var(--radius-s);cursor:pointer}
+button:hover,.filebtn:hover{border-color:var(--accent);color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+button.primary:hover{background:var(--accent-muted);border-color:var(--accent-muted);color:var(--on-accent)}
+button.danger,button.danger:hover{background:var(--status-bad);border-color:var(--status-bad);color:var(--on-accent)}
+.filebtn input{display:none}
+.small{padding:var(--space-1) var(--space-2);font-size:var(--fs-caption)}
+input,select{color-scheme:inherit}
+
+.msg{font-size:var(--fs-caption);color:var(--status-ok);min-height:20px;margin-top:var(--space-2)}
+.warn{background:var(--warn-bg);color:var(--warn);border-radius:var(--radius-s);padding:var(--space-2) var(--space-3);font-size:var(--fs-caption);margin-top:var(--space-2);display:none}
+.warn ul{margin:var(--space-1) 0 0;padding-left:20px}
+.hint{color:var(--text-secondary);font-size:var(--fs-caption);margin-top:var(--space-3)}
+.note{font-size:var(--fs-caption);color:var(--text-secondary);margin:0 0 var(--space-2)}
+.formscroll{margin-top:var(--space-2)}
+@media (min-width:901px){.formscroll{max-height:calc(100vh - 240px);overflow:auto;padding-right:var(--space-2)}}
+.formscroll{scrollbar-color:var(--border-hairline) transparent}
+
+/* ส่วนของฟอร์ม: พื้นขาวเหมือนกัน แยกด้วยแถบสีซ้าย ฟ้า = Face ID, แดง = LPR ตรงกับรูป */
+.sec{--sacc:var(--text-secondary);--stint:var(--surface-sunken);background:var(--surface-elevated);border:1px solid var(--border-hairline);border-left:4px solid var(--sacc);border-radius:var(--radius-m);padding:var(--space-3);margin-bottom:var(--space-3)}
+.sec-title,.sec-info{--sacc:var(--brand-bar-2)}
+:root[data-theme="dark"] .sec-title,:root[data-theme="dark"] .sec-info{--sacc:var(--text-secondary)}
+.sec-face{--sacc:var(--face);--stint:var(--face-tint)}
+.sec-lpr{--sacc:var(--lpr);--stint:var(--lpr-tint)}
+.sec>h3{font-size:var(--fs-h2);margin:0 0 var(--space-3);display:flex;justify-content:space-between;align-items:center;gap:var(--space-2)}
+.sec>h3>span:first-child{display:inline-flex;align-items:center;gap:var(--space-2)}
+.sec>h3 svg.i{color:var(--sacc)}
+.sec>h3 .cnt{background:var(--sacc);color:var(--on-accent);border-radius:999px;padding:0 var(--space-3);font-size:var(--fs-caption);font-weight:600;white-space:nowrap}
+.sec button.small:not(.danger){color:var(--sacc);border-color:var(--sacc);font-weight:600}
+.sec button.small:not(.danger):hover{background:var(--stint)}
+
+.f{display:block;margin-bottom:var(--space-2);min-width:0}
+.f>span{display:block;font-size:var(--fs-caption);color:var(--text-secondary);margin-bottom:var(--space-1)}
+.f input{width:100%;min-width:0;padding:var(--space-2) var(--space-3);border:1px solid var(--border-hairline);border-radius:var(--radius-s);background:var(--surface-elevated);color:var(--text-primary);font:inherit;font-size:var(--fs-body)}
+.f input.bad{border-color:var(--status-bad);background:var(--status-bad-tint)}
+.f input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.two{display:grid;grid-template-columns:1.3fr 1fr;gap:var(--space-2)}
+.three{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2)}
+
+.item{border:1px solid var(--border-hairline);border-radius:var(--radius-s);padding:var(--space-3);margin-bottom:var(--space-3);background:var(--stint)}
+.ihead{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2)}
+.ihead b{color:var(--sacc)}
+.sbox{border-top:1px dashed var(--border-hairline);margin-top:var(--space-2);padding-top:var(--space-2)}
+.sbox>.lab{font-size:var(--fs-caption);font-weight:600;margin-bottom:var(--space-2)}
+.srow{border:1px solid var(--border-hairline);border-radius:var(--radius-s);padding:var(--space-2);margin-bottom:var(--space-2);background:var(--surface-elevated)}
+.srow .n{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--sacc);color:var(--on-accent);font-size:var(--fs-caption);align-items:center;justify-content:center;margin-right:var(--space-2);flex:none}
+.srow .r1{display:flex;align-items:center;margin-bottom:var(--space-2)}
 .srow .r1 .f{flex:1;margin:0}
-.srow .r2{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+.srow .r2{display:grid;grid-template-columns:1fr 1fr auto;gap:var(--space-2);align-items:end}
 .srow .r2 .f{margin:0}
-.small{padding:5px 9px;font-size:13px}
-button.danger{background:#e0424b;border-color:#e0424b;color:#fff}
-.note{font-size:12.5px;color:var(--muted);margin:2px 0 8px}
 
-/* สีการ์ดแต่ละส่วน (โทนอ่อน) */
-.sec-info{--sbg:#eef7ef;--sbd:#c3dfc9;--sacc:#2e8b57}
-.sec-title{--sbg:#454611;--sbd:#d6cbee;--sacc:#6a4fc0}
-.sec-face{--sbg:#eaf1ff;--sbd:#c0d3f6;--sacc:#1e5bd8}
-.sec-lpr{--sbg:#fdeeee;--sbd:#f2c6c8;--sacc:#c0303a}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .sec-info{--sbg:#11291c;--sbd:#2a5a40;--sacc:#4cc98a}
-  :root:not([data-theme="light"]) .sec-face{--sbg:#10214a;--sbd:#28448a;--sacc:#5b8fff}
-  :root:not([data-theme="light"]) .sec-lpr{--sbg:#2b1418;--sbd:#70303a;--sacc:#ff7780}
-}
-:root[data-theme="dark"] .sec-info{--sbg:#11291c;--sbd:#2a5a40;--sacc:#4cc98a}
-:root[data-theme="dark"] .sec-face{--sbg:#10214a;--sbd:#28448a;--sacc:#5b8fff}
-:root[data-theme="dark"] .sec-lpr{--sbg:#2b1418;--sbd:#70303a;--sacc:#ff7780}
-.sec{background:var(--sbg,transparent);border-color:var(--sbd,var(--line));border-left:5px solid var(--sacc,var(--line))}
-.sec>h3 .cnt{background:var(--sacc,var(--accent))}
-.sec .item{background:color-mix(in srgb,var(--card) 72%,transparent);border-color:var(--sbd,var(--line))}
-.sec .srow{border-color:var(--sbd,var(--line));background:color-mix(in srgb,var(--card) 60%,transparent)}
-.sec .srow .n{background:var(--sacc,var(--accent))}
-.sec .f input{background:var(--card)}
-.sec .sbox{border-top-color:var(--sbd,var(--line))}
-.sec button.small:not(.danger){border-color:var(--sacc,var(--line));color:var(--ink)}
-
-.photo{display:flex;gap:10px;align-items:center;border:1px dashed var(--sbd,var(--line));border-radius:9px;padding:8px;margin-bottom:8px;background:color-mix(in srgb,var(--card) 60%,transparent)}
-.photo:focus,.photo.drag{outline:2px solid var(--sacc,var(--accent))}
-.photo .thumb{width:104px;height:68px;object-fit:contain;background:#0b1430;border-radius:6px;flex:none}
-.photo .ph{width:104px;height:68px;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:6px}
+.photo{display:flex;gap:var(--space-3);align-items:center;border:1px dashed var(--sacc);border-radius:var(--radius-s);padding:var(--space-2);margin-bottom:var(--space-2);background:var(--surface-elevated)}
+.photo:focus,.photo.drag{outline:2px solid var(--sacc)}
+.photo .thumb{width:104px;height:68px;object-fit:contain;background:var(--thumb-bg);border-radius:var(--radius-s);flex:none}
+.photo .ph{width:104px;height:68px;flex:none;display:flex;align-items:center;justify-content:center;font-size:var(--fs-caption);color:var(--text-secondary);border:1px dashed var(--border-hairline);border-radius:var(--radius-s)}
 .photo .side{flex:1;min-width:0}
-.photo .tip{font-size:12px;color:var(--muted);margin-bottom:6px}
-.photo .btns2{display:flex;gap:6px;flex-wrap:wrap}
+.photo .tip{font-size:var(--fs-caption);color:var(--text-secondary);margin-bottom:var(--space-2)}
+.photo .btns2{display:flex;gap:var(--space-2);flex-wrap:wrap}
+@media (max-width:480px){.srow .r2{grid-template-columns:1fr 1fr}.srow .r2>button,.srow .r2>span{grid-column:1/-1}.two{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+  <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+  <symbol id="icon-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></symbol>
+  <symbol id="icon-doc" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+  <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="icon-face" viewBox="0 0 24 24"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><circle cx="12" cy="10" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></symbol>
+  <symbol id="icon-car" viewBox="0 0 24 24"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M7 14h10v3H7zM8.5 14l1-3h5l1 3"/></symbol>
+</svg>
+<header class="appbar"><div class="in">
+  <h1>Daily Report<small>สร้างรูปรายงานประจำวัน</small></h1>
+  <button type="button" class="themebtn" id="btnTheme" aria-label="สลับธีม"><svg class="i"><use href="#icon-moon"/></svg><span>โหมดมืด</span></button>
+</div></header>
 <div class="wrap">
-  <h1>โครงการ 6 หัวเมืองหลัก – สร้างรูปรายงานประจำวัน</h1>
-  <p class="sub">กรอกข้อมูลในฟอร์มด้านซ้าย รูปจะสร้างให้อัตโนมัติทันที</p>
   <div class="grid">
     <div class="card">
       <div class="top-actions">
-        <button class="primary" id="btnSave">บันทึกเป็นรูป PNG</button>
-        <button id="btnCopy">คัดลอกรูป</button>
-        <label class="filebtn">อัปโหลดตราตำรวจ (ซ้าย)<input type="file" id="logo" accept="image/*"></label>
-        <label class="filebtn">อัปโหลดโลโก้ (ขวา)<input type="file" id="logoR" accept="image/*"></label>
+        <button class="primary" id="btnSave"><svg class="i"><use href="#icon-download"/></svg>บันทึกเป็นรูป PNG</button>
+        <button id="btnCopy"><svg class="i"><use href="#icon-copy"/></svg>คัดลอกรูป</button>
+        
+        <label class="filebtn"><svg class="i"><use href="#icon-image"/></svg>ตราซ้าย<input type="file" id="logo" accept="image/*"></label>
+        <label class="filebtn"><svg class="i"><use href="#icon-image"/></svg>โลโก้ขวา<input type="file" id="logoR" accept="image/*"></label>
       </div>
       <div class="msg" id="msg"></div>
       <div class="warn" id="warn"></div>
@@ -207,28 +226,6 @@ const ic = {
     ctx.strokeRect(cx-s*.7,cy-s,s*1.4,s*2);
     ctx.beginPath(); for(const k of [-.45,0,.45]){ctx.moveTo(cx-s*.4,cy+s*k);ctx.lineTo(cx+s*.4,cy+s*k);} ctx.stroke();
   },
-
-  task(cx,cy,s){
-    // กรอบเอกสาร
-    ctx.strokeRect(cx-s*.7,cy-s,s*1.4,s*2);
-
-    // เส้นหัวข้อ/ข้อความ
-    ctx.beginPath();
-    ctx.moveTo(cx-s*.3,cy-s*.45);
-    ctx.lineTo(cx+s*.25,cy-s*.45);
-
-    ctx.moveTo(cx-s*.3,cy+s*.55);
-    ctx.lineTo(cx+s*.25,cy+s*.55);
-    ctx.stroke();
-
-    // เครื่องหมายถูกตรงกลาง
-    ctx.beginPath();
-    ctx.moveTo(cx-s*.28,cy+s*.02);
-    ctx.lineTo(cx-s*.06,cy+s*.26);
-    ctx.lineTo(cx+s*.34,cy-s*.20);
-    ctx.stroke();
-  },
-
   pin(cx,cy,s){
     ctx.beginPath(); ctx.moveTo(cx,cy+s); ctx.bezierCurveTo(cx-s*1.2,cy-s*.2,cx-s*.9,cy-s,cx,cy-s);
     ctx.bezierCurveTo(cx+s*.9,cy-s,cx+s*1.2,cy-s*.2,cx,cy+s); ctx.stroke();
@@ -274,6 +271,14 @@ const ic = {
     ctx.beginPath(); ctx.arc(cx,cy,s*.62,0,7); ctx.stroke();
     ctx.beginPath(); ctx.arc(cx,cy,s*.25,0,7); ctx.fill();
   },
+  search(cx,cy,s){
+    ctx.beginPath(); ctx.arc(cx-s*.2,cy-s*.2,s*.65,0,7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx+s*.28,cy+s*.28); ctx.lineTo(cx+s*.9,cy+s*.9); ctx.stroke();
+  },
+  check(cx,cy,s){
+    ctx.beginPath(); ctx.arc(cx,cy,s,0,7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-s*.45,cy+s*.02); ctx.lineTo(cx-s*.1,cy+s*.38); ctx.lineTo(cx+s*.5,cy-s*.35); ctx.stroke();
+  },
   calendar(cx,cy,s){
     rr(cx-s,cy-s*.8,s*2,s*1.8,3); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cx-s,cy-s*.2); ctx.lineTo(cx+s,cy-s*.2);
@@ -287,42 +292,19 @@ function icon(name,cx,cy,s,color,lw=2){
 }
 
 /* แถวข้อมูล */
-function row(iconName,label,val,x,y,w,rp=0,maxLines=Infinity){
+function row(iconName,label,val,x,y,w,rp=0){
   setF(500,24);
-
-  const maxW = w-236-30-rp;
-  let lines = wrap(val||'-', maxW);
-
-  // จำกัดจำนวนบรรทัดเฉพาะแถวที่กำหนด
-  if(lines.length > maxLines){
-    lines = lines.slice(0,maxLines);
-
-    let last = lines[lines.length-1].trimEnd();
-
-    // ตัดข้อความให้พอดีกับความกว้าง
-    while(last.length && ctx.measureText(last+'…').width > maxW){
-      last = last.slice(0,-1);
-    }
-
-    lines[lines.length-1] = last.trimEnd()+'…';
-  }
-
+  // คอลัมน์ชื่อหัวข้อกว้างพอสำหรับ "ผลการตรวจสอบ" ที่ขนาดตัวอักษรเท่าหัวข้ออื่น
+  const lines = wrap(val||'-', w-268-30-rp);
   const h = Math.max(46, lines.length*33+13);
-
   if(!DRY){
     icon(iconName,x+44,y+23,13,'#cbd5f0',2);
-    T(label,x+78,y+31,{s:24,c:MUTED});
-    T(':',x+214,y+31,{c:MUTED});
-    lines.forEach((l,i)=>T(l,x+236,y+31+i*33,{s:24,w:500}));
-
-    ctx.strokeStyle='rgba(120,150,220,.28)';
-    ctx.lineWidth=1;
-    ctx.beginPath();
-    ctx.moveTo(x+30,y+h);
-    ctx.lineTo(x+w-30-rp,y+h);
-    ctx.stroke();
+    T(label,x+78,y+31,{s:fitSize([[label,400]],164,24,16),c:MUTED});
+    T(':',x+246,y+31,{c:MUTED});
+    lines.forEach((l,i)=>T(l,x+268,y+31+i*33,{s:24,w:500}));
+    ctx.strokeStyle='rgba(120,150,220,.28)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x+30,y+h); ctx.lineTo(x+w-30-rp,y+h); ctx.stroke();
   }
-
   return h;
 }
 
@@ -368,7 +350,6 @@ function drawItems(items,x,y,w,accent){
 
     cy += row('shield','เจ้าของคดี',it.owner||'-',x,cy,w,rpAt(cy));
     cy += row('doc','ประเภทคดี',it.type||'-',x,cy,w,rpAt(cy));
-    cy += row('task','การปฏิบัติงาน',it.action||'-',x,cy,w,rpAt(cy),2);
 
     const s = it.sightings.length ? it.sightings : [{place:'',time:''}];
     {
@@ -390,6 +371,8 @@ function drawItems(items,x,y,w,accent){
         cy += h;
       });
     }
+    if(it.result) cy += row('search','ผลการตรวจสอบ',it.result,x,cy,w,rpAt(cy));
+    if(it.arrest) cy += row('check','ผลการจับกุม',it.arrest,x,cy,w,rpAt(cy));
     cy = Math.max(cy, imgBottom+6);
     cy += 8;
   });
@@ -664,14 +647,49 @@ function remember(id,val){
 }
 
 function newSight(prev){ return {place:prev?prev.place:'', d:prev?prev.d:(S?S.end.d:''), t:''}; }
+
 function newItem(kind){
-  return kind==='face' ? {name:'',owner:'',type:'',s:[newSight()]}
-                       : {plate:'',prov:'ภูเก็ต',owner:'',type:'',s:[newSight()]};
+  return kind==='face'
+    ? {
+        name:'',
+        owner:'',
+        type:'',
+        result:'',
+        arrest:'',
+        s:[newSight()]
+      }
+    : {
+        plate:'',
+        prov:'ภูเก็ต',
+        owner:'',
+        type:'',
+        result:'ป้ายทะเบียนตรง รถตรง',
+        arrest:'',
+        s:[newSight()]
+      };
 }
+
+
 function newState(){
-  const t=isoOf(new Date());
-  return {reportDate:t, start:{d:addDays(t,-1),t:'08:30'}, end:{d:t,t:'09:30'}, face:[], lpr:[], savedAt:Date.now()};
+  const today = isoOf(new Date());
+  const yesterday = addDays(today, -1);
+
+  return {
+    reportDate: today,
+    start: {
+      d: yesterday,
+      t: '00:00'
+    },
+    end: {
+      d: yesterday,
+      t: '23:59'
+    },
+    face: [],
+    lpr: [],
+    savedAt: Date.now()
+  };
 }
+
 let saveT=null;
 function saveDraft(){
   clearTimeout(saveT);
@@ -703,10 +721,8 @@ function buildFromState(){
   const mk=(list,kind)=>({count:null,items:list.map(it=>({
     title: kind==='face' ? (it.name.trim()||'(ยังไม่กรอกชื่อ)')
                          : 'ป้ายทะเบียนเลขที่ '+([it.plate.trim()||'-',it.prov.trim()].filter(Boolean).join(' ')),
-    owner:it.owner.trim(),
-    type:it.type.trim(),
-    action:(it.action||'').trim(),
-    img:it._im||null,
+    owner:it.owner.trim(), type:it.type.trim(), img:it._im||null,
+    result:(it.result||'').trim(), arrest:(it.arrest||'').trim(),
     sightings:sortedSights(it.s).map(x=>({place:x.place.trim(),time:sightRaw(x)}))
   }))});
   const face=mk(S.face,'face'), lpr=mk(S.lpr,'lpr');
@@ -745,7 +761,11 @@ function h(tag,props={},...kids){
   kids.flat().forEach(c=>{ if(c!=null) e.append(c.nodeType?c:document.createTextNode(c)); });
   return e;
 }
-function changed(){ saveDraft(); schedule(); }
+function changed(){
+  invalidateVss05();
+  saveDraft();
+  schedule();
+}
 function markBad(e){ e.classList.toggle('bad',!e.value.trim()); }
 function inp(obj,key,o={}){
   const e=h('input',{type:o.type||'text',placeholder:o.ph||''});
@@ -767,8 +787,16 @@ function armed(btn,fn){
   return btn;
 }
 function rebuild(){
-  const sc=$('paneForm'); const top=sc.scrollTop;
-  buildForm(); sc.scrollTop=top; saveDraft(); render();
+  invalidateVss05();
+
+  const sc = $('paneForm');
+  const top = sc.scrollTop;
+
+  buildForm();
+  sc.scrollTop = top;
+
+  saveDraft();
+  render();
 }
 
 function sightRow(list,it,i){
@@ -841,27 +869,25 @@ function itemCard(kind,list,idx){
   const addS=h('button',{class:'small',text:'+ เพิ่มการพบเหตุ (ครั้งถัดไป)'});
   addS.onclick=()=>{ it.s.push(newSight(it.s[it.s.length-1])); rebuild(); };
   const card=h('div',{class:'item'},head,top,photoBox(it,kind),
-  h('div',{class:'three'},
-    fld('เจ้าของคดี',inp(it,'owner',{list:'dl-owner',ph:'เช่น สภ.ถลาง',req:true})),
-    fld('ประเภทคดี',inp(it,'type',{list:'dl-type',ph:'เช่น ลักทรัพย์',req:true}))),
-
-  fld('การปฏิบัติงาน',
-    inp(it,'action',{
-      ph:'ระบุแผนเผชิญเหตุหรือการปฏิบัติงาน'
-    })
-  ),
-
-  h('div',{class:'sbox'},h('div',{class:'lab',text:`การพบเหตุ (${it.s.length} ครั้ง)`}),
-    it.s.map((_,i)=>sightRow(list,it,i)),addS));
+    h('div',{class:'three'},
+      fld('เจ้าของคดี',inp(it,'owner',{list:'dl-owner',ph:'เช่น สภ.ถลาง',req:true})),
+      fld('ประเภทคดี',inp(it,'type',{list:'dl-type',ph:'เช่น ลักทรัพย์',req:true}))),
+    h('div',{class:'sbox'},h('div',{class:'lab',text:`การพบเหตุ (${it.s.length} ครั้ง)`}),
+      it.s.map((_,i)=>sightRow(list,it,i)),addS),
+    h('div',{class:'sbox'},h('div',{class:'lab',text:'ผลการดำเนินการ (ไม่บังคับ)'}),
+      h('div',{class:'note',text:'กรอกเมื่อมีผลแล้ว ถ้าเว้นว่างไว้จะไม่แสดงในรูป'}),
+      fld('ผลการตรวจสอบ',inp(it,'result',{ph:'เช่น ตรวจสอบแล้ว ไม่พบบุคคล/รถ ในพื้นที่'})),
+      fld('ผลการจับกุม',inp(it,'arrest',{ph:'เช่น จับกุมได้แล้ว / ยังไม่ได้จับกุม'}))));
   card.addEventListener('paste',e=>{ const f=imageFromClipboard(e); if(f){ e.preventDefault(); setItemImage(it,f); } });
   return card;
 }
+function ico(name){ const NS='http://www.w3.org/2000/svg'; const v=document.createElementNS(NS,'svg'); v.setAttribute('class','i'); const u=document.createElementNS(NS,'use'); u.setAttribute('href','#icon-'+name); v.appendChild(u); return v; }
 function section(kind,title,list){
   const n=list.reduce((a,it)=>a+Math.max(1,it.s.length),0);
   const add=h('button',{class:'small',text:kind==='face'?'+ เพิ่มบุคคล (Face ID)':'+ เพิ่มป้ายทะเบียน (LPR)'});
   add.onclick=()=>{ list.push(newItem(kind)); rebuild(); };
   return h('div',{class:'sec sec-'+kind},
-    h('h3',{},h('span',{text:title}),h('span',{class:'cnt',text:n+' เหตุการณ์'})),
+    h('h3',{},h('span',{},ico(kind==='face'?'face':'car'),title),h('span',{class:'cnt',text:n+' เหตุการณ์'})),
     list.length?list.map((_,i)=>itemCard(kind,list,i)):h('div',{class:'note',text:'ไม่มีเหตุการณ์ (ถ้าไม่มี ไม่ต้องกดเพิ่ม)'}),
     add);
 }
@@ -869,13 +895,24 @@ function buildForm(){
   reqEls=[];
   const root=$('form'); root.innerHTML='';
   const rd=inp(S,'reportDate',{type:'date',req:true});
-  rd.addEventListener('change',()=>{
-    if(!S.reportDate) return;
-    S.end.d=S.reportDate; S.start.d=addDays(S.reportDate,-1); rebuild();
-  });
-  const info=h('div',{class:'sec sec-info'},h('h3',{},h('span',{text:'ข้อมูลรายงาน'})),
+  
+rd.addEventListener('change', () => {
+  if (!S.reportDate) return;
+
+  const yesterday = addDays(S.reportDate, -1);
+
+  S.start.d = yesterday;
+  S.start.t = '00:00';
+
+  S.end.d = yesterday;
+  S.end.t = '23:59';
+
+  rebuild();
+});
+
+  const info=h('div',{class:'sec sec-info'},h('h3',{},h('span',{},ico('calendar'),'ข้อมูลรายงาน')),
     fld('วันที่รายงาน',rd),
-    h('div',{class:'note',text:'เมื่อเปลี่ยนวันที่รายงาน ระบบจะตั้งช่วงเวลาเป็น “เมื่อวาน 08:30 ถึง วันนี้ 09:30” ให้ใหม่ (แก้เองได้ เช่น วันจันทร์ให้เริ่มจากวันศุกร์)'}),
+    h('div',{class:'note',text:'เมื่อเปลี่ยนวันที่รายงาน ระบบจะตั้งช่วงสถิติเป็นวันก่อนหน้า ตั้งแต่เวลา 00:00 ถึง 23:59 น. โดยสามารถแก้ไขวันที่และเวลาเองได้'}),
     h('div',{class:'three'},
       fld('ตั้งแต่วันที่',inp(S.start,'d',{type:'date',req:true})),
       fld('เวลา',inp(S.start,'t',{type:'time',req:true}))),
@@ -895,7 +932,7 @@ function titleSection(){
   const ti=(key,label,ph)=>{ const e=h('input',{type:'text',placeholder:ph}); e.value=TITLE[key]||'';
     e.addEventListener('input',()=>{ TITLE[key]=e.value; saveTitle(); schedule(); }); return fld(label,e); };
   const reset=armed(h('button',{class:'small',text:'คืนค่าหัวรายงานเดิม'}),()=>{ TITLE=Object.assign({},TITLE_DEFAULT); saveTitle(); rebuild(); });
-  return h('div',{class:'sec sec-title'},h('h3',{},h('span',{text:'หัวรายงาน (Title)'})),
+  return h('div',{class:'sec sec-title'},h('h3',{},h('span',{},ico('doc'),'หัวรายงาน (Title)')),
     titleI('l1'),titleI('l2'),titleI('l3'),
     h('div',{class:'note',text:'ข้อความ 3 บรรทัดด้านบนของรูป แก้ได้ตามงาน ระบบจำค่าไว้ในเครื่องนี้'}),reset);
   function titleI(k){ return k==='l1'?ti('l1','บรรทัดที่ 1 (คำขึ้นต้น)','เช่น เรียน ผู้บังคับบัญชา')
@@ -907,239 +944,275 @@ function initForm(){
   fillLists(); buildForm(); render();
 }
 
-
-
-
+/* ธีม: ค่าเริ่มต้น light, สลับ dark ได้ จำไว้ในเครื่อง */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  const dark=t==='dark', b=$('btnTheme');
+  b.querySelector('use').setAttribute('href',dark?'#icon-sun':'#icon-moon');
+  b.querySelector('span').textContent=dark?'โหมดสว่าง':'โหมดมืด';
+}
+let theme='light';
+try{ if(localStorage.getItem('pe_theme')==='dark') theme='dark'; }catch(e){}
+applyTheme(theme);
+$('btnTheme').onclick=()=>{ theme=theme==='dark'?'light':'dark'; applyTheme(theme); try{ localStorage.setItem('pe_theme',theme); }catch(e){} };
 
 
 /* ==================================================
-   รับข้อมูล VSS05 จาก React
+   VSS05 - รับข้อมูลจาก React
+   รองรับ Phuket Eyes Daily Report v4
 ================================================== */
 
-function loadImageFromDataUrl(
-  item,
-  dataUrl
-) {
+window.addEventListener('message', async (event) => {
 
-  return new Promise(
-    (resolve) => {
+  // รับข้อมูลจากเว็บไซต์เดียวกันเท่านั้น
+  if (
+    event.origin !== window.location.origin ||
+    event.source !== window.parent
+  ) {
+    return;
+  }
 
-      if (!dataUrl) {
-        resolve();
-        return;
+  const message = event.data;
+
+  if (
+    !message ||
+    message.type !== 'LOAD_VSS05_DATA'
+  ) {
+    return;
+  }
+
+  const data = message.payload || {};
+
+  const incomingLpr = Array.isArray(data.lpr)
+    ? data.lpr
+    : [];
+
+  // สร้างข้อมูลรายงานใหม่
+  S = {
+    reportDate:
+      data.reportDate || isoOf(new Date()),
+
+    start: {
+      d: data.start?.d || data.reportDate || isoOf(new Date()),
+      t: data.start?.t || ''
+    },
+
+    end: {
+      d: data.end?.d || data.reportDate || isoOf(new Date()),
+      t: data.end?.t || ''
+    },
+
+    face: [],
+
+    lpr: incomingLpr.map((item) => ({
+      plate: item.plate || '',
+      prov: item.prov || '',
+      owner: item.owner || '',
+      type: item.type || '',
+
+      vss05Key: item.vss05Key || '',
+
+      // ค่าเริ่มต้นของผลการตรวจสอบ
+      result: item.result || 'ป้ายทะเบียนตรง รถตรง',
+
+      // ผลการจับกุมให้ผู้ใช้กรอกเอง
+      arrest: item.arrest || '',
+
+      s: Array.isArray(item.s) && item.s.length
+        ? item.s.map((sight) => ({
+            place: sight.place || '',
+            d: sight.d || '',
+            t: sight.t || ''
+          }))
+        : [{
+            place: '',
+            d: data.end?.d || data.reportDate || '',
+            t: ''
+          }]
+    })),
+
+    savedAt: Date.now()
+  };
+
+  // โหลดภาพรถจากระบบเดิม
+  await Promise.all(
+    incomingLpr.map((item, index) => {
+
+      const imageDataUrl = item.imageDataUrl;
+
+      if (!imageDataUrl) {
+        return Promise.resolve();
       }
 
-      const im =
-        new Image();
+      return new Promise((resolve) => {
 
-      im.onload = () => {
+        const image = new Image();
 
-        item._url =
-          dataUrl;
+        image.onload = () => {
+          S.lpr[index]._url = imageDataUrl;
+          S.lpr[index]._im = image;
+          resolve();
+        };
 
-        item._im =
-          im;
+        image.onerror = () => resolve();
 
-        resolve();
-      };
+        image.src = imageDataUrl;
+      });
+    })
+  );
 
-      im.onerror = () => {
-        resolve();
-      };
+  // อัปเดตฟอร์มและภาพ Preview
+  rebuild();
 
-      im.src =
-        dataUrl;
-    }
+  const imageCount = incomingLpr.filter(
+    item => item.imageDataUrl
+  ).length;
+
+  say(
+    `รับข้อมูล VSS05 แล้ว ${S.lpr.length} คัน` +
+    (imageCount ? ` • มีภาพ ${imageCount} คัน` : '')
+  );
+
+});
+
+
+/* ==================================================
+   VSS05 - CONFIRMATION SYSTEM
+   ยืนยันข้อมูลผ่านปุ่มบน React Toolbar
+================================================== */
+
+let vss05Confirmed = false;
+
+
+/* ส่งข้อความกลับ React */
+function notifyVss05Parent(type, payload = {}) {
+
+  if (window.parent === window) return;
+
+  window.parent.postMessage(
+    {
+      type,
+      ...payload
+    },
+    window.location.origin
   );
 }
 
 
-window.addEventListener(
-  'message',
-  async (event) => {
+/* ยกเลิกการยืนยันเมื่อมีการแก้ไข */
+function invalidateVss05() {
 
-    /*
-     * รับเฉพาะเว็บเดียวกัน
-     */
-    if (
-      event.origin !==
-      window.location.origin
-    ) {
-      return;
-    }
+  if (!vss05Confirmed) return;
+
+  vss05Confirmed = false;
+
+  notifyVss05Parent(
+    'VSS05_CONFIRMATION_RESET'
+  );
+}
 
 
-    const message =
-      event.data;
+/* รับคำสั่งยืนยันจาก React */
+window.addEventListener('message', (event) => {
 
-
-    if (
-      !message ||
-      message.type !==
-        'LOAD_VSS05_DATA'
-    ) {
-      return;
-    }
-
-
-    const data =
-      message.payload || {};
-
-
-    const incomingLpr =
-      Array.isArray(data.lpr)
-        ? data.lpr
-        : [];
-
-
-    /*
-     * สร้าง State ใหม่
-     */
-    S = {
-
-      reportDate:
-        data.reportDate ||
-        isoOf(new Date()),
-
-
-      start: {
-
-        d:
-          data.start?.d ||
-          data.reportDate ||
-          isoOf(new Date()),
-
-        t:
-          data.start?.t || '',
-      },
-
-
-      end: {
-
-        d:
-          data.end?.d ||
-          data.reportDate ||
-          isoOf(new Date()),
-
-        t:
-          data.end?.t || '',
-      },
-
-
-      face: [],
-
-
-      lpr:
-        incomingLpr.map(
-          (item) => ({
-
-            plate:
-              item.plate || '',
-
-            prov:
-              item.prov || '',
-
-            owner:
-              item.owner || '',
-
-            type:
-              item.type || '',
-
-            action:
-              item.action || '',  
-
-            s:
-              Array.isArray(item.s) &&
-              item.s.length
-                ? item.s.map(
-                    (sight) => ({
-
-                      place:
-                        sight.place ||
-                        '',
-
-                      d:
-                        sight.d ||
-                        '',
-
-                      t:
-                        sight.t ||
-                        '',
-                    })
-                  )
-                : [
-                    {
-                      place: '',
-                      d:
-                        data.end?.d ||
-                        data.reportDate ||
-                        '',
-                      t: '',
-                    },
-                  ],
-          })
-        ),
-
-
-      savedAt:
-        Date.now(),
-    };
-
-
-    /*
-     * ใส่รูป Thumbnail
-     */
-    await Promise.all(
-
-      S.lpr.map(
-        async (
-          item,
-          index
-        ) => {
-
-          const imageDataUrl =
-            incomingLpr[
-              index
-            ]?.imageDataUrl;
-
-          if (!imageDataUrl) {
-            return;
-          }
-
-          await loadImageFromDataUrl(
-            item,
-            imageDataUrl
-          );
-        }
-      )
-    );
-
-
-    /*
-     * สร้างฟอร์ม +
-     * Preview ใหม่
-     */
-    rebuild();
-
-
-    const imageCount =
-      incomingLpr.filter(
-        (item) =>
-          item.imageDataUrl
-      ).length;
-
-
-    say(
-      `รับข้อมูล VSS05 แล้ว ${S.lpr.length} คัน` +
-      (
-        imageCount
-          ? ` • พบภาพ ${imageCount} คัน`
-          : ''
-      )
-    );
+  // ตรวจสอบต้นทาง
+  if (
+    event.origin !== window.location.origin ||
+    event.source !== window.parent
+  ) {
+    return;
   }
-);
 
+  const message = event.data;
+
+  if (
+    !message ||
+    message.type !== 'REQUEST_VSS05_CONFIRMATION'
+  ) {
+    return;
+  }
+
+  // ต้องมีข้อมูลรถก่อนยืนยัน
+  if (
+    !S ||
+    !Array.isArray(S.lpr) ||
+    S.lpr.length === 0
+  ) {
+
+    window.alert(
+      'ยังไม่มีข้อมูลรถ LPR สำหรับยืนยัน'
+    );
+
+    return;
+  }
+
+  // รวบรวมข้อมูลล่าสุดในฟอร์ม
+  const items = S.lpr.map((item, index) => ({
+
+    index,
+
+    vss05Key: String(
+      item.vss05Key || ''
+    ).trim(),
+
+    plate: String(
+      item.plate || ''
+    ).trim(),
+
+    prov: String(
+      item.prov || ''
+    ).trim(),
+
+    result: String(
+      item.result || ''
+    ).trim(),
+
+    arrest: String(
+      item.arrest || ''
+    ).trim()
+
+  }));
+
+
+  /* ตรวจรายการที่ไม่มีผลการจับกุม */
+  const missing = items.filter(
+    item => !item.arrest
+  );
+
+
+  if (missing.length > 0) {
+
+    const accepted = window.confirm(
+      `พบรถจำนวน ${missing.length} รายการ ` +
+      'ที่ยังไม่ได้กรอกผลการจับกุม\n\n' +
+      'ต้องการยืนยันความถูกต้อง ' +
+      'โดยเว้นผลการจับกุมไว้หรือไม่?'
+    );
+
+    if (!accepted) {
+
+      say('ยกเลิกการยืนยันข้อมูล');
+      return;
+
+    }
+  }
+
+
+  /* ยืนยันสำเร็จ */
+  vss05Confirmed = true;
+
+  notifyVss05Parent(
+    'VSS05_DATA_CONFIRMED',
+    {
+      lpr: items
+    }
+  );
+
+  say(
+    `ยืนยันข้อมูล VSS05 แล้ว ${items.length} รายการ`
+  );
+
+});
 
 
 /* เริ่มต้น */
