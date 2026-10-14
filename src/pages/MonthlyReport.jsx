@@ -14,7 +14,7 @@ import Section03Editor from './monthly/Section03Editor'
 import Section04Editor from './monthly/Section04Editor'
 import Section05Editor from './monthly/Section05Editor'
 import Section06Editor from './monthly/Section06Editor'
-
+import Section07Editor from './monthly/Section07Editor'
 import Section08Editor from './monthly/Section08Editor'
 import Section09Editor from './monthly/Section09Editor'
 
@@ -116,7 +116,7 @@ function MonthlyReport({ profile }) {
   const section04ExportRef = useRef(null)
   const section05ExportRef = useRef(null)
   const section06ExportRef = useRef(null)
-
+  const section07ExportRef = useRef(null)
   const section08ExportRef = useRef(null)
   const section09ExportRef = useRef(null)
 
@@ -126,8 +126,7 @@ function MonthlyReport({ profile }) {
   const [section04ExportVersion, setSection04ExportVersion] = useState(0)
   const [section05ExportVersion, setSection05ExportVersion] = useState(0)
   const [section06ExportVersion, setSection06ExportVersion] = useState(0)
-
-
+  const [section07ExportVersion, setSection07ExportVersion] = useState(0)
   const [section08ExportVersion, setSection08ExportVersion] = useState(0)
   const [section09ExportVersion, setSection09ExportVersion] = useState(0)
 
@@ -809,9 +808,10 @@ function MonthlyReport({ profile }) {
             sectionNo: 6,
             exporter: section06ExportRef.current,
         },
-
-
-
+        {
+            sectionNo: 7,
+            exporter: section07ExportRef.current,
+        },
         {
             sectionNo: 8,
             exporter: section08ExportRef.current,
@@ -1289,9 +1289,16 @@ function MonthlyReport({ profile }) {
                 canEdit={false}
                 />
 
+                <Section07Editor
+                key={`section07-export-${currentReport.id}-${section07ExportVersion}`}
+                ref={section07ExportRef}
+                report={currentReport}
+                center={selectedCenter}
+                month={month}
+                year={year}
+                canEdit={false}
+                />
 
-
-                
                 <Section08Editor
                 key={`section08-export-${currentReport.id}-${section08ExportVersion}`}
                 ref={section08ExportRef}
@@ -1571,7 +1578,23 @@ function MonthlyReport({ profile }) {
                                 )
                                 }}
                             />
-                       
+                        
+                        ) : activeSection.id === 7 ? (
+
+                            <Section07Editor
+                                report={currentReport}
+                                center={selectedCenter}
+                                month={month}
+                                year={year}
+                                canEdit={canEdit && editMode}
+                                onDataChange={() => {
+                                handleSectionDataChange()
+
+                                setSection07ExportVersion(
+                                    previous => previous + 1
+                                )
+                                }}
+                            />
                         
                         ) : activeSection.id === 8 ? (
 
