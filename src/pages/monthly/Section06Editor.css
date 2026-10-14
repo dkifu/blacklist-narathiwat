@@ -1,0 +1,997 @@
+
+/* ==========================================
+   SECTION 06 — A4 LANDSCAPE
+   2 PRINTABLE PAGES
+========================================== */
+
+.section06-editor {
+  width: 100%;
+  min-width: 0;
+  font-family: 'Noto Sans Thai', sans-serif;
+}
+
+.section06-editor.section06-editing {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+
+/* ==========================================
+   EDITOR PANEL
+========================================== */
+
+.section06-panel {
+  overflow: hidden;
+  border: 1px solid #2b3547;
+  border-radius: 14px;
+  background: #151a23;
+  color: #fff;
+}
+
+.section06-panel-header {
+  padding: 19px 18px 16px;
+  border-bottom: 1px solid #2b3547;
+}
+
+.section06-panel-header > span {
+  color: #ff426a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.section06-panel-header h3 {
+  margin: 7px 0 5px;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+.section06-panel-header p {
+  margin: 0;
+  color: #8494ae;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* PAGE SWITCH */
+
+.section06-page-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.section06-page-switch button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+
+  min-width: 0;
+  min-height: 60px;
+  padding: 8px 4px;
+
+  border: 1px solid #344155;
+  border-radius: 9px;
+  background: #101827;
+  color: #9aa9bf;
+
+  font-family: inherit;
+  cursor: pointer;
+
+  transition:
+    background .2s ease,
+    border-color .2s ease;
+}
+
+.section06-page-switch button:hover {
+  border-color: #e84570;
+  color: #fff;
+}
+
+.section06-page-switch button.active {
+  border-color: #e84570;
+  background: #a81943;
+  color: #fff;
+}
+
+.section06-page-switch button span {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.section06-page-switch button small {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* EDITOR SCROLLBAR */
+
+.section06-panel-body {
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px;
+
+  scrollbar-width: thin;
+  scrollbar-color: #52637b #151a23;
+}
+
+.section06-panel-body::-webkit-scrollbar {
+  width: 7px;
+}
+
+.section06-panel-body::-webkit-scrollbar-track {
+  background: #151a23;
+}
+
+.section06-panel-body::-webkit-scrollbar-thumb {
+  background: #52637b;
+  border-radius: 10px;
+}
+
+.section06-panel-body::-webkit-scrollbar-thumb:hover {
+  background: #b0244c;
+}
+
+.section06-panel-body h4 {
+  margin: 12px 0;
+  color: #fff;
+  font-size: 13px;
+}
+
+/* INPUT FIELD */
+
+.section06-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.section06-field > span {
+  color: #e5e7eb;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.section06-field input {
+  width: 100%;
+  height: 42px;
+  box-sizing: border-box;
+  padding: 0 13px;
+
+  border: 1px solid #344155;
+  border-radius: 9px;
+  outline: 0;
+
+  background: #10151d;
+  color: #fff;
+
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.section06-field input:focus {
+  border-color: #e11d48;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, .12);
+}
+
+.section06-field input:disabled {
+  opacity: .5;
+}
+
+.section06-panel-help {
+  color: #8494ae;
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.section06-panel-warning {
+  color: #fbbf24;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* SAVE STATUS */
+
+.section06-save-state {
+  margin: 16px 0 11px;
+  padding: 10px 12px;
+
+  border: 1px solid #344155;
+  border-radius: 8px;
+
+  color: #9aa9bf;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.section06-save-state.unsaved {
+  color: #fbbf24;
+  border-color: #9a671b;
+  background: rgba(245, 158, 11, .07);
+}
+
+.section06-save-state.saved {
+  color: #4ade80;
+  border-color: #24784a;
+  background: rgba(34, 197, 94, .07);
+}
+
+/* SAVE AND EXPORT */
+
+.section06-save {
+  width: 100%;
+  min-height: 43px;
+  padding: 11px;
+
+  border: 1px solid #d52a58;
+  border-radius: 9px;
+  background: #be1e48;
+  color: #fff;
+
+  font: 800 13px 'Noto Sans Thai', sans-serif;
+  cursor: pointer;
+}
+
+.section06-save:disabled,
+.section06-export-controls button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.section06-export-controls {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #344155;
+}
+
+.section06-export-controls h4 {
+  margin: 7px 0 11px;
+}
+
+.section06-export-controls button {
+  width: 100%;
+  min-height: 42px;
+  margin: 0 0 9px;
+
+  border: 1px solid #344155;
+  border-radius: 9px;
+
+  background: #202939;
+  color: #e5eaf3;
+
+  font: 800 12px 'Noto Sans Thai', sans-serif;
+  cursor: pointer;
+}
+
+.section06-export-controls button:hover:not(:disabled) {
+  background: #2b374a;
+}
+
+.section06-export-controls small {
+  color: #8494ae;
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.section06-message {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.section06-message.success {
+  color: #4ade80;
+}
+
+.section06-message.error {
+  color: #fb7185;
+}
+
+/* ==========================================
+   PREVIEW FRAME
+========================================== */
+
+.section06-preview {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+
+  width: 100%;
+  min-width: 0;
+  padding: 20px;
+
+  overflow: hidden;
+  border: 1px solid #293241;
+  border-radius: 14px;
+  background: #0f141c;
+}
+
+.section06-view-switch {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.section06-view-switch button {
+  padding: 9px 16px;
+
+  border: 1px solid #344155;
+  border-radius: 8px;
+
+  background: #192333;
+  color: #b7c4d8;
+
+  font: 800 12px 'Noto Sans Thai', sans-serif;
+  cursor: pointer;
+}
+
+.section06-view-switch button.active {
+  background: #a81943;
+  border-color: #e84570;
+  color: #fff;
+}
+
+/* TWO PAGES IN DOM — ONE PAGE VISIBLE */
+
+.section06-page-stack {
+  position: relative;
+  flex: 0 0 auto;
+  margin: 0 auto;
+}
+
+.section06-page-stack .section06-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+}
+
+/* ==========================================
+   A4 LANDSCAPE PAPER
+========================================== */
+
+.section06-paper {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  box-sizing: border-box;
+  width: 1120px;
+  height: 792px;
+  padding: 30px 34px 28px;
+
+  overflow: hidden;
+  border-radius: 8px;
+
+  background: #fff;
+  color: #17283f;
+
+  transform-origin: top left;
+}
+
+/* HEADING */
+
+.section06-heading {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  min-height: 54px;
+}
+
+.section06-heading h2 {
+  margin: 0;
+  color: #831329;
+  font-size: 26px;
+  line-height: 1.32;
+  font-weight: 900;
+}
+
+.section06-heading p {
+  margin: 4px 0 0;
+  color: #667085;
+  font-size: 12px;
+}
+
+/* ==========================================
+   SHARED REPORT BOX
+========================================== */
+
+.section06-box {
+  box-sizing: border-box;
+  min-height: 0;
+  overflow: hidden;
+
+  border: 1px solid #dfe5ed;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.section06-box-header {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+
+  height: 57px;
+  padding: 10px 15px;
+
+  border-bottom: 1px solid #edf0f4;
+}
+
+.section06-box-header h3 {
+  margin: 0;
+  color: #163458;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.section06-box-header p {
+  margin: 3px 0 0;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.section06-box-header > span {
+  padding: 6px 10px;
+
+  border-radius: 99px;
+  background: #f8e9ee;
+
+  color: #9f1744;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* ==========================================
+   PAGE 1 — SUMMARY CARDS
+========================================== */
+
+.section06-summary {
+  display: grid;
+  gap: 10px;
+  flex-shrink: 0;
+  height: 98px;
+}
+
+.section06-summary-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.section06-summary-card {
+  position: relative;
+  box-sizing: border-box;
+  padding: 12px 17px;
+
+  overflow: hidden;
+  border: 1px solid #e1e6ee;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.section06-summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: var(--metric-color);
+}
+
+.section06-summary-card > span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.section06-summary-card > div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-top: 3px;
+}
+
+.section06-summary-card strong {
+  color: var(--metric-color);
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.12;
+  font-variant-numeric: tabular-nums;
+}
+
+.section06-summary-card small {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.section06-summary-card em {
+  display: block;
+  margin-top: 2px;
+
+  color: #64748b;
+  font-size: 10px;
+  font-style: normal;
+}
+
+/* ==========================================
+   PAGE 1 — BAR COMPARISON
+========================================== */
+
+.section06-compare {
+  flex-shrink: 0;
+  height: 179px;
+}
+
+.section06-bars {
+  padding: 14px 20px 6px;
+}
+
+.section06-bar-row {
+  display: grid;
+  grid-template-columns: 147px minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section06-bar-row > b {
+  color: #334155;
+  font-size: 12px;
+}
+
+.section06-bar-row > strong {
+  color: #183355;
+  font-size: 19px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.section06-bar-track {
+  height: 22px;
+  overflow: hidden;
+
+  border-radius: 5px;
+  background: #eef2f7;
+}
+
+.section06-bar-track > div {
+  height: 100%;
+  border-radius: 5px;
+}
+
+.section06-bars > p {
+  margin: 0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* ==========================================
+   PAGE 1 — PROBLEM TABLE
+========================================== */
+
+.section06-lower {
+  display: grid;
+  grid-template-columns: .9fr 1.1fr;
+  align-items: stretch;
+  gap: 10px;
+
+  flex: 1;
+  min-height: 0;
+}
+
+.section06-lower > .section06-box {
+  height: 100%;
+}
+
+.section06-problems {
+  display: flex;
+  flex-direction: column;
+}
+
+.section06-problem-table {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 6px 14px 10px;
+}
+
+.section06-problem-row {
+  display: grid;
+  grid-template-columns: 28px 10px minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 10px;
+
+  flex: 1 1 0;
+  min-height: 0;
+  border-bottom: 1px solid #edf1f6;
+}
+
+.section06-problem-row:last-child {
+  border-bottom: 0;
+}
+
+.section06-problem-row > span {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.section06-problem-row > i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.section06-problem-row > b {
+  color: #183355;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.section06-problem-row > strong {
+  color: #9f1744;
+  font-size: 17px;
+  font-weight: 900;
+  text-align: right;
+}
+
+/* ==========================================
+   DONUT — COMMON STYLE FOR BOTH PAGES
+========================================== */
+
+.section06-problem-chart,
+.section06-parameter-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.section06-ring-block {
+  box-sizing: border-box;
+  display: flex;
+
+  flex: 1;
+  min-height: 0;
+
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.section06-ring-holder {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+
+  width: 332px;
+  height: 332px;
+}
+
+.section06-ring {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* DONUT CENTER */
+
+.section06-ring-center {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  pointer-events: none;
+}
+
+.section06-ring-center > span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.section06-ring-center > strong {
+  color: #9f1744;
+  font-size: 54px;
+  line-height: 1.1;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.section06-ring-center > small {
+  max-width: 160px;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+/* DONUT LEGEND */
+
+.section06-ring-legend {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 9px;
+
+  min-width: 0;
+  max-width: 175px;
+}
+
+.section06-legend-item {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.section06-legend-item > i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.section06-legend-item > span {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.section06-legend-item > b {
+  color: #183355;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.section06-legend-empty {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+/* DONUT PAGE 1 ONLY */
+
+.section06-problem-chart .section06-ring-block {
+  justify-content: space-between;
+  gap: 13px;
+  padding: 0 14px;
+}
+
+.section06-problem-chart .section06-ring-holder {
+  width: 306px;
+  height: 306px;
+}
+
+.section06-problem-chart .section06-ring-legend {
+  max-width: 165px;
+}
+
+/* ==========================================
+   PAGE 2 — TWO GROUPED SUMMARY CARDS
+========================================== */
+
+.section06-param-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  flex-shrink: 0;
+  height: 134px;
+}
+
+.section06-param-summary {
+  position: relative;
+  box-sizing: border-box;
+
+  padding: 13px 18px 11px;
+
+  border: 1px solid #dfe5ed;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.section06-param-summary::before {
+  content: '';
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 5px;
+
+  background: var(--param-color);
+}
+
+.section06-param-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.section06-param-summary-head > strong {
+  color: #183355;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.section06-param-summary-head > span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* TWO STATISTICS INSIDE ONE CARD */
+
+.section06-param-summary-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.section06-param-summary-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.section06-param-summary-stats > div + div {
+  padding-left: 14px;
+  border-left: 1px solid #e8edf4;
+}
+
+.section06-param-summary-stats span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.section06-param-summary-stats strong {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.section06-param-summary-stats strong.normal {
+  color: var(--param-color);
+}
+
+.section06-param-summary-stats strong.abnormal {
+  color: var(--param-bad);
+}
+
+.section06-param-summary-stats small {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* ==========================================
+   PAGE 2 — TWO LARGE DONUTS
+========================================== */
+
+.section06-parameter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  flex: 1;
+  min-height: 0;
+}
+
+.section06-parameter-card .section06-box-header {
+  height: 62px;
+}
+
+.section06-parameter-card .section06-ring-block {
+  gap: 5px;
+  padding: 12px 6px;
+}
+
+.section06-parameter-card .section06-ring-holder {
+  width: 360px;
+  height: 360px;
+}
+
+.section06-parameter-card .section06-ring-legend {
+  max-width: 135px;
+  gap: 14px;
+}
+
+/* PARAMETER LEGEND:
+   LABEL + PERCENTAGE, NO NUMBER BOX */
+
+.section06-parameter-card .section06-legend-item {
+  grid-template-columns: 9px minmax(0, 1fr);
+}
+
+.section06-parameter-card .section06-legend-item > b {
+  grid-column: 2;
+  font-size: 10px;
+  color: #64748b;
+}
+
+.section06-parameter-card .section06-ring-center > strong {
+  font-size: 48px;
+}
+
+.section06-parameter-card .section06-ring-center > span {
+  font-size: 11px;
+}
+
+.section06-parameter-card .section06-ring-center > small {
+  max-width: 145px;
+}
+
+/* ==========================================
+   EDITOR RESPONSIVE
+========================================== */
+
+@media (max-width: 900px) {
+  .section06-editor.section06-editing {
+    grid-template-columns: 1fr;
+  }
+
+  .section06-panel-body {
+    max-height: none;
+  }
+}
+
+/* เพิ่มขนาด Label ทางขวา เฉพาะหน้า 2 */
+
+.section06-parameter-card .section06-legend-item > span {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+/* เพิ่มขนาดตัวเลข % ใต้ Label */
+
+.section06-parameter-card .section06-legend-item > b {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* เพิ่มขนาดจุดสี */
+
+.section06-parameter-card .section06-legend-item > i {
+  width: 10px;
+  height: 10px;
+}
