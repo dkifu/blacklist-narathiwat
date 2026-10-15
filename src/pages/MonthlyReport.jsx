@@ -6,7 +6,6 @@ import {
 import { jsPDF } from 'jspdf'
 import { supabase } from '../lib/supabase'
 import './MonthlyReport.css'
-
 import Section01Editor from './monthly/Section01Editor'
 import Section02Editor from './monthly/Section02Editor'
 import Section03Editor from './monthly/Section03Editor'
@@ -16,9 +15,9 @@ import Section06Editor from './monthly/Section06Editor'
 import Section07Editor from './monthly/Section07Editor'
 import Section08Editor from './monthly/Section08Editor'
 import Section09Editor from './monthly/Section09Editor'
+import Section10Editor from './monthly/Section10Editor'
 import Section11Editor from './monthly/Section11Editor'
 import Section12Editor from './monthly/Section12Editor'
-
 const MONTHS = [
   { value: 1, label: 'มกราคม' },
   { value: 2, label: 'กุมภาพันธ์' },
@@ -33,7 +32,6 @@ const MONTHS = [
   { value: 11, label: 'พฤศจิกายน' },
   { value: 12, label: 'ธันวาคม' },
 ]
-
 const REPORT_SECTIONS = [
   {
     id: 1,
@@ -96,64 +94,50 @@ const REPORT_SECTIONS = [
     detail: 'สรุป Face Detection และการแจ้งเตือนตามหมายจับ',
   },
 ]
-
 // ==========================================
 // CHECK SAVED SECTION STATUS
 // ==========================================
-
 function hasSavedMonthlySectionContent(section) {
   const content = section?.content
-
   if (!content || typeof content !== 'object') {
     return false
   }
-
   const id = Number(section.section_no)
-
   if (id === 7) {
     return Array.isArray(content.slides) &&
       content.slides.length > 0
   }
-
   return Object.entries(content).some(([key, value]) => {
     if (
       key === 'version' ||
       key === 'rowsPerPage'
     ) return false
-
     if (Array.isArray(value)) {
       return value.length > 0
     }
-
     if (typeof value === 'string') {
       return value.trim().length > 0
     }
-
     if (typeof value === 'number') {
       return Number.isFinite(value)
     }
-
     if (typeof value === 'boolean') {
       return value
     }
-
     return !!value &&
       typeof value === 'object' &&
       Object.keys(value).length > 0
   })
 }
-
 // ==========================================
 // SAVED SECTION IDS
 // ==========================================
-
 async function getSavedMonthlySectionIds(report, rows) {
   const ids = new Set(
     (rows || [])
       .filter(hasSavedMonthlySectionContent)
       .map(row => Number(row.section_no))
   )
-
   // หัวข้อ 04 ใช้ข้อมูลรายปี
   if (report?.center_id != null) {
     try {
@@ -164,20 +148,15 @@ async function getSavedMonthlySectionIds(report, rows) {
         .eq('report_year', report.report_year)
         .eq('section_no', 4)
         .maybeSingle()
-
       if (error) throw error
-
       const reportMonth = Number(report.report_month)
       const reportYear = Number(report.report_year)
-
       const calendarYear =
         reportYear >= 2400
           ? reportYear - 543
           : reportYear
-
       const content = data?.content
       const monthRow = content?.rows?.[reportMonth - 1]
-
       const hasSavedData =
         Number(content?.year) === calendarYear &&
         Array.isArray(content?.rows) &&
@@ -194,7 +173,6 @@ async function getSavedMonthlySectionIds(report, rows) {
           Number.isSafeInteger(monthRow?.[key]) &&
           monthRow[key] >= 0
         )
-
       if (hasSavedData) {
         ids.add(4)
       }
@@ -205,7 +183,6 @@ async function getSavedMonthlySectionIds(report, rows) {
       )
     }
   }
-
   // หัวข้อ 09 ใช้ข้อมูลเคสแยก
   if (report?.center_id != null) {
     try {
@@ -216,9 +193,7 @@ async function getSavedMonthlySectionIds(report, rows) {
         .eq('report_month', report.report_month)
         .eq('report_year', report.report_year)
         .limit(1)
-
       if (error) throw error
-
       if (data?.length) {
         ids.add(9)
       }
@@ -229,42 +204,31 @@ async function getSavedMonthlySectionIds(report, rows) {
       )
     }
   }
-
   return [...ids]
 }
-
 // ==========================================
 // PDF SECTIONS
 // ==========================================
-
 const COMPANY_PDF_SECTIONS =
   REPORT_SECTIONS.map(section => section.id)
-
 const POLICE_PDF_SECTIONS =
   COMPANY_PDF_SECTIONS.filter(id => id !== 6)
-
 const IMPLEMENTED_PDF_SECTIONS =
-  new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12])
-
+  new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
 // ==========================================
 // MONTHLY REPORT
 // ==========================================
-
 function MonthlyReport({ profile }) {
   const now = new Date()
-
   const previousMonthDate = new Date(
     now.getFullYear(),
     now.getMonth() - 1,
     1
   )
-
   const [collapseSectionList, setCollapseSectionList] =
     useState(false)
-
   const [currentReport, setCurrentReport] =
     useState(null)
-
   const section01ExportRef = useRef(null)
   const section02ExportRef = useRef(null)
   const section03ExportRef = useRef(null)
@@ -274,9 +238,9 @@ function MonthlyReport({ profile }) {
   const section07ExportRef = useRef(null)
   const section08ExportRef = useRef(null)
   const section09ExportRef = useRef(null)
+  const section10ExportRef = useRef(null)
   const section11ExportRef = useRef(null)
   const section12ExportRef = useRef(null)
-
   const [section03ExportVersion, setSection03ExportVersion] =
     useState(0)
   const [section04ExportVersion, setSection04ExportVersion] =
@@ -291,11 +255,11 @@ function MonthlyReport({ profile }) {
     useState(0)
   const [section09ExportVersion, setSection09ExportVersion] =
     useState(0)
+  const [section10ExportVersion, setSection10ExportVersion] = useState(0)
   const [section11ExportVersion, setSection11ExportVersion] =
     useState(0)
   const [section12ExportVersion, setSection12ExportVersion] =
     useState(0)
-
   const [exportingPdf, setExportingPdf] =
     useState(false)
   const [editorOpen, setEditorOpen] =
@@ -304,32 +268,27 @@ function MonthlyReport({ profile }) {
     useState(false)
   const [reportHasContent, setReportHasContent] =
     useState(false)
-
   const [savedSectionsStatus, setSavedSectionsStatus] =
     useState({
       reportId: null,
       ids: [],
     })
-
   const [pdfDialogOpen, setPdfDialogOpen] =
     useState(false)
   const [pdfPreset, setPdfPreset] =
     useState('company')
   const [pdfSelectedSections, setPdfSelectedSections] =
     useState(COMPANY_PDF_SECTIONS)
-
   const [reportLoading, setReportLoading] =
     useState(false)
   const [reportMessage, setReportMessage] =
     useState('')
   const [reportMessageType, setReportMessageType] =
     useState('')
-
   const [centers, setCenters] =
     useState([])
   const [selectedCenterId, setSelectedCenterId] =
     useState('')
-
   const [month, setMonth] = useState(
     previousMonthDate.getMonth() + 1
   )
@@ -340,72 +299,54 @@ function MonthlyReport({ profile }) {
     useState(1)
   const [loadingCenters, setLoadingCenters] =
     useState(true)
-
   const role = profile?.role
-
   const isAdmin = role === 'admin'
   const isSupervisor = role === 'supervisor'
   const isOperator = role === 'operator'
   const isCenter = role === 'center'
-
   // ========================================
   // EFFECTS
   // ========================================
-
   useEffect(() => {
     loadCenters()
   }, [profile?.id, profile?.center_id])
-
   useEffect(() => {
     setEditorOpen(false)
     setEditMode(false)
     setReportHasContent(false)
-
     setSavedSectionsStatus({
       reportId: null,
       ids: [],
     })
-
     setPdfDialogOpen(false)
-
     if (!selectedCenterId) {
       setCurrentReport(null)
       return
     }
-
     loadMonthlyReport()
   }, [selectedCenterId, month, year])
-
   // ========================================
   // LOAD CENTERS
   // ========================================
-
   const loadCenters = async () => {
     setLoadingCenters(true)
-
     let query = supabase
       .from('centers')
       .select('id, name, code, active')
       .eq('active', true)
       .order('name')
-
     if (isCenter && profile?.center_id) {
       query = query.eq('id', profile.center_id)
     }
-
     const { data, error } = await query
-
     if (error) {
       console.error('Load centers error:', error)
       setCenters([])
       setLoadingCenters(false)
       return
     }
-
     const rows = data || []
-
     setCenters(rows)
-
     if (isCenter && profile?.center_id) {
       setSelectedCenterId(String(profile.center_id))
     } else if (
@@ -421,21 +362,16 @@ function MonthlyReport({ profile }) {
     } else if (rows.length > 0) {
       setSelectedCenterId(String(rows[0].id))
     }
-
     setLoadingCenters(false)
   }
-
   // ========================================
   // LOAD MONTHLY REPORT
   // ========================================
-
   const loadMonthlyReport = async () => {
     if (!selectedCenterId) return
-
     setReportLoading(true)
     setReportMessage('')
     setReportMessageType('')
-
     const { data, error } = await supabase
       .from('monthly_reports')
       .select('*')
@@ -443,13 +379,11 @@ function MonthlyReport({ profile }) {
       .eq('report_month', month)
       .eq('report_year', year)
       .maybeSingle()
-
     if (error) {
       console.error(
         'Load monthly report error:',
         error
       )
-
       setCurrentReport(null)
       setEditorOpen(false)
       setEditMode(false)
@@ -461,7 +395,6 @@ function MonthlyReport({ profile }) {
       setReportLoading(false)
       return
     }
-
     if (!data) {
       setCurrentReport(null)
       setEditorOpen(false)
@@ -470,7 +403,6 @@ function MonthlyReport({ profile }) {
       setReportLoading(false)
       return
     }
-
     const {
       data: sectionRows,
       error: sectionError,
@@ -478,9 +410,7 @@ function MonthlyReport({ profile }) {
       .from('monthly_report_sections')
       .select('section_no, content')
       .eq('report_id', data.id)
-
     let hasContent = false
-
     if (sectionError) {
       console.error(
         'Load report sections error:',
@@ -489,89 +419,71 @@ function MonthlyReport({ profile }) {
     } else {
       hasContent = (sectionRows || []).some(section => {
         const content = section?.content
-
         if (!content || typeof content !== 'object') {
           return false
         }
-
         if (Array.isArray(content.rows)) {
           return content.rows.length > 0
         }
-
         if (Array.isArray(content.items)) {
           return content.items.length > 0
         }
-
         if (Array.isArray(content.pages)) {
           return content.pages.length > 0
         }
-
         return Object.entries(content).some(
           ([key, value]) => {
             if (key === 'rowsPerPage') {
               return false
             }
-
             if (Array.isArray(value)) {
               return value.length > 0
             }
-
             if (typeof value === 'string') {
               return value.trim() !== ''
             }
-
             if (typeof value === 'number') {
               return true
             }
-
             if (typeof value === 'boolean') {
               return value
             }
-
             if (
               value &&
               typeof value === 'object'
             ) {
               return Object.keys(value).length > 0
             }
-
             return false
           }
         )
       })
     }
-
     const savedIds = sectionError
       ? []
       : await getSavedMonthlySectionIds(
         data,
         sectionRows
       )
-
     setSavedSectionsStatus({
       reportId: data.id,
       ids: savedIds,
     })
-
     setCurrentReport(data)
     setReportHasContent(hasContent)
     setEditorOpen(true)
     setEditMode(false)
     setReportLoading(false)
   }
-
   // ========================================
   // UPDATE SECTION STATUS
   // ========================================
-
   const handleSectionDataChange = async () => {
     if (!currentReport?.id) return
-
     const { data, error } = await supabase
       .from('monthly_report_sections')
       .select('section_no, content')
       .eq('report_id', currentReport.id)
-
     if (error) {
       console.error(
         'Refresh report content state error:',
@@ -579,75 +491,58 @@ function MonthlyReport({ profile }) {
       )
       return
     }
-
     const hasContent = (data || []).some(section => {
       const content = section?.content
-
       if (!content || typeof content !== 'object') {
         return false
       }
-
       if (Array.isArray(content.rows)) {
         return content.rows.length > 0
       }
-
       if (Array.isArray(content.items)) {
         return content.items.length > 0
       }
-
       if (Array.isArray(content.pages)) {
         return content.pages.length > 0
       }
-
       return Object.entries(content).some(
         ([key, value]) => {
           if (key === 'rowsPerPage') return false
-
           if (Array.isArray(value)) {
             return value.length > 0
           }
-
           if (typeof value === 'string') {
             return value.trim() !== ''
           }
-
           if (typeof value === 'number') {
             return true
           }
-
           if (typeof value === 'boolean') {
             return value
           }
-
           if (
             value &&
             typeof value === 'object'
           ) {
             return Object.keys(value).length > 0
           }
-
           return false
         }
       )
     })
-
     setReportHasContent(hasContent)
-
     const ids = await getSavedMonthlySectionIds(
       currentReport,
       data
     )
-
     setSavedSectionsStatus({
       reportId: currentReport.id,
       ids,
     })
   }
-
   // ========================================
   // CREATE REPORT
   // ========================================
-
   const handleCreateReport = async () => {
     if (!canEdit) {
       setReportMessage(
@@ -656,13 +551,11 @@ function MonthlyReport({ profile }) {
       setReportMessageType('error')
       return
     }
-
     if (!selectedCenterId) {
       setReportMessage('กรุณาเลือกศูนย์')
       setReportMessageType('error')
       return
     }
-
     if (currentReport) {
       setReportMessage(
         'มีรายงานของศูนย์และเดือนนี้อยู่แล้ว'
@@ -670,11 +563,9 @@ function MonthlyReport({ profile }) {
       setReportMessageType('warning')
       return
     }
-
     setReportLoading(true)
     setReportMessage('')
     setReportMessageType('')
-
     const { data, error } = await supabase
       .from('monthly_reports')
       .insert({
@@ -686,13 +577,11 @@ function MonthlyReport({ profile }) {
       })
       .select()
       .single()
-
     if (error) {
       console.error(
         'Create monthly report error:',
         error
       )
-
       if (error.code === '23505') {
         await loadMonthlyReport()
         setReportMessage(
@@ -702,7 +591,6 @@ function MonthlyReport({ profile }) {
         setReportLoading(false)
         return
       }
-
       setReportMessage(
         error.message ||
         'ไม่สามารถสร้างรายงานได้'
@@ -711,75 +599,59 @@ function MonthlyReport({ profile }) {
       setReportLoading(false)
       return
     }
-
     setCurrentReport(data)
     setReportHasContent(false)
-
     setSavedSectionsStatus({
       reportId: data.id,
       ids: [],
     })
-
     setEditorOpen(true)
     setEditMode(true)
-
     setReportMessage(
       'สร้างรายงานประจำเดือนเรียบร้อยแล้ว'
     )
     setReportMessageType('success')
     setReportLoading(false)
   }
-
   // ========================================
   // ROLES & STATE
   // ========================================
-
   const selectedCenter = centers.find(
     center =>
       String(center.id) === String(selectedCenterId)
   )
-
   const isOwnCenter =
     selectedCenterId &&
     profile?.center_id &&
     Number(selectedCenterId) ===
       Number(profile.center_id)
-
   const canEdit =
     isAdmin ||
     isSupervisor ||
     (isOperator && isOwnCenter) ||
     (isCenter && isOwnCenter)
-
   const canChooseCenter =
     isAdmin ||
     isSupervisor ||
     isOperator
-
   const activeSection =
     REPORT_SECTIONS.find(
       section => section.id === selectedSection
     ) || REPORT_SECTIONS[0]
-
   const savedSectionIds =
     currentReport?.id === savedSectionsStatus.reportId
       ? savedSectionsStatus.ids
       : []
-
   const savedSectionIdSet =
     new Set(savedSectionIds)
-
   if (currentReport?.id != null) {
     savedSectionIdSet.add(8)
   }
-
   // ========================================
   // PDF PRESETS
   // ========================================
-
   const openPdfSelectionDialog = () => {
     if (!currentReport || exportingPdf) return
-
     setPdfPreset('company')
     setPdfSelectedSections([
       ...COMPANY_PDF_SECTIONS,
@@ -788,7 +660,6 @@ function MonthlyReport({ profile }) {
     setReportMessageType('')
     setPdfDialogOpen(true)
   }
-
   const applyPdfPreset = preset => {
     setPdfPreset(preset)
     setPdfSelectedSections(
@@ -797,28 +668,22 @@ function MonthlyReport({ profile }) {
         : [...COMPANY_PDF_SECTIONS]
     )
   }
-
   const togglePdfSection = (id, checked) => {
     setPdfPreset('custom')
-
     setPdfSelectedSections(previous => {
       const next = new Set(previous)
-
       if (checked) {
         next.add(id)
       } else {
         next.delete(id)
       }
-
       return COMPANY_PDF_SECTIONS.filter(
         item => next.has(item)
       )
     })
   }
-
   useEffect(() => {
     if (!pdfDialogOpen) return undefined
-
     const onEscape = event => {
       if (
         event.key === 'Escape' &&
@@ -827,23 +692,19 @@ function MonthlyReport({ profile }) {
         setPdfDialogOpen(false)
       }
     }
-
     document.addEventListener(
       'keydown',
       onEscape
     )
-
     return () =>
       document.removeEventListener(
         'keydown',
         onEscape
       )
   }, [pdfDialogOpen, exportingPdf])
-
   // ========================================
   // EXPORT FULL PDF
   // ========================================
-
   const handleExportFullPdf = async (
     sectionIds = COMPANY_PDF_SECTIONS
   ) => {
@@ -854,9 +715,7 @@ function MonthlyReport({ profile }) {
       setReportMessageType('warning')
       return
     }
-
     if (exportingPdf) return
-
     if (!sectionIds.length) {
       setReportMessage(
         'กรุณาเลือกหัวข้อที่จะส่งออกอย่างน้อย 1 หัวข้อ'
@@ -864,16 +723,12 @@ function MonthlyReport({ profile }) {
       setReportMessageType('warning')
       return
     }
-
     const requestedSections = new Set(sectionIds)
-
     setExportingPdf(true)
     setReportMessage('กำลังรวบรวมหน้ารายงาน...')
     setReportMessageType('')
-
     try {
       const allPages = []
-
       const sectionExporters = [
         {
           sectionNo: 1,
@@ -912,6 +767,10 @@ function MonthlyReport({ profile }) {
           exporter: section09ExportRef.current,
         },
         {
+          sectionNo: 10,
+          exporter: section10ExportRef.current,
+        },
+        {
           sectionNo: 11,
           exporter: section11ExportRef.current,
         },
@@ -920,34 +779,25 @@ function MonthlyReport({ profile }) {
           exporter: section12ExportRef.current,
         },
       ]
-
       sectionExporters.sort(
         (a, b) => a.sectionNo - b.sectionNo
       )
-
       for (const item of sectionExporters) {
         if (
           !requestedSections.has(item.sectionNo)
         ) continue
-
         const exporter = item.exporter
-
         if (!exporter) continue
-
         if (!exporter.isReady()) {
           throw new Error(
             `หัวข้อ ${String(item.sectionNo).padStart(2, '0')} กำลังโหลดข้อมูล`
           )
         }
-
         if (!exporter.hasData()) continue
-
         const pages =
           await exporter.exportPdfPages()
-
         allPages.push(...pages)
       }
-
       if (allPages.length === 0) {
         setReportMessage(
           'ยังไม่มีหน้ารายงานที่มีข้อมูลสำหรับสร้าง PDF'
@@ -955,16 +805,13 @@ function MonthlyReport({ profile }) {
         setReportMessageType('warning')
         return
       }
-
       const firstPage = allPages[0]
-
       const pdf = new jsPDF({
         orientation: firstPage.orientation,
         unit: 'mm',
         format: 'a4',
         compress: true,
       })
-
       allPages.forEach((page, index) => {
         if (index > 0) {
           pdf.addPage(
@@ -972,41 +819,29 @@ function MonthlyReport({ profile }) {
             page.orientation
           )
         }
-
         const isPortrait =
           page.orientation === 'portrait'
-
         const pageWidth =
           isPortrait ? 210 : 297
-
         const pageHeight =
           isPortrait ? 297 : 210
-
         const PDF_MARGIN = 8
-
         const availableWidth =
           pageWidth - PDF_MARGIN * 2
-
         const availableHeight =
           pageHeight - PDF_MARGIN * 2
-
         const scale = Math.min(
           availableWidth / pageWidth,
           availableHeight / pageHeight
         )
-
         const imageWidth =
           pageWidth * scale
-
         const imageHeight =
           pageHeight * scale
-
         const imageX =
           (pageWidth - imageWidth) / 2
-
         const imageY =
           (pageHeight - imageHeight) / 2
-
         pdf.addImage(
           page.dataUrl,
           page.dataUrl.startsWith('data:image/jpeg')
@@ -1020,43 +855,34 @@ function MonthlyReport({ profile }) {
           'FAST'
         )
       })
-
       // ======================================
       // PDF FILE NAME
       // ======================================
-
       const centerName =
         selectedCenter?.code ||
         selectedCenter?.name ||
         'CENTER'
-
       const safeCenterName =
         String(centerName).replace(
           /[\\/:*?"<>|]/g,
           '_'
         )
-
       const christianYear =
         Number(year) >= 2400
           ? Number(year) - 543
           : Number(year)
-
       const fileMonth =
         String(month).padStart(2, '0')
-
       const filePeriod =
         `${christianYear}-${fileMonth}`
-
       const thaiMonthName =
         MONTHS.find(
           item =>
             Number(item.value) === Number(month)
         )?.label || ''
-
       const centerSearchText =
         `${selectedCenter?.name || ''} ${selectedCenter?.code || ''}`
           .toLowerCase()
-
       const stationMappings = [
         {
           keywords: ['ตากใบ', 'tkb'],
@@ -1087,7 +913,6 @@ function MonthlyReport({ profile }) {
           station: 'สภ.เมืองนราธิวาส',
         },
       ]
-
       const stationName =
         stationMappings.find(item =>
           item.keywords.some(keyword =>
@@ -1096,10 +921,8 @@ function MonthlyReport({ profile }) {
         )?.station ||
         selectedCenter?.name ||
         'ไม่ระบุหน่วยงาน'
-
       let pdfFileName =
         `Monthly_Report_${safeCenterName}_${month}_${year}.pdf`
-
       if (pdfPreset === 'company') {
         pdfFileName =
           `${filePeriod} ${stationName} รายงานVSS.pdf`
@@ -1107,15 +930,12 @@ function MonthlyReport({ profile }) {
         pdfFileName =
           `${filePeriod} ${stationName} รายงานประจำเดือน${thaiMonthName}.pdf`
       }
-
       const safePdfFileName =
         pdfFileName.replace(
           /[\\/:*?"<>|]/g,
           '_'
         )
-
       pdf.save(safePdfFileName)
-
       setReportMessage(
         `สร้าง PDF เรียบร้อยแล้ว ${allPages.length} หน้า`
       )
@@ -1126,7 +946,6 @@ function MonthlyReport({ profile }) {
         'Full PDF export error:',
         error
       )
-
       setReportMessage(
         error.message ||
         'ไม่สามารถสร้าง PDF ได้'
@@ -1136,11 +955,9 @@ function MonthlyReport({ profile }) {
       setExportingPdf(false)
     }
   }
-
   // ========================================
   // RENDER
   // ========================================
-
   return (
     <div className="monthly-report-page">
       <div className="monthly-report-header">
@@ -1148,15 +965,12 @@ function MonthlyReport({ profile }) {
           <span className="monthly-report-eyebrow">
             MONTHLY REPORT
           </span>
-
           <h2>รายงานประจำเดือน</h2>
-
           <p>
             จัดทำ ตรวจสอบ และรวบรวมรายงานประจำเดือน
             แยกตามศูนย์
           </p>
         </div>
-
         <div className="monthly-report-header-actions">
           <button
             type="button"
@@ -1171,7 +985,6 @@ function MonthlyReport({ profile }) {
               ? 'กำลังสร้าง PDF...'
               : '↓ ดาวน์โหลด PDF ทั้งเล่ม'}
           </button>
-
           <div
             className={
               canEdit
@@ -1185,11 +998,9 @@ function MonthlyReport({ profile }) {
           </div>
         </div>
       </div>
-
       {/* ====================================
           PDF SELECTION DIALOG
          ==================================== */}
-
       {pdfDialogOpen && (
         <div
           className="monthly-pdf-modal-backdrop"
@@ -1212,11 +1023,9 @@ function MonthlyReport({ profile }) {
             <div className="monthly-pdf-modal-header">
               <div>
                 <span>PDF EXPORT SETTINGS</span>
-
                 <h3 id="monthly-pdf-modal-title">
                   เลือกหัวข้อสำหรับส่งออก PDF
                 </h3>
-
                 <p>
                   {selectedCenter?.name || 'ศูนย์'}
                   {' · '}
@@ -1227,7 +1036,6 @@ function MonthlyReport({ profile }) {
                   {year}
                 </p>
               </div>
-
               <button
                 className="monthly-pdf-modal-close"
                 type="button"
@@ -1240,7 +1048,6 @@ function MonthlyReport({ profile }) {
                 ×
               </button>
             </div>
-
             <div className="monthly-pdf-modal-content">
               <div className="monthly-pdf-presets">
                 <button
@@ -1260,7 +1067,6 @@ function MonthlyReport({ profile }) {
                     เลือกครบทุกหัวข้อ 01–12
                   </small>
                 </button>
-
                 <button
                   type="button"
                   className={
@@ -1279,10 +1085,8 @@ function MonthlyReport({ profile }) {
                   </small>
                 </button>
               </div>
-
               <div className="monthly-pdf-selection-heading">
                 <strong>หัวข้อรายงาน</strong>
-
                 <div className="monthly-pdf-selection-tools">
                   <span>
                     เลือก {pdfSelectedSections.length}
@@ -1291,7 +1095,6 @@ function MonthlyReport({ profile }) {
                     {' '}
                     หัวข้อ
                   </span>
-
                   <button
                     type="button"
                     className="monthly-pdf-clear-button"
@@ -1308,7 +1111,6 @@ function MonthlyReport({ profile }) {
                   </button>
                 </div>
               </div>
-
               <div className="monthly-pdf-section-options">
                 {REPORT_SECTIONS.map(section => (
                   <label
@@ -1338,18 +1140,15 @@ function MonthlyReport({ profile }) {
                         )
                       }
                     />
-
                     <span className="monthly-pdf-section-index">
                       {String(section.id).padStart(
                         2,
                         '0'
                       )}
                     </span>
-
                     <span className="monthly-pdf-section-name">
                       {section.title}
                     </span>
-
                     <span
                       className={
                         `monthly-pdf-section-status ${
@@ -1376,14 +1175,12 @@ function MonthlyReport({ profile }) {
                   </label>
                 ))}
               </div>
-
               <p className="monthly-pdf-modal-hint">
                 ระบบจะส่งออกเฉพาะหัวข้อที่เลือก
                 และมีข้อมูลพร้อมส่งออกเท่านั้น
                 หัวข้อ 10 ยังไม่มีตัวสร้าง PDF
                 ในระบบปัจจุบัน
               </p>
-
               {['error', 'warning'].includes(
                 reportMessageType
               ) && reportMessage && (
@@ -1395,7 +1192,6 @@ function MonthlyReport({ profile }) {
                 </p>
               )}
             </div>
-
             <div className="monthly-pdf-modal-actions">
               <button
                 type="button"
@@ -1407,7 +1203,6 @@ function MonthlyReport({ profile }) {
               >
                 ยกเลิก
               </button>
-
               <button
                 type="button"
                 className="monthly-pdf-modal-confirm"
@@ -1429,15 +1224,12 @@ function MonthlyReport({ profile }) {
           </div>
         </div>
       )}
-
       {/* ====================================
           REPORT FILTER
          ==================================== */}
-
       <div className="monthly-report-filter">
         <div className="monthly-filter-item">
           <label>ศูนย์</label>
-
           {canChooseCenter ? (
             <select
               value={selectedCenterId}
@@ -1468,10 +1260,8 @@ function MonthlyReport({ profile }) {
             </div>
           )}
         </div>
-
         <div className="monthly-filter-item">
           <label>เดือน</label>
-
           <select
             value={month}
             onChange={e =>
@@ -1488,10 +1278,8 @@ function MonthlyReport({ profile }) {
             ))}
           </select>
         </div>
-
         <div className="monthly-filter-item">
           <label>ปี พ.ศ.</label>
-
           <select
             value={year}
             onChange={e =>
@@ -1503,7 +1291,6 @@ function MonthlyReport({ profile }) {
                 now.getFullYear() +
                 543 -
                 offset
-
               return (
                 <option
                   key={reportYear}
@@ -1516,18 +1303,15 @@ function MonthlyReport({ profile }) {
           </select>
         </div>
       </div>
-
       {!canEdit && isOperator && (
         <div className="monthly-readonly-notice">
           ศูนย์นี้ไม่ได้ผูกกับบัญชีของคุณ
           จึงสามารถเปิดดูรายงานได้อย่างเดียว
         </div>
       )}
-
       {/* ====================================
           SECTION LIST
          ==================================== */}
-
       <div
         className={
           collapseSectionList
@@ -1541,7 +1325,6 @@ function MonthlyReport({ profile }) {
               <strong>หัวข้อรายงาน</strong>
               <span>12 หมวดหลัก</span>
             </div>
-
             <button
               type="button"
               className="collapse-toggle-button"
@@ -1554,7 +1337,6 @@ function MonthlyReport({ profile }) {
               {collapseSectionList ? '›' : '‹'}
             </button>
           </div>
-
           {REPORT_SECTIONS.map(section => (
             <button
               type="button"
@@ -1571,7 +1353,6 @@ function MonthlyReport({ profile }) {
               onClick={() => {
                 setSelectedSection(section.id)
                 setEditMode(false)
-
                 if (currentReport) {
                   setEditorOpen(true)
                 }
@@ -1580,7 +1361,6 @@ function MonthlyReport({ profile }) {
               <span className="monthly-section-number">
                 {String(section.id).padStart(2, '0')}
               </span>
-
               {!collapseSectionList && (
                 <>
                   <div>
@@ -1591,7 +1371,6 @@ function MonthlyReport({ profile }) {
                       {section.detail}
                     </small>
                   </div>
-
                   <span className="monthly-section-arrow">
                     ›
                   </span>
@@ -1600,11 +1379,9 @@ function MonthlyReport({ profile }) {
             </button>
           ))}
         </div>
-
         {/* ====================================
             HIDDEN PDF EXPORT EDITORS
            ==================================== */}
-
         {currentReport && (
           <div
             className="monthly-pdf-export-host"
@@ -1618,7 +1395,6 @@ function MonthlyReport({ profile }) {
               year={year}
               canEdit={false}
             />
-
             <Section02Editor
               ref={section02ExportRef}
               report={currentReport}
@@ -1627,7 +1403,6 @@ function MonthlyReport({ profile }) {
               year={year}
               canEdit={false}
             />
-
             <Section03Editor
               key={
                 `section03-export-${currentReport.id}-${section03ExportVersion}`
@@ -1639,7 +1414,6 @@ function MonthlyReport({ profile }) {
               year={year}
               canEdit={false}
             />
-
             <Section04Editor
               key={
                 `section04-export-${currentReport.id}-${section04ExportVersion}`
@@ -1651,7 +1425,6 @@ function MonthlyReport({ profile }) {
               year={year}
               canEdit={false}
             />
-
             <Section05Editor
               key={
                 `section05-export-${currentReport.id}-${section05ExportVersion}`
@@ -1663,7 +1436,6 @@ function MonthlyReport({ profile }) {
               year={year}
               canEdit={false}
             />
-
             <Section06Editor
               key={
                 `section06-export-${currentReport.id}-${section06ExportVersion}`
@@ -1675,7 +1447,6 @@ function MonthlyReport({ profile }) {
               year={year}
               canEdit={false}
             />
-
             <Section07Editor
               key={
                 `section07-export-${currentReport.id}-${section07ExportVersion}`
@@ -1687,7 +1458,6 @@ function MonthlyReport({ profile }) {
               year={year}
               canEdit={false}
             />
-
             <Section08Editor
               key={
                 `section08-export-${currentReport.id}-${section08ExportVersion}`
@@ -1699,7 +1469,6 @@ function MonthlyReport({ profile }) {
               year={year}
               canEdit={false}
             />
-
             <Section09Editor
               key={
                 `section09-export-${currentReport.id}-${section09ExportVersion}`
@@ -1711,7 +1480,15 @@ function MonthlyReport({ profile }) {
               year={year}
               canEdit={false}
             />
-
+            <Section10Editor
+              key={`section10-export-${currentReport.id}-${section10ExportVersion}`}
+              ref={section10ExportRef}
+              report={currentReport}
+              center={selectedCenter}
+              month={month}
+              year={year}
+              canEdit={false}
+            />
             <Section11Editor
               key={
                 `section11-export-${currentReport.id}-${section11ExportVersion}`
@@ -1723,7 +1500,6 @@ function MonthlyReport({ profile }) {
               year={year}
               canEdit={false}
             />
-
             <Section12Editor
               key={
                 `section12-export-${currentReport.id}-${section12ExportVersion}`
@@ -1737,11 +1513,9 @@ function MonthlyReport({ profile }) {
             />
           </div>
         )}
-
         {/* ====================================
             WORKSPACE
            ==================================== */}
-
         <div className="monthly-report-workspace">
           <div className="monthly-workspace-head">
             <div>
@@ -1752,11 +1526,9 @@ function MonthlyReport({ profile }) {
                   '0'
                 )}
               </span>
-
               <h3>{activeSection.title}</h3>
               <p>{activeSection.detail}</p>
             </div>
-
             <div className="monthly-workspace-actions">
               <button
                 type="button"
@@ -1767,14 +1539,12 @@ function MonthlyReport({ profile }) {
                 }
                 onClick={() => {
                   if (!currentReport) return
-
                   setEditorOpen(true)
                   setEditMode(false)
                 }}
               >
                 ดูตัวอย่าง
               </button>
-
               {canEdit && (
                 <button
                   type="button"
@@ -1785,7 +1555,6 @@ function MonthlyReport({ profile }) {
                       setEditMode(true)
                       return
                     }
-
                     await handleCreateReport()
                   }}
                   disabled={reportLoading}
@@ -1799,7 +1568,6 @@ function MonthlyReport({ profile }) {
               )}
             </div>
           </div>
-
           {reportMessage && (
             <div
               className={
@@ -1809,7 +1577,6 @@ function MonthlyReport({ profile }) {
               {reportMessage}
             </div>
           )}
-
           {currentReport && (
             <div className="monthly-report-status">
               <div>
@@ -1822,7 +1589,6 @@ function MonthlyReport({ profile }) {
                       : 'ฉบับร่าง'}
                 </strong>
               </div>
-
               <div>
                 <span>Report ID</span>
                 <strong>
@@ -1831,11 +1597,9 @@ function MonthlyReport({ profile }) {
               </div>
             </div>
           )}
-
           {/* ====================================
               ACTIVE EDITOR
              ==================================== */}
-
           {editorOpen && currentReport ? (
             <div className="monthly-editor">
               <div className="monthly-editor-toolbar">
@@ -1849,7 +1613,6 @@ function MonthlyReport({ profile }) {
                     {activeSection.title}
                   </strong>
                 </div>
-
                 <button
                   type="button"
                   className="secondary-button"
@@ -1860,7 +1623,6 @@ function MonthlyReport({ profile }) {
                   กลับ
                 </button>
               </div>
-
               <div className="monthly-editor-body">
                 {activeSection.id === 1 ? (
                   <Section01Editor
@@ -1893,7 +1655,6 @@ function MonthlyReport({ profile }) {
                     canEdit={canEdit && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
-
                       setSection03ExportVersion(
                         previous => previous + 1
                       )
@@ -1908,7 +1669,6 @@ function MonthlyReport({ profile }) {
                     canEdit={canEdit && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
-
                       setSection04ExportVersion(
                         previous => previous + 1
                       )
@@ -1923,7 +1683,6 @@ function MonthlyReport({ profile }) {
                     canEdit={canEdit && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
-
                       setSection05ExportVersion(
                         previous => previous + 1
                       )
@@ -1938,7 +1697,6 @@ function MonthlyReport({ profile }) {
                     canEdit={canEdit && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
-
                       setSection06ExportVersion(
                         previous => previous + 1
                       )
@@ -1953,7 +1711,6 @@ function MonthlyReport({ profile }) {
                     canEdit={canEdit && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
-
                       setSection07ExportVersion(
                         previous => previous + 1
                       )
@@ -1968,7 +1725,6 @@ function MonthlyReport({ profile }) {
                     canEdit={canEdit && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
-
                       setSection08ExportVersion(
                         previous => previous + 1
                       )
@@ -1984,10 +1740,22 @@ function MonthlyReport({ profile }) {
                     onDataChange={() => {
                       handleSectionDataChange()
                       setReportHasContent(true)
-
                       setSection09ExportVersion(
                         previous => previous + 1
                       )
+                    }}
+                  />
+                ) : activeSection.id === 10 ? (
+                  <Section10Editor
+                    key={`section10-${currentReport.id}`}
+                    report={currentReport}
+                    center={selectedCenter}
+                    month={month}
+                    year={year}
+                    canEdit={canEdit && editMode}
+                    onDataChange={() => {
+                      handleSectionDataChange()
+                      setSection10ExportVersion(v => v + 1)
                     }}
                   />
                 ) : activeSection.id === 12 ? (
@@ -2000,7 +1768,6 @@ function MonthlyReport({ profile }) {
                     canEdit={canEdit && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
-
                       setSection12ExportVersion(
                         previous => previous + 1
                       )
@@ -2016,7 +1783,6 @@ function MonthlyReport({ profile }) {
                     canEdit={canEdit && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
-
                       setSection11ExportVersion(
                         previous => previous + 1
                       )
@@ -2030,16 +1796,13 @@ function MonthlyReport({ profile }) {
                         activeSection.id
                       ).padStart(2, '0')}
                     </span>
-
                     <h3>
                       {activeSection.title}
                     </h3>
-
                     <p>
                       Editor ของหัวข้อนี้
                       จะถูกสร้างในขั้นต่อไป
                     </p>
-
                     <small>
                       Report ID #{currentReport.id}
                     </small>
@@ -2052,15 +1815,12 @@ function MonthlyReport({ profile }) {
               <div className="monthly-empty-icon">
                 📄
               </div>
-
               <h4>{activeSection.title}</h4>
-
               <p>
                 พื้นที่นี้จะเป็น Editor
                 สำหรับสร้างและจัดการหน้ารายงาน
                 ในขั้นต่อไป
               </p>
-
               <div className="monthly-empty-tags">
                 <span>หลายหน้าได้</span>
                 <span>แนวตั้ง / แนวนอน</span>
@@ -2074,5 +1834,4 @@ function MonthlyReport({ profile }) {
     </div>
   )
 }
-
 export default MonthlyReport
