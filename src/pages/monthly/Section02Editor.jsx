@@ -111,6 +111,65 @@ const formatExcelValue = (value) => {
   return String(value).trim()
 }
 
+
+const normalizeExcelTime = (value) => {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+    return ''
+  }
+
+  const pad2 = (number) =>
+    String(number).padStart(2, '0')
+
+  // กรณีเป็น JavaScript Date
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      return ''
+    }
+
+    return `${pad2(value.getHours())}:${pad2(value.getMinutes())}`
+  }
+
+  const text = String(value).trim()
+
+  // กรณี Excel เก็บเวลาเป็นตัวเลข
+  // เช่น 0.7916666667 = 19:00
+  if (/^\d+(\.\d+)?$/.test(text)) {
+    const parsed = XLSX.SSF.parse_date_code(
+      Number(text)
+    )
+
+    if (parsed) {
+      return `${pad2(parsed.H)}:${pad2(parsed.M)}`
+    }
+  }
+
+  // กรณีเป็นข้อความ HH:mm หรือ HH:mm:ss
+  const match = text.match(
+    /^(\d{1,2}):(\d{2})(?::\d{2})?$/
+  )
+
+  if (match) {
+    const hours = Number(match[1])
+    const minutes = Number(match[2])
+
+    if (
+      hours >= 0 &&
+      hours <= 23 &&
+      minutes >= 0 &&
+      minutes <= 59
+    ) {
+      return `${pad2(hours)}:${pad2(minutes)}`
+    }
+  }
+
+  return text
+}
+
+
 const normalizeEventDate = (value) => {
   if (
     value === null ||
@@ -1806,11 +1865,12 @@ const Section02Editor = forwardRef(
             e.target.result
           )
 
-        const workbook =
-            XLSX.read(data, {
-                type: 'array',
-                cellDates: true,
+        
+        const workbook = XLSX.read(data, {
+          type: 'array',
+          cellDates: false,
         })
+
 
         const sheet =
           workbook.Sheets[
@@ -1827,13 +1887,15 @@ const Section02Editor = forwardRef(
           return
         }
 
-        const imported =
-          XLSX.utils.sheet_to_json(
-            sheet,
-            {
-              defval: '',
-            }
-          )
+        
+        const imported = XLSX.utils.sheet_to_json(
+          sheet,
+          {
+            defval: '',
+            raw: true,
+          }
+        )
+
 
         const cleaned =
           imported
@@ -1853,9 +1915,9 @@ const Section02Editor = forwardRef(
                     row['วันที่ข้อมูล']
                 ),
 
-                dataTime:
-                formatExcelValue(
-                    row['เวลา']
+              dataTime:
+                normalizeExcelTime(
+                  row['เวลา']
                 ),
 
               operator:
@@ -1880,11 +1942,10 @@ const Section02Editor = forwardRef(
                     row['วันที่เกิดเหตุ']
                 ),
 
-                eventTime:
-                formatExcelValue(
-                    row['เวลาเกิดเหตุ']
+              eventTime:
+                normalizeExcelTime(
+                  row['เวลาเกิดเหตุ']
                 ),
-
               source:
                 row['ที่มา alarm'] ||
                 '',
