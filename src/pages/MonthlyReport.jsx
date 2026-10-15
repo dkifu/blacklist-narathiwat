@@ -38,6 +38,8 @@ import Section09Editor from './monthly/Section09Editor'
 
 
 
+import Section11Editor from './monthly/Section11Editor'
+
 
 
 
@@ -226,6 +228,59 @@ async function getSavedMonthlySectionIds(report, rows) {
       .map(row => Number(row.section_no))
   )
 
+  // ==========================================
+  // ตรวจสถานะหัวข้อ 04 จากข้อมูลรายปี
+  // ==========================================
+  if (report?.center_id != null) {
+    try {
+      const { data, error } = await supabase
+        .from('monthly_report_annual_sections')
+        .select('content')
+        .eq('center_id', report.center_id)
+        .eq('report_year', report.report_year)
+        .eq('section_no', 4)
+        .maybeSingle()
+
+      if (error) throw error
+
+      const reportMonth = Number(report.report_month)
+      const reportYear = Number(report.report_year)
+
+      const calendarYear =
+        reportYear >= 2400
+          ? reportYear - 543
+          : reportYear
+
+      const content = data?.content
+
+      const monthRow =
+        content?.rows?.[reportMonth - 1]
+
+      const hasSavedData =
+        Number(content?.year) === calendarYear &&
+        Array.isArray(content?.rows) &&
+        content.rows.length === 12 &&
+        Number.isInteger(reportMonth) &&
+        reportMonth >= 1 &&
+        reportMonth <= 12 &&
+        ['reports', 'sites', 'withinSla', 'overSla']
+          .some(key =>
+            Number.isSafeInteger(monthRow?.[key]) &&
+            monthRow[key] >= 0
+          )
+
+      if (hasSavedData) {
+        ids.add(4)
+      }
+
+    } catch (error) {
+      console.warn(
+        'Section 04 status lookup failed:',
+        error
+      )
+    }
+  }
+
   if (report?.center_id != null) {
     try {
       const { data, error } = await supabase
@@ -249,7 +304,7 @@ async function getSavedMonthlySectionIds(report, rows) {
 
 const COMPANY_PDF_SECTIONS = REPORT_SECTIONS.map(section => section.id)
 const POLICE_PDF_SECTIONS = COMPANY_PDF_SECTIONS.filter(id => id !== 6)
-const IMPLEMENTED_PDF_SECTIONS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9])
+const IMPLEMENTED_PDF_SECTIONS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 11])
 
 function MonthlyReport({ profile }) {
 
@@ -295,6 +350,10 @@ function MonthlyReport({ profile }) {
 
 
 
+  const section11ExportRef = useRef(null)
+
+
+
 
 
 
@@ -312,6 +371,10 @@ function MonthlyReport({ profile }) {
   const [section08ExportVersion, setSection08ExportVersion] = useState(0)
 
   const [section09ExportVersion, setSection09ExportVersion] = useState(0)
+
+
+
+  const [section11ExportVersion, setSection11ExportVersion] = useState(0)
 
 
 
@@ -1777,6 +1840,12 @@ function MonthlyReport({ profile }) {
 
 
 
+
+
+        {
+            sectionNo: 11,
+            exporter: section11ExportRef.current,
+        },
         ]
 
 
@@ -2439,7 +2508,7 @@ function MonthlyReport({ profile }) {
 
               <p className="monthly-pdf-modal-hint">
                 ระบบจะส่งออกเฉพาะหัวข้อที่เลือกและมีข้อมูลพร้อมส่งออกเท่านั้น
-                หัวข้อ 10–12 ยังไม่มีตัวสร้าง PDF ในระบบปัจจุบัน
+                หัวข้อ 10 และ 12 ยังไม่มีตัวสร้าง PDF ในระบบปัจจุบัน
               </p>
               {['error', 'warning'].includes(reportMessageType) && reportMessage && (
                 <p className="monthly-pdf-modal-error" role="alert">{reportMessage}</p>
@@ -2980,6 +3049,26 @@ function MonthlyReport({ profile }) {
 
 
 
+
+
+
+
+                <Section11Editor
+                  key={`section11-export-${currentReport.id}-${section11ExportVersion}`}
+
+                  ref={section11ExportRef}
+
+                  report={currentReport}
+
+                  center={selectedCenter}
+
+                  month={month}
+
+                  year={year}
+
+                  canEdit={false}
+
+                />
 
 
             </div>
@@ -3599,6 +3688,38 @@ function MonthlyReport({ profile }) {
                                 }}
 
                             />
+
+
+                        ) : activeSection.id === 11 ? (
+
+                            <Section11Editor
+
+                                key={`section11-${currentReport.id}`}
+
+                                report={currentReport}
+
+                                center={selectedCenter}
+
+                                month={month}
+
+                                year={year}
+
+                                canEdit={canEdit && editMode}
+
+                                onDataChange={() => {
+                                  
+                                    handleSectionDataChange()
+
+                                    setSection11ExportVersion(
+
+                                        previous => previous + 1
+                                    )
+
+                                }}
+
+                            />
+
+                        
 
 
 

@@ -1,0 +1,833 @@
+
+/* ==========================================
+   SECTION 11
+   IMPORTANT OPERATION RESULTS
+   A4 LANDSCAPE — SAME AS SECTION 07
+========================================== */
+
+.section11-editor {
+  width: 100%;
+  min-width: 0;
+  font-family: 'Noto Sans Thai', sans-serif;
+}
+
+.section11-editor.section11-editing {
+  display: grid;
+  grid-template-columns:
+    290px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+
+/* ==========================================
+   SIDEBAR
+========================================== */
+
+.section11-panel {
+  overflow: hidden;
+  border: 1px solid #2b3547;
+  border-radius: 14px;
+  background: #151a23;
+  color: #fff;
+}
+
+.section11-panel-head {
+  padding: 19px 18px 18px;
+  border-bottom: 1px solid #2b3547;
+}
+
+.section11-panel-head > span {
+  color: #ff426a;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.section11-panel-head h3 {
+  margin: 8px 0 5px;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.section11-panel-head p {
+  margin: 0;
+  color: #8494ae;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.section11-panel-body {
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px;
+
+  scrollbar-width: thin;
+  scrollbar-color: #52637b #151a23;
+}
+
+.section11-panel-body::-webkit-scrollbar {
+  width: 7px;
+}
+
+.section11-panel-body::-webkit-scrollbar-track {
+  background: #151a23;
+}
+
+.section11-panel-body::-webkit-scrollbar-thumb {
+  background: #52637b;
+  border-radius: 10px;
+}
+
+.section11-panel-body h4 {
+  margin: 6px 0 10px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.section11-help {
+  margin: 8px 0 12px;
+  color: #8494ae;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.section11-separator {
+  height: 1px;
+  margin: 19px 0;
+  background: #344155;
+}
+
+.section11-filename {
+  margin: 9px 0 0;
+  overflow-wrap: anywhere;
+  color: #a7e0c3;
+  font-size: 11px;
+}
+
+/* ==========================================
+   REPORT MODES
+========================================== */
+
+.section11-mode-list {
+  display: grid;
+  gap: 9px;
+}
+
+.section11-mode {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  box-sizing: border-box;
+
+  padding: 12px 11px;
+
+  border: 1px solid #344155;
+  border-radius: 10px;
+
+  background: #101827;
+  color: #cbd5e1;
+
+  text-align: left;
+  font-family: inherit;
+}
+
+button.section11-mode {
+  cursor: pointer;
+}
+
+button.section11-mode:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.section11-mode.active {
+  border-color: #bc2b53;
+  background: rgba(190, 30, 72, .13);
+  color: #fff;
+}
+
+.section11-mode svg {
+  flex: 0 0 auto;
+  color: #fb7185;
+}
+
+.section11-mode div {
+  min-width: 0;
+}
+
+.section11-mode strong {
+  display: block;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.section11-mode small {
+  display: block;
+  margin-top: 2px;
+  color: #8798b0;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+/* ==========================================
+   BUTTONS
+========================================== */
+
+.section11-import,
+.section11-save {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+
+  border: 1px solid #d52a58;
+  border-radius: 9px;
+
+  background: #be1e48;
+  color: #fff;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.section11-import:hover:not(:disabled),
+.section11-save:hover:not(:disabled) {
+  background: #d02554;
+}
+
+.section11-import:disabled,
+.section11-save:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.section11-save {
+  margin-bottom: 10px;
+}
+
+/* ==========================================
+   TEXTAREA
+========================================== */
+
+.section11-panel textarea {
+  box-sizing: border-box;
+
+  display: block;
+
+  width: 100%;
+  min-height: 92px;
+  padding: 11px;
+
+  border: 1px solid #344155;
+  border-radius: 9px;
+
+  outline: 0;
+  resize: vertical;
+
+  background: #101827;
+  color: #fff;
+
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.section11-panel textarea:focus {
+  border-color: #d52a58;
+}
+
+/* ==========================================
+   SAVE STATUS
+========================================== */
+
+.section11-save-state {
+  margin: 10px 0 12px;
+  padding: 11px 12px;
+
+  border: 1px solid #344155;
+  border-radius: 8px;
+
+  color: #9aa9bf;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.section11-save-state.unsaved {
+  border-color: #9a671b;
+  background: rgba(245, 158, 11, .07);
+  color: #fbbf24;
+}
+
+.section11-save-state.saved {
+  border-color: #24784a;
+  background: rgba(34, 197, 94, .07);
+  color: #4ade80;
+}
+
+.section11-message {
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+
+  color: #e2e8f0;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.section11-message.success {
+  color: #4ade80;
+}
+
+.section11-message.error {
+  color: #fb7185;
+}
+
+/* ==========================================
+   SIDEBAR PAGE NAVIGATION
+========================================== */
+
+.section11-page-nav {
+  display: grid;
+
+  grid-template-columns:
+    42px minmax(0, 1fr) 42px;
+
+  gap: 7px;
+  margin-top: 17px;
+}
+
+.section11-page-nav button,
+.section11-page-nav select {
+  box-sizing: border-box;
+  height: 43px;
+
+  border: 1px solid #344155;
+  border-radius: 8px;
+
+  background: #101827;
+  color: #e5e7eb;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.section11-page-nav button {
+  font-size: 23px;
+  cursor: pointer;
+}
+
+.section11-page-nav select {
+  min-width: 0;
+  padding: 0 8px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.section11-page-nav button:hover:not(:disabled) {
+  background: #a81943;
+}
+
+.section11-page-nav button:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   VIEW MODE NAVIGATION
+========================================== */
+
+.section11-view-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.section11-view-nav button {
+  padding: 8px 14px;
+
+  border: 1px solid #344155;
+  border-radius: 8px;
+
+  background: #192333;
+  color: #dbe4f0;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.section11-view-nav button:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+.section11-view-nav > span {
+  color: #e5e7eb;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* ==========================================
+   A4 PREVIEW
+========================================== */
+
+.section11-preview {
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 14px;
+
+  min-width: 0;
+  width: 100%;
+  padding: 20px;
+
+  overflow: hidden;
+
+  border: 1px solid #293241;
+  border-radius: 14px;
+
+  background: #0f141c;
+}
+
+.section11-stage {
+  position: relative;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
+.section11-paper {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  box-sizing: border-box;
+
+  width: 1120px;
+  height: 792px;
+
+  overflow: hidden;
+
+  border-radius: 18px;
+
+  background: #ffffff;
+  color: #17283f;
+
+  transform-origin: top left;
+}
+
+/* ==========================================
+   REPORT PAGE LAYOUT
+========================================== */
+
+.section11-page-body {
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+
+  width: 100%;
+  height: 100%;
+
+  padding: 30px 34px 28px;
+
+  background: #ffffff;
+}
+
+/* ==========================================
+   REPORT HEADING
+========================================== */
+
+.section11-report-heading {
+  flex: 0 0 54px;
+  min-height: 54px;
+}
+
+.section11-report-heading h2 {
+  margin: 0;
+  color: #831329;
+
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.32;
+}
+
+.section11-report-heading p {
+  margin: 4px 0 0;
+
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ==========================================
+   CONTENT
+========================================== */
+
+.section11-content {
+  display: flex;
+  flex: 1;
+
+  min-height: 0;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+}
+
+/* ==========================================
+   PDF SLIDE PREVIEW
+========================================== */
+
+.section11-slide-shell {
+  box-sizing: border-box;
+
+  display: block;
+  flex: 0 0 auto;
+
+  max-width: 100%;
+  max-height: 100%;
+
+  overflow: hidden;
+
+  border-radius: 18px;
+  background: transparent;
+
+  box-shadow:
+    0 8px 20px rgba(15, 23, 42, .12);
+}
+
+.section11-slide-shell img {
+  display: block;
+}
+
+/* ==========================================
+   EMPTY FILE STATE
+========================================== */
+
+.section11-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+
+  text-align: center;
+}
+
+.section11-empty strong {
+  color: #831329;
+  font-size: 20px;
+}
+
+.section11-empty p {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.section11-preview-caption {
+  margin: 0;
+
+  color: #8494ae;
+
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ==========================================
+   NO EVENT TEMPLATE
+   INSPIRED BY PROVIDED EXAMPLE
+========================================== */
+
+.section11-noevent {
+  position: relative;
+
+  box-sizing: border-box;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+
+  border: 4px solid #243a50;
+  border-radius: 19px;
+
+  background:
+    radial-gradient(
+      circle at 85% 88%,
+      rgba(232, 96, 103, .39),
+      transparent 42%
+    ),
+    linear-gradient(
+      130deg,
+      #ffedeb 0%,
+      #f9d9db 45%,
+      #f8adaf 100%
+    );
+}
+
+/* ==========================================
+   POLYGON BACKGROUND
+========================================== */
+
+.section11-pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.section11-pattern.pattern-a {
+  background:
+    rgba(255, 255, 255, .20);
+
+  clip-path: polygon(
+    0 10%,
+    45% 5%,
+    23% 69%,
+    0 100%
+  );
+}
+
+.section11-pattern.pattern-b {
+  background:
+    rgba(242, 96, 102, .14);
+
+  clip-path: polygon(
+    40% 100%,
+    60% 30%,
+    100% 70%,
+    100% 100%
+  );
+}
+
+.section11-pattern.pattern-c {
+  background:
+    rgba(255, 255, 255, .19);
+
+  clip-path: polygon(
+    37% 0,
+    100% 0,
+    83% 43%,
+    63% 100%
+  );
+}
+
+/* ==========================================
+   DECORATIVE BUBBLES
+========================================== */
+
+.section11-bubble {
+  position: absolute;
+  display: block;
+
+  border: 2px solid
+    rgba(255, 255, 255, .65);
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle at 30% 26%,
+      rgba(255, 255, 255, .95),
+      rgba(255, 255, 255, .12) 52%,
+      rgba(183, 77, 87, .18)
+    );
+
+  box-shadow:
+    0 1px 4px rgba(86, 39, 53, .20);
+}
+
+.section11-bubble.bubble-a {
+  width: 38px;
+  height: 38px;
+  top: -10px;
+  right: 25px;
+}
+
+.section11-bubble.bubble-b {
+  width: 27px;
+  height: 27px;
+  bottom: 10px;
+  right: 65px;
+}
+
+.section11-bubble.bubble-c {
+  width: 14px;
+  height: 14px;
+  bottom: 53px;
+  left: 48%;
+}
+
+/* ==========================================
+   RED REPORT BANNER
+========================================== */
+
+.section11-noevent-banner {
+  position: absolute;
+  z-index: 2;
+
+  top: 19px;
+  left: 26px;
+  right: 26px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+
+  min-height: 48px;
+  padding: 4px 20px;
+
+  border: 2px solid #a53317;
+  border-radius: 8px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #aa2003,
+      #8f2008
+    );
+
+  color: #ffffff;
+
+  font-size: 23px;
+  font-weight: 700;
+  text-align: center;
+
+  box-shadow:
+    0 3px 7px rgba(93, 36, 24, .12);
+}
+
+/* ==========================================
+   CENTER TEXT
+========================================== */
+
+.section11-noevent-center {
+  position: absolute;
+  z-index: 2;
+
+  top: 110px;
+  bottom: 100px;
+
+  left: 70px;
+  right: 70px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 16px;
+
+  text-align: center;
+  color: #14121a;
+}
+
+.section11-noevent-center strong {
+  font-size: 29px;
+  font-weight: 900;
+  line-height: 1.5;
+}
+
+.section11-noevent-center p {
+  margin: 0;
+
+  max-width: 850px;
+
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.55;
+
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ==========================================
+   CAMERA DECORATION
+========================================== */
+
+.section11-camera {
+  position: absolute;
+
+  left: 21px;
+  bottom: 15px;
+
+  transform: rotate(-18deg);
+
+  color: #667b88;
+
+  filter:
+    drop-shadow(
+      1px 2px 2px rgba(0, 0, 0, .15)
+    );
+}
+
+/* ==========================================
+   LOWER CORNER LABEL
+========================================== */
+
+.section11-brand {
+  position: absolute;
+
+  right: 19px;
+  bottom: 13px;
+
+  color: #486783;
+
+  font-size: 23px;
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1;
+
+  text-align: right;
+}
+
+.section11-brand small {
+  display: block;
+
+  margin-top: 3px;
+
+  font-size: 7px;
+  font-style: normal;
+  letter-spacing: 1px;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 900px) {
+  .section11-editor.section11-editing {
+    grid-template-columns: 1fr;
+  }
+
+  .section11-panel-body {
+    max-height: none;
+  }
+}
