@@ -409,33 +409,46 @@ async function listSection07SavedMonths(centerId) {
 
   const reportIds = reports.map(item => item.id)
 
-  // อ่านเฉพาะ report_id ไม่ดึงภาพ PNG จำนวนมาก
+  // อ่านเฉพาะเวลาบันทึก ไม่ดึงภาพ PNG
   const { data: sections, error: sectionError } =
     await supabase
       .from('monthly_report_sections')
-      .select('report_id')
+      .select('report_id, saved_at:content->>savedAt')
       .eq('section_no', 7)
       .in('report_id', reportIds)
 
   if (sectionError) throw sectionError
 
-  const savedIds = new Set(
-    (sections || []).map(item =>
-      String(item.report_id)
-    )
+  const savedAtMap = new Map(
+    (sections || []).map(item => [
+      String(item.report_id),
+      item.saved_at || null,
+    ])
   )
 
   return reports
     .filter(item =>
-      savedIds.has(String(item.id))
+      savedAtMap.has(String(item.id))
     )
-    .sort(
-      (a, b) =>
+    .map(item => ({
+      ...item,
+      savedAt: savedAtMap.get(String(item.id)),
+    }))
+    .sort((a, b) => {
+      const timeA = Date.parse(a.savedAt || '') || 0
+      const timeB = Date.parse(b.savedAt || '') || 0
+
+      if (timeA !== timeB) {
+        return timeB - timeA
+      }
+
+      // ข้อมูลเดิมที่ไม่มี savedAt
+      return (
         section07MonthKey(b) -
         section07MonthKey(a)
-    )
+      )
+    })
 }
-
 // ลบเฉพาะข้อมูลหัวข้อ 07 ที่เกินสองเดือน
 async function cleanupSection07OldMonths(centerId) {
   const savedMonths =
@@ -969,7 +982,11 @@ export default forwardRef(function Section07Editor({
 
     const content = {
       version: 1,
+
+      savedAt: new Date().toISOString(),
+
       sourceName,
+
       slides: slides.map(item => ({
         id: item.id,
         image: item.image,
@@ -991,23 +1008,8 @@ export default forwardRef(function Section07Editor({
     setMessage('กำลังตรวจสอบเดือนรายงาน...')
 
     try {
-    // ตรวจสอบว่ามี 2 เดือนที่ใหม่กว่าอยู่แล้วหรือไม่
-    const savedMonths =
-        await listSection07SavedMonths(center.id)
-
-    const currentMonthKey =
-        Number(year) * 12 + Number(month)
-
-    const newerMonths = savedMonths.filter(
-        item =>
-        section07MonthKey(item) > currentMonthKey
-    )
-
-    if (newerMonths.length >= 2) {
-        throw new Error(
-        'เดือนนี้เก่ากว่า 2 เดือนล่าสุดที่มีข้อมูลหัวข้อ 07 แล้ว ระบบจึงไม่อนุญาตให้บันทึก'
-        )
-    }
+    // อนุญาตให้บันทึกทุกเดือน
+    // เก็บ 2 เดือนตาม savedAt
 
     setMessage('กำลังบันทึกข้อมูล...')
 
@@ -1310,10 +1312,12 @@ export default forwardRef(function Section07Editor({
             </p>
 
             <p className="section07-help">
-            ระบบเก็บข้อมูลหัวข้อ 07 เฉพาะ 2 เดือนรายงาน
-            ล่าสุดที่มีการบันทึกสไลด์ แยกตามศูนย์
-            และลบข้อมูลเดือนเก่าโดยอัตโนมัติ
-            </p>
+            ระบบเก็บข้อมูลหัวข้อ 07 เฉพาะ 2 เดือน
+            ที่กดบันทึกล่าสุด แยกตามศูนย์
+            สามารถย้อนกลับไปบันทึกเดือนเก่าได้
+            โดยระบบจะลบเดือนที่ไม่ได้บันทึก
+            มานานที่สุดโดยอัตโนมัติ
+          </p>
 
             {message && (
               <p

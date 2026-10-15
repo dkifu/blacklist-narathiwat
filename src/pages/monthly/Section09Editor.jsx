@@ -804,38 +804,7 @@ const Section09Editor = forwardRef(
       const uploaded = []
 
       try {
-        // ตรวจว่าเดือนไม่เก่ากว่าสองเดือนล่าสุด
-        const {
-          data: recent,
-          error: recentError,
-        } = await supabase
-          .from('monthly_report_section09_months')
-          .select('report_year,report_month')
-          .eq('center_id', centerId)
-          .order('report_year', {
-            ascending: false,
-          })
-          .order('report_month', {
-            ascending: false,
-          })
-          .limit(2)
-
-        if (recentError) throw recentError
-
-        const newerCount = (recent || [])
-          .filter(row =>
-            numberOf(
-              row.report_year,
-              row.report_month
-            ) > numberOf(year, month)
-          )
-          .length
-
-        if (newerCount >= 2) {
-          throw new Error(
-            'เดือนนี้เก่ากว่า 2 เดือนที่มี ZIP แล้ว ระบบจึงไม่อนุญาตให้อัปโหลดทับ'
-          )
-        }
+        
 
         setProgress('กำลังตรวจ ZIP...')
 

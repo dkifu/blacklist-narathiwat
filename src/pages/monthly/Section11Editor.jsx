@@ -80,6 +80,118 @@ const thaiYear = value => {
 }
 
 /* ==========================================
+   SECTION 11 — TWO MONTH RETENTION
+   เก็บ 2 เดือนรายงานล่าสุดที่บันทึกสำเร็จ
+   แยกตามศูนย์
+========================================== */
+
+const section11MonthKey = row =>
+  Number(row.report_year) * 12 +
+  Number(row.report_month)
+
+async function listSection11SavedMonths(centerId) {
+  const { data: reports, error: reportError } =
+    await supabase
+      .from('monthly_reports')
+      .select('id, report_year, report_month')
+      .eq('center_id', centerId)
+
+  if (reportError) throw reportError
+
+  if (!reports?.length) return []
+
+  const reportIds = reports.map(item => item.id)
+
+  // อ่านเฉพาะเวลาบันทึก ไม่ดึงภาพ PDF
+  const { data: sections, error: sectionError } =
+    await supabase
+      .from('monthly_report_sections')
+      .select('report_id, saved_at:content->>savedAt')
+      .eq('section_no', 11)
+      .in('report_id', reportIds)
+
+  if (sectionError) throw sectionError
+
+  const savedAtMap = new Map(
+    (sections || []).map(item => [
+      String(item.report_id),
+      item.saved_at || null,
+    ])
+  )
+
+  return reports
+    .filter(item =>
+      savedAtMap.has(String(item.id))
+    )
+    .map(item => ({
+      ...item,
+      savedAt: savedAtMap.get(String(item.id)),
+    }))
+    .sort((a, b) => {
+      const timeA = Date.parse(a.savedAt || '') || 0
+      const timeB = Date.parse(b.savedAt || '') || 0
+
+      // เรียงตามเวลาที่กดบันทึกล่าสุด
+      if (timeA !== timeB) {
+        return timeB - timeA
+      }
+
+      // ข้อมูลเก่าที่ไม่มี savedAt
+      // ใช้เดือนรายงานเรียงแทนชั่วคราว
+      return (
+        section11MonthKey(b) -
+        section11MonthKey(a)
+      )
+    })
+}
+
+/* ==========================================
+   DELETE OLD SECTION 11 MONTHS
+========================================== */
+
+async function cleanupSection11OldMonths(centerId) {
+  const savedMonths =
+    await listSection11SavedMonths(centerId)
+
+  const oldMonths = savedMonths.slice(2)
+
+  if (!oldMonths.length) return 0
+
+  const oldReportIds = oldMonths.map(
+    item => item.id
+  )
+
+  const { data: deletedRows, error } =
+    await supabase
+      .from('monthly_report_sections')
+      .delete()
+      .eq('section_no', 11)
+      .in('report_id', oldReportIds)
+      .select('report_id')
+
+  if (error) throw error
+
+  // ตรวจว่าลบข้อมูลสำเร็จจริง
+  const deletedIds = new Set(
+    (deletedRows || []).map(item =>
+      String(item.report_id)
+    )
+  )
+
+  if (
+    oldReportIds.some(
+      id => !deletedIds.has(String(id))
+    )
+  ) {
+    throw new Error(
+      'ลบข้อมูลหัวข้อ 11 ของเดือนเก่าบางรายการไม่สำเร็จ กรุณาตรวจสิทธิ์ Supabase'
+    )
+  }
+
+  return oldReportIds.length
+}
+
+/* ==========================================
    CANVAS HELPERS
 ========================================== */
 
@@ -1161,21 +1273,24 @@ export default forwardRef(
       const content = {
         version: 1,
 
+        // เวลาที่กดบันทึก ใช้จัดลำดับการเก็บ 2 เดือน
+        savedAt: new Date().toISOString(),
+
         mode,
 
         sourceName:
-          mode === 'pdf'
+            mode === 'pdf'
             ? sourceName
             : '',
 
         noEventText:
-          noEventText.trim(),
+            noEventText.trim(),
 
         slides:
-          mode === 'pdf'
+            mode === 'pdf'
             ? slides
             : [],
-      }
+        }
 
       if (
         JSON.stringify(content).length >
@@ -1198,7 +1313,9 @@ export default forwardRef(
 
       setMessageType('')
 
-      try {
+        try {
+        
+
         let result
 
         if (rowExists) {
@@ -1240,13 +1357,45 @@ export default forwardRef(
 
         setDirty(false)
 
+        // ลบเดือนเก่า หลังบันทึกเดือนใหม่สำเร็จแล้วเท่านั้น
+        let removedMonths = 0
+        let cleanupError = null
+
+        try {
+        removedMonths =
+            await cleanupSection11OldMonths(center.id)
+        } catch (error) {
+        cleanupError = error
+
+        console.error(
+            'Section 11 retention cleanup error:',
+            error
+        )
+        }
+
+        const savedMessage =
+        mode === 'none'
+            ? 'บันทึกรายงานเดือนที่ไม่มีเหตุสำคัญเรียบร้อยแล้ว'
+            : `บันทึก PDF ${slides.length} หน้าเรียบร้อยแล้ว`
+
+        if (cleanupError) {
+        setMessageType('error')
+
+        setMessage(
+            `${savedMessage} แต่ลบข้อมูลเดือนเก่าไม่สำเร็จ: ${cleanupError.message}`
+        )
+        } else {
         setMessageType('success')
 
         setMessage(
-          mode === 'none'
-            ? 'บันทึกรายงานเดือนที่ไม่มีเหตุสำคัญเรียบร้อยแล้ว'
-            : `บันทึก PDF ${slides.length} หน้าเรียบร้อยแล้ว`
+            savedMessage +
+            (
+            removedMonths > 0
+                ? ` · ลบข้อมูลหัวข้อ 11 ของเดือนเก่า ${removedMonths} เดือน`
+                : ' · ข้อมูลอยู่ภายในเงื่อนไขเก็บ 2 เดือน'
+            )
         )
+        }
 
         onDataChange?.()
 
@@ -1603,11 +1752,12 @@ export default forwardRef(
               </button>
 
               <p className="section11-help">
-                ไม่มีปุ่ม PNG แยก
-                หน้านี้จะถูกใช้ในระบบ
-                รวม PDF ทั้งเล่ม
-                เมื่อบันทึกแล้ว
-              </p>
+                ระบบเก็บข้อมูลหัวข้อ 11 เฉพาะ 2 เดือน
+                ที่กดบันทึกล่าสุด แยกตามศูนย์
+                สามารถย้อนกลับไปบันทึกเดือนเก่าได้
+                โดยระบบจะลบเดือนที่ไม่ได้บันทึก
+                มานานที่สุดโดยอัตโนมัติ
+                </p>
 
               {message && (
                 <p
