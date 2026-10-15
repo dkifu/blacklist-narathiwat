@@ -29,7 +29,7 @@ const EQUIPMENT_FIELDS = [
   { key: 'computer', label: 'Computer' },
   { key: 'nvr', label: 'NVR' },
   { key: 'ups', label: 'UPS' },
-  { key: 'dummyCamera', label: 'หุ่นกล้อง' },
+  { key: 'dummyCamera', label: 'มุมกล้อง' },
   { key: 'fiberOptic', label: 'Fiber optic' },
   { key: 'sfp', label: 'SFP' },
   { key: 'lan', label: 'สาย LAN' },
