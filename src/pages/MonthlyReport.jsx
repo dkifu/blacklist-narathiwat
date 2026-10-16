@@ -1382,11 +1382,13 @@ function MonthlyReport({ profile }) {
         {/* ====================================
             HIDDEN PDF EXPORT EDITORS
            ==================================== */}
-        {currentReport && (
-          <div
-            className="monthly-pdf-export-host"
-            aria-hidden="true"
-          >
+        
+          {currentReport && (pdfDialogOpen || exportingPdf) && (
+            <div
+              className="monthly-pdf-export-host"
+              aria-hidden="true"
+            >
+
             <Section01Editor
               ref={section01ExportRef}
               report={currentReport}
