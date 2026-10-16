@@ -17,6 +17,64 @@ GlobalWorkerOptions.workerSrc = pdfWorkerUrl
 import { supabase } from '../../lib/supabase'
 import './Section07Editor.css'
 
+
+/* ==========================================
+   SECTION 07 — SHARED MEMORY CACHE
+   ลดการโหลดภาพซ้ำระหว่าง Preview และ PDF
+========================================== */
+
+const section07LoadCache = new Map()
+const SECTION07_CACHE_TTL = 5 * 60 * 1000
+
+async function loadSection07Cached(reportId) {
+  const { data: { session } } =
+    await supabase.auth.getSession()
+
+  const key = `${session?.user?.id || 'guest'}:${reportId}`
+  const cached = section07LoadCache.get(key)
+
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.promise
+  }
+
+  const promise = supabase
+    .from('monthly_report_sections')
+    .select('content')
+    .eq('report_id', reportId)
+    .eq('section_no', 7)
+    .maybeSingle()
+    .then(({ data, error }) => {
+      if (error) throw error
+      return data
+    })
+
+  section07LoadCache.set(key, {
+    promise,
+    expiresAt: Date.now() + SECTION07_CACHE_TTL,
+  })
+
+  // เก็บไม่เกิน 2 รายงานในหน่วยความจำ
+  while (section07LoadCache.size > 2) {
+    const oldestKey =
+      section07LoadCache.keys().next().value
+
+    section07LoadCache.delete(oldestKey)
+  }
+
+  try {
+    return await promise
+  } catch (error) {
+    const current = section07LoadCache.get(key)
+
+    if (current?.promise === promise) {
+      section07LoadCache.delete(key)
+    }
+
+    throw error
+  }
+}
+
+
 const PAPER_W = 1120
 const PAPER_H = 792
 
@@ -602,15 +660,11 @@ export default forwardRef(function Section07Editor({
       }
 
       try {
-        const { data: row, error } = await supabase
-          .from('monthly_report_sections')
-          .select('content')
-          .eq('report_id', report.id)
-          .eq('section_no', 7)
-          .maybeSingle()
+        
+        const row = await loadSection07Cached(report.id)
 
-        if (error) throw error
         if (!active) return
+
 
         setRowExists(!!row)
 
@@ -1033,11 +1087,16 @@ export default forwardRef(function Section07Editor({
       }
 
       
-        if (error) throw error
+        
+      if (error) throw error
 
-        setRowExists(true)
-        setHasStoredData(true)
-        setHasUnsavedChanges(false)
+      // บันทึกสำเร็จ ล้าง Cache เพื่อให้โหลดข้อมูลล่าสุด
+      section07LoadCache.clear()
+
+      setRowExists(true)
+      setHasStoredData(true)
+      setHasUnsavedChanges(false)
+
 
         // ลบข้อมูลเก่าหลังจากบันทึกเดือนใหม่สำเร็จ
         let removedMonths = 0
