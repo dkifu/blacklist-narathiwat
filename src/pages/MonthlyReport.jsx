@@ -133,11 +133,13 @@ function hasSavedMonthlySectionContent(section) {
 // SAVED SECTION IDS
 // ==========================================
 async function getSavedMonthlySectionIds(report, rows) {
+  
   const ids = new Set(
     (rows || [])
-      .filter(hasSavedMonthlySectionContent)
+      .filter(row => row.has_saved_content === true)
       .map(row => Number(row.section_no))
   )
+
   // หัวข้อ 04 ใช้ข้อมูลรายปี
   if (report?.center_id != null) {
     try {
@@ -403,68 +405,40 @@ function MonthlyReport({ profile }) {
       setReportLoading(false)
       return
     }
+    
+    
     const {
-      data: sectionRows,
+      data: sectionFlags,
       error: sectionError,
-    } = await supabase
-      .from('monthly_report_sections')
-      .select('section_no, content')
-      .eq('report_id', data.id)
-    let hasContent = false
+    } = await supabase.rpc(
+      'monthly_report_get_section_flags',
+      { p_report_id: data.id }
+    )
+
     if (sectionError) {
       console.error(
-        'Load report sections error:',
+        'Load report section flags error:',
         sectionError
       )
-    } else {
-      hasContent = (sectionRows || []).some(section => {
-        const content = section?.content
-        if (!content || typeof content !== 'object') {
-          return false
-        }
-        if (Array.isArray(content.rows)) {
-          return content.rows.length > 0
-        }
-        if (Array.isArray(content.items)) {
-          return content.items.length > 0
-        }
-        if (Array.isArray(content.pages)) {
-          return content.pages.length > 0
-        }
-        return Object.entries(content).some(
-          ([key, value]) => {
-            if (key === 'rowsPerPage') {
-              return false
-            }
-            if (Array.isArray(value)) {
-              return value.length > 0
-            }
-            if (typeof value === 'string') {
-              return value.trim() !== ''
-            }
-            if (typeof value === 'number') {
-              return true
-            }
-            if (typeof value === 'boolean') {
-              return value
-            }
-            if (
-              value &&
-              typeof value === 'object'
-            ) {
-              return Object.keys(value).length > 0
-            }
-            return false
-          }
-        )
-      })
+
+      setReportMessage(
+        'ไม่สามารถโหลดสถานะหัวข้อรายงานได้'
+      )
+      setReportMessageType('error')
     }
+
+    const hasContent = (sectionFlags || []).some(
+      row => row.has_any_content === true
+    )
+
     const savedIds = sectionError
       ? []
       : await getSavedMonthlySectionIds(
-        data,
-        sectionRows
-      )
+          data,
+          sectionFlags
+        )
+
+
     setSavedSectionsStatus({
       reportId: data.id,
       ids: savedIds,
@@ -478,68 +452,43 @@ function MonthlyReport({ profile }) {
   // ========================================
   // UPDATE SECTION STATUS
   // ========================================
+  
+  
   const handleSectionDataChange = async () => {
     if (!currentReport?.id) return
-    const { data, error } = await supabase
-      .from('monthly_report_sections')
-      .select('section_no, content')
-      .eq('report_id', currentReport.id)
+
+    const { data: sectionFlags, error } =
+      await supabase.rpc(
+        'monthly_report_get_section_flags',
+        { p_report_id: currentReport.id }
+      )
+
     if (error) {
       console.error(
-        'Refresh report content state error:',
+        'Refresh report section flags error:',
         error
       )
       return
     }
-    const hasContent = (data || []).some(section => {
-      const content = section?.content
-      if (!content || typeof content !== 'object') {
-        return false
-      }
-      if (Array.isArray(content.rows)) {
-        return content.rows.length > 0
-      }
-      if (Array.isArray(content.items)) {
-        return content.items.length > 0
-      }
-      if (Array.isArray(content.pages)) {
-        return content.pages.length > 0
-      }
-      return Object.entries(content).some(
-        ([key, value]) => {
-          if (key === 'rowsPerPage') return false
-          if (Array.isArray(value)) {
-            return value.length > 0
-          }
-          if (typeof value === 'string') {
-            return value.trim() !== ''
-          }
-          if (typeof value === 'number') {
-            return true
-          }
-          if (typeof value === 'boolean') {
-            return value
-          }
-          if (
-            value &&
-            typeof value === 'object'
-          ) {
-            return Object.keys(value).length > 0
-          }
-          return false
-        }
-      )
-    })
+
+    const hasContent = (sectionFlags || []).some(
+      row => row.has_any_content === true
+    )
+
     setReportHasContent(hasContent)
+
     const ids = await getSavedMonthlySectionIds(
       currentReport,
-      data
+      sectionFlags
     )
+
     setSavedSectionsStatus({
       reportId: currentReport.id,
       ids,
     })
   }
+
+
   // ========================================
   // CREATE REPORT
   // ========================================
