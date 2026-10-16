@@ -716,26 +716,7 @@ const Section01Editor = forwardRef(
   ])
 
 
-  useEffect(() => {
-
-    if (
-      !initializedRef.current
-    ) {
-      return
-    }
-
-    onDataChange?.({
-      ...form,
-      reportMonth: monthNumber,
-      reportYear: rawYear,
-    })
-
-  }, [
-    form,
-    monthNumber,
-    rawYear,
-    onDataChange,
-  ])
+  
 
 
     /*
