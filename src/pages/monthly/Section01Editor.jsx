@@ -390,11 +390,11 @@ const Section01Editor = forwardRef(
           report?.id || 0
         )
         .order(
-          'year',
+          'report_year',
           { ascending: false }
         )
         .order(
-          'month',
+          'report_month',
           { ascending: false }
         )
         .limit(12)
