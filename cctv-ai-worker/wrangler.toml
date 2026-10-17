@@ -5,7 +5,7 @@ compatibility_date = "2026-10-12"
 
 [vars]
 ALLOWED_ORIGINS = "http://localhost:5173,https://dkifu.github.io"
-SUPABASE_URL = "https://tplgbnfeabcissqefmkc.supabase.co"
+SUPABASE_URL = "https://supabase.melonman.uk"
 
 
 [ai]

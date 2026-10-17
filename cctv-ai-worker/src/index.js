@@ -3261,10 +3261,7 @@ async function verifyUser(
     env.SUPABASE_URL || ''
   ).replace(/\/$/, '');
 
-  if (
-    !/^https:\/\/[a-z0-9.-]+\.supabase\.co$/i
-      .test(base)
-  ) {
+  if (base !== 'https://supabase.melonman.uk') {
     throw new Error(
       'SUPABASE_CONFIG_INVALID'
     );
