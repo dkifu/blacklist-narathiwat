@@ -565,3 +565,31 @@ button.daily-hub-card:hover
   }
 
 }
+
+/* =========================================================
+   TCC CHECKPOINT DASHBOARD
+========================================================= */
+
+.daily-hub-tcc-frame {
+  display: block;
+
+  width: 100%;
+  height: 82vh;
+  min-height: 760px;
+
+  border: 1px solid #283548;
+  border-radius: 14px;
+
+  background: #eef1f7;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  .daily-hub-tcc-frame {
+    height: 85vh;
+    min-height: 650px;
+
+    border-radius: 10px;
+  }
+}

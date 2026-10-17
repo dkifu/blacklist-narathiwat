@@ -5,6 +5,7 @@ import {
   Cctv,
   ChevronRight,
   ScanEye,
+  LayoutDashboard,
 } from 'lucide-react'
 
 
@@ -184,7 +185,43 @@ function DailyReport({ profile }) {
       }
         
 
- 
+  /* =========================
+      TCC CHECKPOINT DASHBOARD
+    ========================= */
+
+    if (activeReport === 'tcc-dashboard') {
+      return (
+        <div className="daily-hub-report-view">
+
+          <div className="daily-hub-backbar">
+
+            <button
+              type="button"
+              className="daily-hub-back-button"
+              onClick={() => setActiveReport(null)}
+            >
+              <ArrowLeft size={18} />
+              กลับไปหน้ารายงานประจำวัน
+            </button>
+
+            <div className="daily-hub-current-report">
+              <LayoutDashboard size={18} />
+              <span>TCC DASHBOARD</span>
+              <span>รายงาน Dashboard ด่านตรวจ</span>
+            </div>
+
+          </div>
+
+          <iframe
+            className="daily-hub-tcc-frame"
+            src={`${import.meta.env.BASE_URL}TCC_Dashboard_Report.html`}
+            title="รายงาน Dashboard ด่านตรวจ"
+            loading="lazy"
+          />
+
+        </div>
+      )
+    }
 
 
   /* =========================
@@ -405,6 +442,44 @@ function DailyReport({ profile }) {
                 <div className="daily-hub-card-arrow">
                   <ChevronRight size={22} />
                 </div>
+              </button>
+
+              {/* =====================
+                  TCC CHECKPOINT DASHBOARD
+              ====================== */}
+
+              <button
+                type="button"
+                className="daily-hub-card"
+                onClick={() => setActiveReport('tcc-dashboard')}
+              >
+
+                <div className="daily-hub-card-number-box">
+                  <LayoutDashboard size={27} />
+                </div>
+
+                <div className="daily-hub-card-content">
+
+                  <span className="daily-hub-card-number">
+                    TCC DASHBOARD
+                  </span>
+
+                  <h3>
+                    รายงาน Dashboard ด่านตรวจ
+                  </h3>
+
+                  <p>
+                    สรุปสถานะกล้อง การแจ้งเตือน Face ID และ LPR
+                    สถิติการจราจรขาเข้า–ขาออก
+                    พร้อมจัดทำรายงานรูปภาพ PNG
+                  </p>
+
+                </div>
+
+                <div className="daily-hub-card-arrow">
+                  <ChevronRight size={22} />
+                </div>
+
               </button>
 
 
