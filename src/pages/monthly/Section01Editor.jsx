@@ -382,7 +382,7 @@ const Section01Editor = forwardRef(
       } = await supabase
         .from('monthly_reports')
         .select(
-          'id, center_id, year, month, created_at'
+          'id, center_id, report_year, report_month, created_at'
         )
         .eq('center_id', centerId)
         .neq(
