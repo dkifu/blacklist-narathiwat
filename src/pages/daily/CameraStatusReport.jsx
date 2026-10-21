@@ -13,6 +13,46 @@ const NETWORKS = [
   { value: 'checkpoint', label: 'กล้องด่าน' },
 ]
 
+const EMPTY_OVERVIEW = {
+  total: 0,
+  online: 0,
+  offline: 0,
+  unknown: 0,
+  green: 0,
+  yellow: 0,
+  orange: 0,
+  red: 0,
+  pending: 0,
+  notTested: 0,
+  hasReport: false,
+}
+
+// รองรับทะเบียนมากกว่า 1,000 กล้อง
+async function fetchCameraInventory(center, type) {
+  const items = []
+
+  for (let offset = 0; offset < 2000; offset += 1000) {
+    const { data, error } = await supabase
+      .from('camera_inventory')
+      .select('id,name,ip,service_box,latitude,longitude')
+      .eq('center_id', Number(center))
+      .eq('network_type', type)
+      .eq('is_active', true)
+      .order('id')
+      .range(offset, offset + 999)
+
+    if (error) {
+      return { data: null, error }
+    }
+
+    items.push(...(data || []))
+
+    if ((data || []).length < 1000) break
+  }
+
+  return { data: items, error: null }
+}
+
 const SHIFTS = {
   morning: 'กะเช้า',
   afternoon: 'กะบ่าย',
@@ -71,11 +111,27 @@ const asText = value => {
   return String(value).trim()
 }
 
+// ผล Agent รุ่นเดิม: green=ปกติ, orange=เฝ้าระวัง,
+// red=Ping ตอบแต่ผิดปกติ, unreachable=Ping ไม่ได้
+// แปลงเป็นสีใหม่ตามข้อกำหนด โดยเก็บค่าเดิมไว้ตรวจสอบย้อนหลัง
+const normalizeAgentLevel = ping => {
+  if (!ping || ping.level === 'not_tested') return 'not_tested'
+
+  const loss = Number(ping.lossPct)
+  if (
+    ping.level === 'unreachable' ||
+    (ping.lossPct != null && Number.isFinite(loss) && loss >= 100)
+  ) return 'unreachable'
+
+  if (ping.level === 'green') return 'green'
+  if (ping.level === 'orange') return 'yellow'
+  if (ping.level === 'red') return 'orange'
+
+  return 'not_tested'
+}
+
 const newResult = (camera, ping) => {
-  const level =
-    !ping || ping.level === 'not_tested'
-      ? 'not_tested'
-      : ping.level
+  const level = normalizeAgentLevel(ping)
 
   return {
     ip: camera.ip,
@@ -84,6 +140,8 @@ const newResult = (camera, ping) => {
     lat: camera.latitude,
     long: camera.longitude,
 
+    // ผลวิเคราะห์จาก Ping (ห้ามแก้ทับด้วยผลที่เจ้าหน้าที่ยืนยัน)
+    ping_source_level: ping?.level ?? null,
     ping_level: level,
     avg_ms: ping?.avgMs ?? null,
     loss_pct: ping?.lossPct ?? null,
@@ -97,6 +155,24 @@ const newResult = (camera, ping) => {
 
     confirmed: level === 'green',
   }
+}
+
+// สีที่หน้าจอแสดงหลังเจ้าหน้าที่ตรวจสอบจริง
+// ผล Ping ต้นทางยังคงอยู่ใน ping_level / ping_source_level
+const displayPingLevel = row => {
+  if (row.confirmed) {
+    if (row.status === 'online') return 'green'
+    if (row.status === 'offline') return 'unreachable'
+    if (row.status === 'unknown') return 'orange'
+  }
+
+  // แปลงรายงานเก่าที่บันทึกก่อนเปลี่ยนระบบสี
+  if (!row.ping_source_level) {
+    if (row.ping_level === 'orange') return 'yellow'
+    if (row.ping_level === 'red') return 'orange'
+  }
+
+  return row.ping_level || 'not_tested'
 }
 
 const summarize = rows => ({
@@ -121,9 +197,10 @@ const summarize = rows => ({
 
 const levelLabel = level => ({
   green: 'ปกติ',
-  orange: 'เฝ้าระวัง',
-  red: 'ผิดปกติ',
-  unreachable: 'Timeout',
+  yellow: 'ตรวจสอบ',
+  orange: 'ผิดปกติ',
+  red: 'กล้องดับ',
+  unreachable: 'กล้องดับ',
   not_tested: 'ยังไม่ Ping',
 })[level] || 'ยังไม่ Ping'
 
@@ -139,7 +216,7 @@ const getMessageTone = (message) => {
   }
 
   if (
-    /เชื่อมต่อโปรแกรม Ping|นำเข้า\/อัปเดตทะเบียนกล้อง|แทนที่ทะเบียนกล้องสำเร็จ|Ping เสร็จแล้ว|บันทึก.*สำเร็จ/.test(message)
+    /เชื่อมต่อโปรแกรม Ping|นำเข้า\/อัปเดตทะเบียนกล้อง|แทนที่ทะเบียนกล้องสำเร็จ|Ping เสร็จแล้ว|Ping ใหม่สำเร็จ|บันทึก.*สำเร็จ/.test(message)
     ) {
     return 'success'
     }
@@ -198,6 +275,9 @@ export default function CameraStatusReport({
   const [running, setRunning] =
     useState(false)
 
+  // ใช้เฉพาะการ Ping ใหม่ทีละกล้อง
+  const [pingingIp, setPingingIp] = useState('')
+
   const [completed, setCompleted] =
     useState(0)
 
@@ -243,6 +323,21 @@ export default function CameraStatusReport({
 
   const [reloadIndex, setReloadIndex] =
     useState(0)
+
+  const [networkOverview, setNetworkOverview] = useState({
+    general: { ...EMPTY_OVERVIEW },
+    checkpoint: { ...EMPTY_OVERVIEW },
+  })
+
+  const [loadedScope, setLoadedScope] = useState('')
+
+  const scopeKey =
+    `${centerId}|${network}|${reportDate}|${shift}`
+  const currentScopeRef = useRef(scopeKey)
+  currentScopeRef.current = scopeKey
+
+  const selectedLoaded =
+    loadedScope === scopeKey && !loading  
 
   const stopRef = useRef(false)
   const fileRef = useRef(null)
@@ -314,6 +409,9 @@ export default function CameraStatusReport({
     let cancelled = false
 
     setLoading(true)
+    setLoadedScope('')
+    setInventory([])
+    setPrincipal(null)
     setResults({})
     setManual(null)
     setSavedInfo(null)
@@ -322,15 +420,7 @@ export default function CameraStatusReport({
     async function load() {
       const [a, b, c] = await Promise.all([
 
-        supabase
-          .from('camera_inventory')
-          .select(
-            'id,name,ip,service_box,latitude,longitude'
-          )
-          .eq('center_id', Number(centerId))
-          .eq('network_type', network)
-          .eq('is_active', true)
-          .order('ip'),
+        fetchCameraInventory(centerId, network),
 
         supabase
           .from('camera_status_daily')
@@ -426,6 +516,9 @@ export default function CameraStatusReport({
             )
           : null
       )
+      setLoadedScope(
+        `${centerId}|${network}|${reportDate}|${shift}`
+      )
     }
 
     load()
@@ -441,20 +534,156 @@ export default function CameraStatusReport({
     reloadIndex,
   ])
 
+  /* =========================================
+    NETWORK OVERVIEW - BOTH NETWORKS
+  ========================================= */
+
+  useEffect(() => {
+    if (!centerId || !shift) return
+
+    let cancelled = false
+
+    setNetworkOverview({
+      general: { ...EMPTY_OVERVIEW },
+      checkpoint: { ...EMPTY_OVERVIEW },
+    })
+
+    async function loadNetworkOverview() {
+      const center = Number(centerId)
+
+      const [generalCount, checkpointCount, reports] =
+        await Promise.all([
+          supabase
+            .from('camera_inventory')
+            .select('id', { count: 'exact', head: true })
+            .eq('center_id', center)
+            .eq('network_type', 'general')
+            .eq('is_active', true),
+
+          supabase
+            .from('camera_inventory')
+            .select('id', { count: 'exact', head: true })
+            .eq('center_id', center)
+            .eq('network_type', 'checkpoint')
+            .eq('is_active', true),
+
+          supabase
+            .from('camera_status_daily')
+            .select(
+              'network_type,details,final_summary,manual_summary'
+            )
+            .eq('center_id', center)
+            .eq('report_date', reportDate)
+            .eq('shift', shift),
+        ])
+
+      if (cancelled) return
+
+      const error =
+        generalCount.error ||
+        checkpointCount.error ||
+        reports.error
+
+      if (error) {
+        setMessage(
+          `โหลดสรุปสองเครือข่ายไม่สำเร็จ: ${error.message}`
+        )
+        return
+      }
+
+      const counts = {
+        general: generalCount.count ?? 0,
+        checkpoint: checkpointCount.count ?? 0,
+      }
+
+      const next = {}
+
+      for (const item of NETWORKS) {
+        const report = (reports.data || []).find(
+          r => r.network_type === item.value
+        )
+
+        const details = Array.isArray(report?.details)
+          ? report.details
+          : []
+
+        const tested = details.filter(
+          r => r.ping_level &&
+              r.ping_level !== 'not_tested'
+        )
+
+        const savedSummary =
+          report?.manual_summary ||
+          report?.final_summary
+
+        const colors = { green: 0, yellow: 0, orange: 0, red: 0 }
+        for (const camera of details) {
+          const level = displayPingLevel(camera)
+          const key = level === 'unreachable' ? 'red' : level
+          if (key in colors) colors[key] += 1
+        }
+
+        next[item.value] = {
+          ...colors,
+          total: counts[item.value],
+
+          online: Number(
+            savedSummary?.online ??
+            tested.filter(r => r.status === 'online').length
+          ) || 0,
+
+          offline: Number(
+            savedSummary?.offline ??
+            tested.filter(r => r.status === 'offline').length
+          ) || 0,
+
+          unknown: Number(
+            savedSummary?.unknown ??
+            tested.filter(r => r.status === 'unknown').length
+          ) || 0,
+
+          pending: tested.filter(
+            r => !r.confirmed
+          ).length,
+
+          notTested: Math.max(
+            0,
+            counts[item.value] - tested.length
+          ),
+
+          hasReport: Boolean(report),
+        }
+      }
+
+      setNetworkOverview(next)
+    }
+
+    loadNetworkOverview()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    centerId,
+    reportDate,
+    shift,
+    reloadIndex,
+  ])
+
 
   /* =========================================
      CALCULATE CURRENT RESULTS
   ========================================= */
 
   const rows = useMemo(
-    () =>
-      inventory.map(camera => ({
+    () => inventory.map(camera => {
+      const row = {
         ...camera,
-        ...(
-          results[camera.ip] ||
-          newResult(camera, null)
-        ),
-      })),
+        ...(results[camera.ip] || newResult(camera, null)),
+      }
+
+      return { ...row, display_level: displayPingLevel(row) }
+    }),
     [inventory, results]
   )
 
@@ -492,6 +721,40 @@ export default function CameraStatusReport({
         unknown: Number(manual.unknown),
       }
     : autoSummary
+
+    const notTestedCount = rows.filter(
+      r => r.ping_level === 'not_tested'
+    ).length
+
+    function chooseNetwork(value) {
+  if (
+    value === network ||
+    running ||
+    !!pingingIp ||
+    saving ||
+    importing ||
+    loading
+  ) return
+
+  const hasUnsavedResults =
+    Object.keys(results).length > 0 &&
+    !savedInfo
+
+  if (hasUnsavedResults) {
+    const confirmed = window.confirm(
+      'มีผล Ping ที่ยังไม่ได้บันทึก\n\n' +
+      'หากเปลี่ยนประเภทกล้อง ผลที่ยังไม่ได้บันทึกจะหายไป\n\n' +
+      'ต้องการเปลี่ยนประเภทกล้องหรือไม่?'
+    )
+
+    if (!confirmed) return
+  }
+
+  setNetwork(value)
+  setSearch('')
+  setExpandedBoxes({})
+  setShowPendingOnly(false)
+}
 
   /* =========================================
    GROUP CAMERAS BY SERVICE BOX
@@ -559,26 +822,17 @@ const boxGroups = useMemo(() => {
         (a, b) => compareCameraIp(a.ip, b.ip)
       )
 
-      // สีรุนแรงที่สุดในตู้
-      const hasRed = cameras.some(c =>
-        ['red', 'unreachable'].includes(c.ping_level)
-      )
-
-      const hasOrange = cameras.some(
-        c => c.ping_level === 'orange'
-      )
-
-      const allGreen = cameras.every(
-        c => c.ping_level === 'green'
-      )
-
-      const level = hasRed
+      // สีเข้มที่สุดในตู้จากผล Ping + การยืนยันของเจ้าหน้าที่
+      const levels = cameras.map(c => c.display_level)
+      const level = levels.includes('unreachable') || levels.includes('red')
         ? 'red'
-        : hasOrange
+        : levels.includes('orange')
           ? 'orange'
-          : allGreen
-            ? 'green'
-            : 'idle'
+          : levels.includes('yellow')
+            ? 'yellow'
+            : levels.every(x => x === 'green')
+              ? 'green'
+              : 'idle'
 
       return {
         ...group,
@@ -641,8 +895,11 @@ const boxGroups = useMemo(() => {
       c => c.ip === ip
     )
 
-    if (!camera) return
+    if (!camera || running || pingingIp || saving || importing) return
 
+    // เลือก "กล้องปกติ" จากรายการเหลือง => แสดงสีเขียวทันที
+    // ยืนยัน "ผิดปกติ" => สีส้ม, ยืนยัน "กล้องดับ" => สีแดง
+    // ไม่แก้ข้อมูลผล Ping ดิบ เพื่อรักษาหลักฐานเดิม
     setResults(prev => ({
       ...prev,
 
@@ -663,42 +920,60 @@ const boxGroups = useMemo(() => {
 
 
   /* =========================================
-     DOWNLOAD EXCEL TEMPLATE
+    TWO-SHEET EXCEL TEMPLATE
   ========================================= */
 
   async function downloadTemplate() {
-    const { default: ExcelJS } =
-      await import('exceljs')
-
+    const { default: ExcelJS } = await import('exceljs')
     const wb = new ExcelJS.Workbook()
-    const ws = wb.addWorksheet('CCTV Cameras')
 
-    ws.addRow(TEMPLATE_HEADERS)
+    for (const item of NETWORKS) {
+      const ws = wb.addWorksheet(item.label)
 
-    ws.columns = [
-      { width: 30 },
-      { width: 22 },
-      { width: 25 },
-      { width: 17 },
-      { width: 17 },
-    ]
+      ws.addRow(TEMPLATE_HEADERS)
 
-    ws.getRow(1).font = {
-      bold: true,
-      color: { argb: 'FFFFFFFF' },
+      ws.columns = [
+        { width: 34 },
+        { width: 21 },
+        { width: 28 },
+        { width: 18 },
+        { width: 18 },
+      ]
+
+      ws.views = [
+        { state: 'frozen', ySplit: 1 },
+      ]
+
+      ws.autoFilter = {
+        from: 'A1',
+        to: 'E1',
+      }
+
+      const header = ws.getRow(1)
+
+      header.height = 27
+      header.font = {
+        bold: true,
+        color: { argb: 'FFFFFFFF' },
+      }
+
+      header.alignment = {
+        vertical: 'middle',
+        horizontal: 'center',
+      }
+
+      header.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: {
+          argb: item.value === 'general'
+            ? 'FF9A193F'
+            : 'FF147D91',
+        },
+      }
     }
 
-    ws.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-
-      fgColor: {
-        argb: 'FF9A193F',
-      },
-    }
-
-    const bytes =
-      await wb.xlsx.writeBuffer()
+    const bytes = await wb.xlsx.writeBuffer()
 
     const url = URL.createObjectURL(
       new Blob([bytes], {
@@ -707,258 +982,232 @@ const boxGroups = useMemo(() => {
       })
     )
 
-    const a =
-      document.createElement('a')
-
+    const a = document.createElement('a')
     a.href = url
-
-    a.download =
-      'CCTV_Camera_Template.xlsx'
-
+    a.download = 'CCTV_Camera_2_Networks_Template.xlsx'
     a.click()
 
-    setTimeout(
-      () => URL.revokeObjectURL(url),
-      1000
-    )
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
-
   /* =========================================
-     IMPORT CAMERA INVENTORY
+    IMPORT TWO NETWORKS FROM ONE EXCEL
   ========================================= */
 
   async function importExcel(e) {
     const file = e.target.files?.[0]
-
     e.target.value = ''
 
     if (
       !file ||
       !centerId ||
-      running
+      running ||
+      !!pingingIp ||
+      saving ||
+      importing
     ) return
 
     if (file.size > 3 * 1024 * 1024) {
-      setMessage(
-        'Excel ต้องไม่เกิน 3 MB'
-      )
+      setMessage('Excel ต้องไม่เกิน 3 MB')
       return
     }
 
     setImporting(true)
 
+    const completedNetworks = []
+
     try {
-      const { default: ExcelJS } =
-        await import('exceljs')
+      const { default: ExcelJS } = await import('exceljs')
+      const wb = new ExcelJS.Workbook()
 
-      const wb =
-        new ExcelJS.Workbook()
+      await wb.xlsx.load(await file.arrayBuffer())
 
-      await wb.xlsx.load(
-        await file.arrayBuffer()
-      )
+      const parsed = {}
 
-      const ws = wb.worksheets[0]
+      for (const item of NETWORKS) {
+        const ws = wb.getWorksheet(item.label)
 
-      if (!ws) {
-        throw Error(
-          'ไม่พบแผ่นงาน'
-        )
-      }
-
-      const header = TEMPLATE_HEADERS.map(
-        (_, i) =>
-          asText(
-            ws.getRow(1).getCell(i + 1).value
+        if (!ws) {
+          throw new Error(
+            `ไม่พบชีต "${item.label}" กรุณาใช้ Template ใหม่`
           )
-      )
+        }
 
-      if (
-        header.some(
-          (v, i) =>
-            v !== TEMPLATE_HEADERS[i]
-        )
-      ) {
-        throw Error(
-          'หัวตารางไม่ตรงกับ Template ที่ระบบกำหนด'
-        )
-      }
-
-      const items = []
-      const used = new Set()
-
-      ws.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) return
-
-        const name = asText(
-          row.getCell(1).value
+        const headers = TEMPLATE_HEADERS.map(
+          (_, index) => asText(
+            ws.getRow(1).getCell(index + 1).value
+          )
         )
 
-        const ip = asText(
-          row.getCell(2).value
-        )
+        if (headers.some(
+          (value, index) => value !== TEMPLATE_HEADERS[index]
+        )) {
+          throw new Error(
+            `หัวตารางชีต "${item.label}" ไม่ตรงกับ Template`
+          )
+        }
 
-        if (!name && !ip) return
+        const items = []
+        const used = new Set()
 
-        const serviceBox = asText(
-          row.getCell(3).value
-        )
+        ws.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return
 
-        const latText = asText(
-          row.getCell(4).value
-        )
+          const name = asText(row.getCell(1).value)
+          const ip = asText(row.getCell(2).value)
+          const serviceBox = asText(row.getCell(3).value)
+          const latText = asText(row.getCell(4).value)
+          const longText = asText(row.getCell(5).value)
 
-        const longText = asText(
-          row.getCell(5).value
-        )
+          // ข้ามแถวว่างเท่านั้น
+          if (
+            !name &&
+            !ip &&
+            !serviceBox &&
+            !latText &&
+            !longText
+          ) return
 
-        const lat =
-          latText === ''
+          const lat = latText === ''
             ? null
             : Number(latText)
 
-        const long =
-          longText === ''
+          const long = longText === ''
             ? null
             : Number(longText)
 
-        if (
-          !name ||
-          name.length > 150 ||
-          !privateIP(ip) ||
-          used.has(ip) ||
-          serviceBox.length > 150 ||
-          (
-            lat !== null &&
+          const invalid =
+            !name ||
+            name.length > 150 ||
+            !privateIP(ip) ||
+            used.has(ip) ||
+            serviceBox.length > 150 ||
             (
-              !Number.isFinite(lat) ||
-              Math.abs(lat) > 90
-            )
-          ) ||
-          (
-            long !== null &&
+              lat !== null &&
+              (!Number.isFinite(lat) || Math.abs(lat) > 90)
+            ) ||
             (
-              !Number.isFinite(long) ||
-              Math.abs(long) > 180
+              long !== null &&
+              (!Number.isFinite(long) || Math.abs(long) > 180)
             )
-          )
-        ) {
-          throw Error(
-            `ข้อมูลแถว ${rowNumber} ไม่ถูกต้อง (ชื่อ/IP ส่วนตัว/พิกัด/ข้อมูลซ้ำ)`
-          )
-        }
 
-        used.add(ip)
+          if (invalid) {
+            throw new Error(
+              `ชีต "${item.label}" แถว ${rowNumber} ข้อมูลไม่ถูกต้องหรือ IP ซ้ำ`
+            )
+          }
 
-        items.push({
-          center_id: Number(centerId),
-          network_type: network,
+          used.add(ip)
 
-          name,
-          ip,
+          items.push({
+            name,
+            ip,
+            service_box: serviceBox || null,
+            latitude: lat,
+            longitude: long,
+          })
 
-          service_box:
-            serviceBox || null,
-
-          latitude: lat,
-          longitude: long,
-
-          is_active: true,
+          if (items.length > 2000) {
+            throw new Error(
+              `ชีต "${item.label}" ต้องไม่เกิน 2,000 กล้อง`
+            )
+          }
         })
-      })
 
-      if (
-        !items.length ||
-        items.length > 2000
-      ) {
-        throw Error(
-          'ต้องมีรายการกล้อง 1–2,000 ตัวต่อไฟล์'
+        parsed[item.value] = items
+      }
+
+      // ชีตว่างจะไม่ลบทะเบียนเดิม
+      const networksToReplace = NETWORKS.filter(
+        item => parsed[item.value].length > 0
+      )
+
+      if (networksToReplace.length === 0) {
+        throw new Error(
+          'ไม่พบข้อมูลกล้องในทั้งสองชีต'
         )
       }
 
-      /* =========================================
-    REPLACE ALL CAMERAS IN SELECTED NETWORK
-    ========================================= */
-
-    const centerName =
-    centers.find(
+      const selectedCenter = centers.find(
         c => String(c.id) === String(centerId)
-    )?.name || 'ศูนย์ที่เลือก'
-
-    const networkName =
-    NETWORKS.find(
-        n => n.value === network
-    )?.label || network
-
-    const confirmed = window.confirm(
-    `ยืนยันการแทนที่ทะเบียนกล้อง?
-
-    ศูนย์: ${centerName}
-    เครือข่าย: ${networkName}
-
-    ทะเบียนเดิม: ${inventory.length} กล้อง
-    ทะเบียนใหม่: ${items.length} กล้อง
-
-    ระบบจะลบทะเบียนกล้องเดิมทั้งหมด
-    เฉพาะศูนย์และเครือข่ายที่เลือก
-    แล้วนำข้อมูลจาก Excel ใหม่มาแทนที่
-
-    ประวัติรายงานที่เคยบันทึกจะไม่ถูกลบ
-
-    ต้องการดำเนินการหรือไม่?`
-    )
-
-    if (!confirmed) {
-    setMessage('ยกเลิกการแทนที่ทะเบียนกล้อง')
-    return
-    }
-
-    const { data: replacedCount, error } =
-    await supabase.rpc(
-        'camera_replace_inventory',
-        {
-        p_center_id: Number(centerId),
-        p_network_type: network,
-
-        p_items: items.map(item => ({
-            name: item.name,
-            ip: item.ip,
-            service_box: item.service_box,
-            latitude: item.latitude,
-            longitude: item.longitude,
-        })),
-        }
-    )
-
-    if (error) {
-    throw error
-    }
-
-    setMessage(
-    `แทนที่ทะเบียนกล้องสำเร็จ ${replacedCount} ตัว — ${centerName} / ${networkName}`
-    )
-
-    setResults({})
-    setManual(null)
-    setSavedInfo(null)
-    setCompleted(0)
-
-    setReloadIndex(
-    x => x + 1
-    )
-
-    } catch (err) {
-      setMessage(
-        `นำเข้าไม่สำเร็จ: ${err.message}`
       )
 
+      const centerName =
+        selectedCenter?.name || 'ศูนย์ที่เลือก'
+
+      const detail = NETWORKS.map(item => {
+        const amount = parsed[item.value].length
+        const oldAmount =
+          networkOverview[item.value]?.total ?? 0
+
+        return amount > 0
+          ? `${item.label}: ${oldAmount} → ${amount} กล้อง`
+          : `${item.label}: ชีตว่าง (คงทะเบียนเดิม)`
+      }).join('\n')
+
+      const confirmed = window.confirm(
+        `ยืนยันนำเข้าทะเบียนกล้องจาก Excel?\n\n` +
+        `ศูนย์: ${centerName}\n\n` +
+        `${detail}\n\n` +
+        `ระบบจะแทนที่ทะเบียนเดิมเฉพาะชีตที่มีข้อมูล\n` +
+        `ชีตว่างจะไม่เปลี่ยนทะเบียนเดิม\n\n` +
+        `การแทนที่แต่ละเครือข่ายเป็นคนละรายการบันทึก\n` +
+        `หากรายการใดผิดพลาด รายการก่อนหน้าอาจสำเร็จแล้ว\n\n` +
+        `ประวัติรายงานเดิมจะไม่ถูกลบ\n\n` +
+        `ต้องการดำเนินการหรือไม่?`
+      )
+
+      if (!confirmed) {
+        setMessage('ยกเลิกการนำเข้าทะเบียนกล้อง')
+        return
+      }
+
+      // ใช้ RPC เดิมทีละเครือข่าย
+      for (const item of networksToReplace) {
+        const { error } = await supabase.rpc(
+          'camera_replace_inventory',
+          {
+            p_center_id: Number(centerId),
+            p_network_type: item.value,
+            p_items: parsed[item.value],
+          }
+        )
+
+        if (error) {
+          throw new Error(
+            `${item.label}: ${error.message}`
+          )
+        }
+
+        completedNetworks.push(item.label)
+      }
+
+      setMessage(
+        `แทนที่ทะเบียนกล้องสำเร็จ: ${completedNetworks.join(', ')}`
+      )
+    } catch (err) {
+      const partial = completedNetworks.length
+        ? `สำเร็จแล้ว: ${completedNetworks.join(', ')} • `
+        : ''
+
+      setMessage(
+        `${partial}นำเข้าไม่สำเร็จ: ${err.message}`
+      )
     } finally {
+      if (completedNetworks.length) {
+        setResults({})
+        setManual(null)
+        setSavedInfo(null)
+        setCompleted(0)
+        setReloadIndex(x => x + 1)
+      }
+
       setImporting(false)
     }
   }
 
 
+  
   /* =========================================
      CONNECT TO WINDOWS PING AGENT
   ========================================= */
@@ -1197,7 +1446,9 @@ const boxGroups = useMemo(() => {
     if (
       !inventory.length ||
       !agentKey ||
-      running
+      !selectedLoaded ||
+      running ||
+      !!pingingIp
     ) {
       setMessage(
         'ต้องมีทะเบียนกล้องและกรอกรหัส Agent ก่อน'
@@ -1325,7 +1576,7 @@ const boxGroups = useMemo(() => {
       setMessage(
         stopRef.current
           ? 'หยุดแล้ว ผลที่ตรวจไม่ครบจะเป็นรายการรอตรวจสอบ'
-          : 'Ping เสร็จแล้ว โปรดยืนยันรายการสีส้ม/แดงก่อนสรุป'
+          : 'Ping เสร็จแล้ว โปรดยืนยันกล้องสีเหลือง/ส้ม/แดงก่อนสรุป'
       )
 
     } catch (err) {
@@ -1340,6 +1591,64 @@ const boxGroups = useMemo(() => {
 
 
   /* =========================================
+     RE-PING A SINGLE CAMERA (NO OTHER RESULTS RESET)
+  ========================================= */
+
+  async function pingOneCamera(ip) {
+    if (
+      running || pingingIp || saving || importing || loading ||
+      !agentKey || !selectedLoaded
+    ) return
+
+    const camera = inventory.find(item => item.ip === ip)
+    if (!camera) return
+    const requestedScope = scopeKey
+
+    setPingingIp(ip)
+    setMessage(`กำลัง Ping ใหม่: ${camera.name} (${ip})`)
+
+    try {
+      const response = await fetch(`${AGENT_URL}/ping`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Agent-Key': agentKey,
+        },
+        body: JSON.stringify({ ips: [ip] }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Agent ส่ง HTTP ${response.status}`)
+      }
+
+      const payload = await response.json()
+      const ping = (payload.results || []).find(item => item.ip === ip)
+      if (!ping) {
+        throw new Error('Agent ไม่ส่งผล Ping ของกล้องที่เลือก')
+      }
+
+      // หากผู้ใช้เปลี่ยนกะจากหน้าหลักระหว่างรอผล ให้ทิ้งผลที่ข้ามกะ
+      if (currentScopeRef.current !== requestedScope) return
+
+      // เปลี่ยนผลเฉพาะ IP นี้ ไม่แตะผลของกล้องตัวอื่น
+      setResults(prev => ({
+        ...prev,
+        [ip]: newResult(camera, ping),
+      }))
+      setManual(null)
+      setSavedInfo(null)
+      setMessage(`Ping ใหม่สำเร็จ: ${camera.name} • ${levelLabel(normalizeAgentLevel(ping))} (ยังไม่ได้บันทึก)`)
+    } catch (error) {
+      // กรณีติดต่อ Agent ไม่ได้ ไม่เขียนทับผลเดิม
+      if (currentScopeRef.current === requestedScope) {
+        setMessage(`Ping กล้อง ${camera.name} ไม่สำเร็จ: ${error.message}`)
+      }
+    } finally {
+      setPingingIp('')
+    }
+  }
+
+  /* =========================================
      SAVE CONFIRMED / DRAFT REPORT
   ========================================= */
 
@@ -1347,8 +1656,10 @@ const boxGroups = useMemo(() => {
     if (
       !centerId ||
       !inventory.length ||
+      !selectedLoaded ||
       saving ||
-      running
+      running ||
+      !!pingingIp
     ) return
 
     if (
@@ -1391,12 +1702,13 @@ const boxGroups = useMemo(() => {
     }
 
     const isFinal =
-      raw.pending === 0
+      raw.pending === 0 &&
+      notTestedCount === 0
 
     if (
       !window.confirm(
         `บันทึก${SHIFTS[shift]} ${reportDate} ${NETWORKS.find(n => n.value === network)?.label}
-สถานะ: ${isFinal ? 'ยืนยันครบ' : `ชั่วคราว (รอยืนยัน ${raw.pending} กล้อง)`}
+สถานะ: ${isFinal ? 'ยืนยันครบ' : `ชั่วคราว (ยังไม่ Ping ${notTestedCount} กล้อง / รอยืนยัน ${autoSummary.pending} กล้อง)`}
 การบันทึกใหม่จะทับผลของกะ/วัน/วงนี้เท่านั้น ยืนยันหรือไม่?`
       )
     ) return
@@ -1431,6 +1743,7 @@ const boxGroups = useMemo(() => {
                   lat,
                   long,
                   ping_level,
+                  ping_source_level,
                   avg_ms,
                   loss_pct,
                   status,
@@ -1442,6 +1755,7 @@ const boxGroups = useMemo(() => {
                   lat,
                   long,
                   ping_level,
+                  ping_source_level,
                   avg_ms,
                   loss_pct,
                   status,
@@ -1450,26 +1764,11 @@ const boxGroups = useMemo(() => {
               ),
 
               ping_summary: {
-                green: rows.filter(
-                  x =>
-                    x.ping_level === 'green'
-                ).length,
-
-                orange: rows.filter(
-                  x =>
-                    x.ping_level === 'orange'
-                ).length,
-
-                red: rows.filter(
-                  x =>
-                    x.ping_level === 'red' ||
-                    x.ping_level === 'unreachable'
-                ).length,
-
-                not_tested: rows.filter(
-                  x =>
-                    x.ping_level === 'not_tested'
-                ).length,
+                green: rows.filter(x => x.display_level === 'green').length,
+                yellow: rows.filter(x => x.display_level === 'yellow').length,
+                orange: rows.filter(x => x.display_level === 'orange').length,
+                red: rows.filter(x => ['unreachable', 'red'].includes(x.display_level)).length,
+                not_tested: rows.filter(x => x.display_level === 'not_tested').length,
               },
 
               final_summary:
@@ -1535,7 +1834,7 @@ const boxGroups = useMemo(() => {
   }
 
   return (
-    <div className="csr-root">
+    <div className={`csr-root${pingingIp ? ' csr-ping-single-active' : ''}`}>
 
       {/* HEADER */}
 
@@ -1562,7 +1861,7 @@ const boxGroups = useMemo(() => {
 
       {/* FILTERS */}
 
-      <div className="csr-controls">
+      <div className="csr-controls csr-main-filters">
 
         <label>
           ศูนย์
@@ -1572,8 +1871,10 @@ const boxGroups = useMemo(() => {
             disabled={
               !isAllCenters ||
               running ||
+              !!pingingIp ||
               saving ||
-              importing
+              importing ||
+              loading
             }
             onChange={e =>
               setCenterId(e.target.value)
@@ -1590,30 +1891,7 @@ const boxGroups = useMemo(() => {
           </select>
         </label>
 
-        <label>
-          เครือข่าย
-
-          <select
-            value={network}
-            disabled={
-              running ||
-              saving ||
-              importing
-            }
-            onChange={e =>
-              setNetwork(e.target.value)
-            }
-          >
-            {NETWORKS.map(n => (
-              <option
-                key={n.value}
-                value={n.value}
-              >
-                {n.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        
 
         <label>
           วันที่รายงาน
@@ -1623,8 +1901,10 @@ const boxGroups = useMemo(() => {
             value={reportDate}
             disabled={
               running ||
+              !!pingingIp ||
               saving ||
-              importing
+              importing ||
+              loading
             }
             onChange={e =>
               setReportDate(e.target.value)
@@ -1651,6 +1931,9 @@ const boxGroups = useMemo(() => {
           disabled={
             importing ||
             running ||
+            !!pingingIp ||
+            saving ||
+            loading ||
             !centerId
           }
           onClick={() =>
@@ -1659,7 +1942,7 @@ const boxGroups = useMemo(() => {
         >
           {importing
             ? 'กำลังนำเข้า...'
-            : 'อัปโหลดทะเบียนกล้อง'}
+            : 'อัปโหลดทะเบียนกล้อง 2 เครือข่าย'}
         </button>
 
         <input
@@ -1671,8 +1954,9 @@ const boxGroups = useMemo(() => {
         />
 
         <small>
-            อัปโหลด Excel ใหม่จะแทนที่ทะเบียนกล้องทั้งหมด
-            เฉพาะศูนย์และเครือข่ายที่เลือก
+          Excel ไฟล์เดียวมี 2 ชีต: กล้องทั่วไป / กล้องด่าน
+          • ชีตที่มีข้อมูลจะแทนที่ทะเบียนเดิม
+          • ชีตว่างจะไม่เปลี่ยนข้อมูล
         </small>
 
       </div>
@@ -1737,43 +2021,12 @@ const boxGroups = useMemo(() => {
           >
             ทดสอบเชื่อมต่อ
           </button>
-
-          <button
-            type="button"
-            className="csr-primary"
-            disabled={
-              !agentKey ||
-              running ||
-              loading ||
-              importing ||
-              saving ||
-              !inventory.length
-            }
-            onClick={runPing}
-          >
-            {running
-              ? 'กำลังตรวจสอบ Ping'
-              : 'เริ่มตรวจสอบ Ping'}
-          </button>
-
-          {running && (
-            <button
-              type="button"
-              onClick={() => {
-                stopRef.current = true
-              }}
-            >
-              หยุดหลังจบชุดนี้
-            </button>
-          )}
         </div>
 
         <div className="csr-agent-progress">
           {completed}/{inventory.length} กล้อง
         </div>
-
       </div>
-
 
       {/* MESSAGES */}
 
@@ -1879,62 +2132,191 @@ const boxGroups = useMemo(() => {
           {' '}ทั้งหมด {principal.total}
           {' • '}ติด {principal.online}
           {' • '}ดับ {principal.offline}
-          {' • '}ตรวจสอบไม่ได้ {principal.unknown}
+          {' • '}ตรวจสอบ/ผิดปกติ {principal.unknown}
         </p>
       )}
 
 
-      {/* SUMMARY CARDS */}
+      {/* BOTH NETWORKS SUMMARY */}
 
-      <div className="csr-stats">
+        <div className="csr-network-overview">
+          {NETWORKS.map(item => {
+            const active = item.value === network
 
-        {[
-          [
-            'กล้องทั้งหมด',
-            summary.total,
-            '',
-          ],
-          [
-            'กล้องติด',
-            summary.online,
-            'green',
-          ],
-          [
-            'กล้องดับ',
-            summary.offline,
-            'red',
-          ],
-          [
-            'ตรวจสอบไม่ได้',
-            summary.unknown,
-            'orange',
-          ],
-          [
-            'รอยืนยันรายตัว',
-            autoSummary.pending,
-            'orange',
-          ],
-        ].map(([label, value, cls]) => (
+            const saved =
+              networkOverview[item.value] ||
+              EMPTY_OVERVIEW
 
-          <div
-            className={`csr-stat ${cls}`}
-            key={label}
-          >
-            <small>
-              {label}
-            </small>
+            const stat = active && selectedLoaded
+              ? {
+                  ...saved,
+                  total: inventory.length,
+                  online: summary.online,
+                  offline: summary.offline,
+                  unknown: summary.unknown,
+                  green: rows.filter(r => r.display_level === 'green').length,
+                  yellow: rows.filter(r => r.display_level === 'yellow').length,
+                  orange: rows.filter(r => r.display_level === 'orange').length,
+                  red: rows.filter(r => ['unreachable', 'red'].includes(r.display_level)).length,
+                  pending: autoSummary.pending,
+                  notTested: notTestedCount,
+                  hasReport:
+                    !!savedInfo ||
+                    Object.keys(results).length > 0,
+                }
+              : saved
 
+            const metrics = [
+              ['ทั้งหมด', stat.total, 'total'],
+              ['ปกติ', stat.green, 'green'],
+              ['ตรวจสอบ', stat.yellow, 'yellow'],
+              ['ผิดปกติ', stat.orange, 'orange'],
+              ['กล้องดับ', stat.red, 'red'],
+              ['ยังไม่ Ping', stat.notTested, 'muted'],
+            ]
+
+            return (
+              <div
+                key={item.value}
+                className={`csr-network-card ${
+                  active ? 'is-active' : ''
+                }`}
+              >
+                <div className="csr-network-card-header">
+                  <div>
+                    <strong>{item.label}</strong>
+                    {stat.pending > 0 && (
+                      <small className="csr-network-pending">
+                        รอเจ้าหน้าที่ยืนยัน {stat.pending} กล้อง
+                      </small>
+                    )}
+                    <small>
+                      {active && selectedLoaded
+                        ? 'ข้อมูลของเครือข่ายที่กำลังแสดง'
+                        : stat.hasReport
+                          ? 'ผลจากรายงานที่บันทึกไว้'
+                          : 'ยังไม่มีผลรายงานในกะนี้'}
+                    </small>
+                  </div>
+
+                  <span className="csr-network-total">
+                    {stat.total.toLocaleString('th-TH')} กล้อง
+                  </span>
+                </div>
+
+                <div className="csr-network-metrics">
+                  {metrics.map(([label, value, tone]) => (
+                    <div
+                      className={`csr-network-metric ${tone}`}
+                      key={label}
+                    >
+                      <small>{label}</small>
+                      <strong>{value}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+
+      {/* CAMERA NETWORK TABS */}
+
+        <div
+          className="csr-network-tabs"
+          role="tablist"
+          aria-label="เลือกประเภทกล้อง"
+        >
+          {NETWORKS.map(item => {
+            const selected = network === item.value
+
+            const amount =
+              selected && selectedLoaded
+                ? inventory.length
+                : networkOverview[item.value]?.total ?? 0
+
+            return (
+              <button
+                key={item.value}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                className={selected ? 'is-active' : ''}
+                disabled={
+                  running ||
+                  !!pingingIp ||
+                  saving ||
+                  importing ||
+                  loading
+                }
+                onClick={() => chooseNetwork(item.value)}
+              >
+                <span>{item.label}</span>
+                <strong>{amount}</strong>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* PING CONTROLS FOR SELECTED NETWORK */}
+
+        <div className="csr-network-runbar">
+          <div className="csr-network-runinfo">
             <strong>
-              {value}
+              {NETWORKS.find(
+                item => item.value === network
+              )?.label}
             </strong>
+
+            <small>
+              จำนวน {inventory.length} กล้อง
+              {' • '}
+              ตรวจสอบแยกจากอีกเครือข่าย
+            </small>
           </div>
 
-        ))}
+          <div className="csr-network-runbuttons">
+            <button
+              type="button"
+              className="csr-primary"
+              disabled={
+                !agentKey ||
+                !selectedLoaded ||
+                !inventory.length ||
+                running ||
+                !!pingingIp ||
+                loading ||
+                importing ||
+                saving
+              }
+              onClick={runPing}
+            >
+              {running
+                ? `กำลัง Ping ${
+                    NETWORKS.find(
+                      item => item.value === network
+                    )?.label
+                  }`
+                : `▶ Ping ${
+                    NETWORKS.find(
+                      item => item.value === network
+                    )?.label
+                  }`}
+            </button>
 
-      </div>
-
-
-      {/* CAMERA TABLE */}
+            {running && (
+              <button
+                type="button"
+                onClick={() => {
+                  stopRef.current = true
+                }}
+              >
+                หยุดหลังจบชุดนี้
+              </button>
+            )}
+          </div>
+        </div>
 
       <div className="csr-table-head">
 
@@ -2009,8 +2391,9 @@ const boxGroups = useMemo(() => {
 
             const levelText = {
             green: 'ปกติ',
-            orange: 'เฝ้าระวัง',
-            red: 'ผิดปกติ',
+            yellow: 'ตรวจสอบ',
+            orange: 'ผิดปกติ',
+            red: 'กล้องดับ',
             idle: 'ยังไม่ตรวจครบ',
             }[group.level]
 
@@ -2089,6 +2472,7 @@ const boxGroups = useMemo(() => {
                             <th>Time / Loss</th>
                             <th>สถานะสรุป</th>
                             <th>การยืนยัน</th>
+                            <th>Ping รายตัว</th>
                         </tr>
                         </thead>
 
@@ -2114,10 +2498,15 @@ const boxGroups = useMemo(() => {
 
                             <td>
                                 <span
-                                className={`csr-level ${r.ping_level}`}
+                                className={`csr-level ${r.display_level}`}
                                 >
-                                {levelLabel(r.ping_level)}
+                                {levelLabel(r.display_level)}
                                 </span>
+                                {r.display_level === 'yellow' && (
+                                  <small className="csr-review-hint">
+                                    ตรวจสอบกล้องจริง หากปกติให้เลือก “ปกติ”
+                                  </small>
+                                )}
                             </td>
 
                             <td>
@@ -2135,7 +2524,10 @@ const boxGroups = useMemo(() => {
 
                             <td>
                                 <select
-                                disabled={running}
+                                disabled={
+                                  running || !!pingingIp || saving || importing ||
+                                  !selectedLoaded || r.ping_level === 'not_tested'
+                                }
                                 value={r.status}
                                 onChange={e =>
                                     updateResult(
@@ -2144,17 +2536,9 @@ const boxGroups = useMemo(() => {
                                     )
                                 }
                                 >
-                                <option value="online">
-                                    กล้องติด / ปกติ
-                                </option>
-
-                                <option value="offline">
-                                    กล้องดับ
-                                </option>
-
-                                <option value="unknown">
-                                    ตรวจสอบไม่ได้
-                                </option>
+                                <option value="online">ปกติ (ตรวจสอบแล้ว)</option>
+                                <option value="unknown">ตรวจสอบ / ผิดปกติ</option>
+                                <option value="offline">กล้องดับ</option>
                                 </select>
                             </td>
 
@@ -2172,6 +2556,9 @@ const boxGroups = useMemo(() => {
                                     type="button"
                                     disabled={
                                     running ||
+                                    !!pingingIp ||
+                                    saving ||
+                                    importing ||
                                     r.ping_level === 'not_tested'
                                     }
                                     onClick={() =>
@@ -2186,6 +2573,23 @@ const boxGroups = useMemo(() => {
 
                                 )}
 
+                            </td>
+
+                            <td>
+                              <button
+                                type="button"
+                                className={`csr-camera-reping${pingingIp === r.ip ? ' csr-camera-reping--busy' : ''}`}
+                                disabled={
+                                  running || !!pingingIp || saving ||
+                                  importing || loading || !selectedLoaded || !agentKey
+                                }
+                                onClick={() => pingOneCamera(r.ip)}
+                                title={`Ping ใหม่เฉพาะ ${r.name}`}
+                              >
+                                {pingingIp === r.ip
+                                  ? '⏳ กำลัง Ping...'
+                                  : '↻ Ping ใหม่'}
+                              </button>
                             </td>
 
                             </tr>
@@ -2221,7 +2625,7 @@ const boxGroups = useMemo(() => {
         แสดงรายการแยกตาม Service Box •
         กดชื่อตู้เพื่อเปิด/ปิดรายละเอียดกล้อง •
         ค่า Lat/Long แสดงแยกตามกล้อง •
-        ผล Ping สีส้ม/แดงต้องตรวจสอบและยืนยัน
+        เขียว = ปกติ • เหลือง = ตรวจสอบ • ส้ม = ผิดปกติ (Ping ตอบ) • แดง = กล้องดับ (Ping ไม่ตอบ)
       </p>
 
 
@@ -2232,7 +2636,7 @@ const boxGroups = useMemo(() => {
         <label>
           <input
             type="checkbox"
-            disabled={running}
+            disabled={running || !!pingingIp || saving || importing || !selectedLoaded}
             checked={!!manual}
             onChange={e =>
               setManual(
@@ -2265,7 +2669,7 @@ const boxGroups = useMemo(() => {
             {[
               ['online', 'กล้องติด'],
               ['offline', 'กล้องดับ'],
-              ['unknown', 'ตรวจสอบไม่ได้'],
+              ['unknown', 'ตรวจสอบ/ผิดปกติ'],
             ].map(([key, label]) => (
 
               <label key={key}>
@@ -2317,8 +2721,8 @@ const boxGroups = useMemo(() => {
       <div className="csr-footer">
 
         <span>
-          {autoSummary.pending
-            ? `ยังไม่ยืนยัน ${autoSummary.pending} ตัว — บันทึกได้เป็นฉบับชั่วคราว`
+          {autoSummary.pending || notTestedCount
+            ? `ยังไม่ Ping ${notTestedCount} กล้อง • รอยืนยัน ${autoSummary.pending} กล้อง — บันทึกได้เป็นฉบับชั่วคราว`
             : 'ตรวจสอบครบทุกรายการ — พร้อมบันทึกผลยืนยัน'}
         </span>
 
@@ -2328,8 +2732,10 @@ const boxGroups = useMemo(() => {
           disabled={
             loading ||
             running ||
+            !!pingingIp ||
             saving ||
             importing ||
+            !selectedLoaded ||
             !inventory.length
           }
           onClick={saveReport}

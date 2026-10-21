@@ -1,1171 +1,2087 @@
 /* =========================================
+
    CAMERA STATUS REPORT
+
 ========================================= */
 
 .csr-root {
+
   color: #eef3fb;
+
   background: #111822;
+
   border: 1px solid #293548;
+
   border-radius: 16px;
+
   padding: 24px;
+
 }
 
 .csr-title {
+
   display: flex;
+
   justify-content: space-between;
+
   margin-bottom: 20px;
+
 }
 
 .csr-title span {
+
   color: #ff416c;
+
   font-size: 11px;
+
   letter-spacing: .13em;
+
   font-weight: 800;
+
 }
 
 .csr-title h2 {
+
   margin: 7px 0;
+
   font-size: 23px;
+
 }
 
 .csr-title p,
+
 .csr-hint {
+
   color: #9aabc1;
+
   font-size: 12px;
+
   line-height: 1.7;
+
 }
 
 /* INPUTS */
 
 .csr-controls {
+
   display: grid;
+
   grid-template-columns: repeat(3, minmax(0, 1fr));
+
   gap: 12px;
+
   margin: 14px 0;
+
 }
 
 .csr-controls label,
+
 .csr-agent label {
+
   display: flex;
+
   flex-direction: column;
+
   gap: 7px;
+
   color: #a9b9d0;
+
   font-size: 12px;
+
   font-weight: 700;
+
 }
 
 .csr-root input:not([type=checkbox]),
+
 .csr-root select {
+
   min-width: 0;
+
   width: 100%;
+
   box-sizing: border-box;
+
   padding: 10px 11px;
+
   color: #eef3fb;
+
   background: #192332;
+
   border: 1px solid #35445b;
+
   border-radius: 9px;
+
   font: inherit;
+
 }
 
 .csr-root select option {
+
   color: #182335;
+
   background: #ffffff;
+
 }
 
 .csr-root button {
+
   border: 1px solid #455169;
+
   padding: 10px 13px;
+
   border-radius: 9px;
+
   background: #1b293b;
+
   color: #eef3fb;
+
   cursor: pointer;
+
   font: inherit;
+
   font-size: 12px;
+
   font-weight: 700;
+
 }
 
 .csr-root button:hover:not(:disabled) {
+
   border-color: #ff416c;
+
 }
 
 .csr-root button:disabled {
+
   opacity: .45;
+
   cursor: not-allowed;
+
 }
 
 .csr-root .csr-primary {
+
   background: #b41f49;
+
   color: #ffffff;
+
   border-color: #d0315c;
+
 }
 
 /* ACTIONS */
 
 .csr-actions,
+
 .csr-agent,
+
 .csr-footer {
+
   display: flex;
+
   flex-wrap: wrap;
+
   align-items: center;
+
   gap: 10px;
+
   margin: 16px 0;
+
 }
 
 .csr-actions small {
+
   color: #7f90a7;
+
 }
 
 .csr-agent {
+
   padding: 15px;
+
   background: #151f2d;
+
   border: 1px solid #2c3c53;
+
   border-radius: 12px;
+
 }
 
 .csr-agent label {
+
   flex: 1 1 260px;
+
 }
 
 .csr-message {
+
   border: 1px solid #455169;
+
   color: #d8e2f1;
+
   padding: 11px 13px;
+
   background: #1a2636;
+
   border-radius: 9px;
+
   margin: 12px 0;
-}
 
-/* SUMMARY */
-
-.csr-stats {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-  margin: 20px 0;
-}
-
-.csr-stat {
-  border: 1px solid #304055;
-  border-radius: 12px;
-  background: #172232;
-  padding: 13px;
-}
-
-.csr-stat small {
-  display: block;
-  font-size: 11px;
-  color: #9dabc0;
-  margin-bottom: 7px;
-}
-
-.csr-stat strong {
-  font-size: 26px;
-}
-
-.csr-stat.green strong {
-  color: #43d19a;
-}
-
-.csr-stat.orange strong {
-  color: #f2ad59;
-}
-
-.csr-stat.red strong {
-  color: #f27885;
 }
 
 /* CAMERA TABLE */
 
 .csr-table-head {
+
   display: flex;
+
   justify-content: space-between;
+
   align-items: center;
+
   gap: 14px;
+
   margin-top: 22px;
+
 }
 
 .csr-table-head h3 {
+
   font-size: 17px;
+
 }
 
 .csr-table-head input {
+
   max-width: 340px;
+
 }
 
 .csr-table-scroll {
+
   overflow: auto;
+
   border: 1px solid #304055;
+
   border-radius: 12px;
+
 }
 
 .csr-table {
+
   border-collapse: collapse;
+
   width: 100%;
+
   min-width: 860px;
+
   text-align: left;
+
   font-size: 12px;
+
 }
 
 .csr-table th {
+
   padding: 13px;
+
   background: #1c2a3a;
+
   color: #abbad0;
+
 }
 
 .csr-table td {
+
   padding: 10px 13px;
+
   border-top: 1px solid #2b3a4e;
+
   vertical-align: middle;
+
 }
 
 .csr-table td small {
+
   display: block;
+
   margin-top: 6px;
+
   color: #8798af;
+
 }
 
 .csr-table td select {
+
   min-width: 165px;
+
 }
 
 .csr-table td button {
+
   padding: 7px 9px;
+
 }
 
 .csr-level {
+
   font-weight: 800;
+
   color: #8da1b9;
+
 }
 
 .csr-level.green,
+
 .csr-yes {
+
   color: #44cd95;
+
+}
+
+.csr-level.yellow {
+
+  color: #facc15;
 }
 
 .csr-level.orange {
-  color: #f2ad59;
+
+  color: #fb923c;
 }
 
 .csr-level.red,
+
 .csr-level.unreachable {
+
   color: #f27783;
 }
 
 /* MANUAL EDIT */
 
 .csr-manual {
+
   margin-top: 20px;
+
   padding: 16px;
+
   border: 1px solid #33445a;
+
   background: #151f2e;
+
   border-radius: 12px;
+
 }
 
 .csr-manual > label {
+
   display: flex;
+
   align-items: center;
+
   gap: 9px;
+
   font-size: 13px;
+
 }
 
 .csr-manual .csr-controls {
+
   grid-template-columns: repeat(3, minmax(0, 1fr));
+
 }
 
 .csr-wide {
+
   grid-column: 1 / -1;
+
 }
 
 /* SAVE BAR */
 
 .csr-footer {
+
   justify-content: space-between;
+
   border-top: 1px solid #304055;
+
   padding-top: 16px;
+
   font-size: 12px;
+
   color: #d8e2ef;
+
 }
 
 /* RESPONSIVE */
 
 @media (max-width: 900px) {
-  .csr-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 
   .csr-controls {
+
     grid-template-columns: 1fr;
+
   }
+
 }
 
 @media (max-width: 600px) {
+
   .csr-root {
+
     padding: 14px;
+
   }
 
   .csr-table-head {
+
     flex-direction: column;
+
     align-items: stretch;
+
   }
 
-  .csr-stats {
-    gap: 7px;
-  }
+.csr-manual .csr-controls {
 
-  .csr-stat strong {
-    font-size: 21px;
-  }
-
-  .csr-manual .csr-controls {
     grid-template-columns: 1fr;
+
   }
+
 }
 
 /* =========================================
+
    SERVICE BOX GROUPED VIEW
+
 ========================================= */
 
 .csr-box-toolbar {
+
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
+
   gap: 12px;
+
   flex-wrap: wrap;
+
   margin: 14px 0;
+
 }
 
 .csr-box-toolbar label {
+
   display: flex;
+
   align-items: center;
+
   gap: 9px;
+
   font-size: 12px;
+
   color: #c4d1e2;
+
   cursor: pointer;
+
 }
 
 .csr-box-toolbar-actions {
+
   display: flex;
+
   gap: 8px;
+
 }
 
 .csr-box-list {
+
   display: flex;
+
   flex-direction: column;
+
   gap: 9px;
+
 }
 
 .csr-box-item {
+
   border: 1px solid #304055;
+
   border-left: 4px solid #65758d;
+
   border-radius: 12px;
+
   background: #172232;
+
   overflow: hidden;
+
 }
 
 .csr-box-item.level-green {
+
   border-left-color: #36c78e;
+
+}
+
+.csr-box-item.level-yellow {
+
+  border-left-color: #facc15;
+
 }
 
 .csr-box-item.level-orange {
-  border-left-color: #f2ac4c;
+
+  border-left-color: #fb923c;
+
 }
 
 .csr-box-item.level-red {
+
   border-left-color: #f06b79;
+
 }
 
 .csr-root .csr-box-toggle {
+
   width: 100%;
+
   display: flex;
+
   align-items: center;
+
   gap: 14px;
+
   padding: 15px 17px;
+
   text-align: left;
+
   border: none;
+
   border-radius: 0;
+
   background: transparent;
+
   color: #edf3fb;
+
 }
 
 .csr-root .csr-box-toggle:hover:not(:disabled) {
+
   background: #203047;
+
   border-color: transparent;
+
 }
 
 .csr-box-chevron {
+
   color: #8a9cb4;
+
   font-size: 23px;
+
   width: 20px;
+
   text-align: center;
+
   flex-shrink: 0;
+
 }
 
 .csr-box-info {
+
   flex: 1;
+
   min-width: 0;
+
   display: flex;
+
   flex-direction: column;
+
   gap: 5px;
+
 }
 
 .csr-box-info strong {
+
   color: #fff;
+
   font-size: 13px;
+
   line-height: 1.5;
+
   overflow-wrap: anywhere;
+
 }
 
 .csr-box-info small {
+
   color: #8599b4;
+
   font-size: 11px;
+
 }
 
 .csr-box-right {
+
   display: flex;
+
   flex-direction: column;
+
   align-items: flex-end;
+
   gap: 5px;
+
   flex-shrink: 0;
+
 }
 
 .csr-box-badge {
+
   padding: 5px 11px;
+
   border-radius: 7px;
+
   font-size: 11px;
+
   font-weight: 800;
+
 }
 
 .csr-box-badge.green {
+
   background: rgba(54, 199, 142, .12);
+
   color: #46d79a;
+
+}
+
+.csr-box-badge.yellow {
+
+  background: rgba(250, 204, 21, .12);
+
+  color: #facc15;
 }
 
 .csr-box-badge.orange {
-  background: rgba(242, 172, 76, .12);
-  color: #f2ac4c;
+
+  background: rgba(251, 146, 60, .12);
+
+  color: #fb923c;
 }
 
 .csr-box-badge.red {
+
   background: rgba(240, 107, 121, .12);
+
   color: #fa8793;
+
 }
 
 .csr-box-badge.idle {
+
   background: rgba(120, 141, 169, .15);
+
   color: #9dadc2;
+
 }
 
 .csr-box-pending {
+
   color: #f2ac4c;
+
   font-size: 10px;
+
 }
 
 .csr-box-details {
+
   padding: 12px;
+
   border-top: 1px solid #304055;
+
   background: #101925;
+
 }
 
 .csr-box-details .csr-table-scroll {
+
   border-radius: 8px;
+
 }
 
 .csr-box-details .csr-table td {
+
   padding-top: 12px;
+
   padding-bottom: 12px;
+
 }
 
 .csr-box-empty {
+
   padding: 35px;
+
   text-align: center;
+
   border: 1px dashed #35445b;
+
   border-radius: 12px;
+
   color: #8d9fb8;
+
 }
 
 @media (max-width: 600px) {
+
   .csr-root .csr-box-toggle {
+
     padding: 12px;
+
     gap: 9px;
+
   }
 
   .csr-box-info strong {
+
     font-size: 12px;
+
   }
 
   .csr-box-badge {
+
     padding: 5px 7px;
+
     font-size: 10px;
+
   }
 
   .csr-box-details {
+
     padding: 7px;
+
   }
+
 }
 
 /* =========================================
+
    SERVICE BOX GRID - 2 BOXES PER ROW
+
 ========================================= */
 
 /* รายการตู้ แถวละ 2 ตู้ */
+
 .csr-root .csr-box-list {
+
   display: grid;
+
   grid-template-columns: repeat(2, minmax(0, 1fr));
+
   gap: 12px;
+
   align-items: start;
+
 }
 
 /* ตู้แต่ละใบ */
+
 .csr-root .csr-box-item {
+
   width: 100%;
+
   min-width: 0;
+
   box-sizing: border-box;
+
   grid-column: auto;
+
 }
 
 /* เมื่อเปิดตู้ ให้ขยายเต็มแถว
+
    เพื่อแสดงตารางกล้องแบบเดิม */
+
 .csr-root .csr-box-item:has(.csr-box-details) {
+
   grid-column: 1 / -1;
+
 }
 
 /* รายละเอียดกล้องใช้รูปแบบเดิม */
+
 .csr-root .csr-box-details {
+
   width: 100%;
+
   box-sizing: border-box;
+
 }
 
 /* จอเล็กแสดงแถวละ 1 ตู้ */
+
 @media (max-width: 900px) {
+
   .csr-root .csr-box-list {
+
     grid-template-columns: 1fr;
+
   }
 
   .csr-root .csr-box-item:has(.csr-box-details) {
+
     grid-column: auto;
+
   }
+
 }
 
 /* =========================================
-   AGENT CONTROLS ALIGNMENT
-========================================= */
 
-/* จัดทุกองค์ประกอบให้อยู่แนวล่างเดียวกัน */
-.csr-agent {
-  align-items: flex-end;
-  gap: 10px;
-}
-
-/* ช่องกรอกรหัส */
-.csr-agent > label {
-  flex: 1 1 320px;
-  min-width: 0;
-}
-
-.csr-agent > label input {
-  height: 40px;
-  box-sizing: border-box;
-}
-
-/* ปุ่มทั้งสองให้ขนาดเท่ากัน */
-.csr-root .csr-agent > button {
-  width: 165px;
-  height: 40px;
-  flex: 0 0 165px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 0 12px;
-  white-space: nowrap;
-  box-sizing: border-box;
-}
-
-/* ตัวเลขจำนวนกล้อง */
-.csr-agent > span {
-  height: 40px;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-}
-
-/* รองรับหน้าจอเล็ก */
-@media (max-width: 900px) {
-  .csr-agent > label {
-    flex: 1 1 100%;
-  }
-
-  .csr-root .csr-agent > button {
-    flex: 1 1 165px;
-  }
-}
-
-/* =========================================
    MESSAGE STATUS COLORS
+
 ========================================= */
 
 .csr-root .csr-message {
+
   display: flex;
+
   align-items: center;
+
   gap: 12px;
 
   padding: 13px 16px;
+
   border-radius: 10px;
 
   font-size: 13px;
+
   font-weight: 600;
+
   line-height: 1.6;
 
   transition: all 0.2s ease;
+
 }
 
 /* SUCCESS - GREEN */
+
 .csr-root .csr-message--success {
+
   background: rgba(34, 197, 94, 0.10);
+
   border: 1px solid rgba(34, 197, 94, 0.45);
+
   color: #4ade80;
+
 }
 
 /* ERROR - RED */
+
 .csr-root .csr-message--error {
+
   background: rgba(239, 68, 68, 0.10);
+
   border: 1px solid rgba(239, 68, 68, 0.45);
+
   color: #f87171;
+
 }
 
 /* WARNING - ORANGE */
+
 .csr-root .csr-message--warning {
+
   background: rgba(245, 158, 11, 0.10);
+
   border: 1px solid rgba(245, 158, 11, 0.45);
+
   color: #fbbf24;
+
 }
 
 /* INFO - BLUE */
+
 .csr-root .csr-message--info {
+
   background: rgba(59, 130, 246, 0.10);
+
   border: 1px solid rgba(59, 130, 246, 0.35);
+
   color: #93c5fd;
+
 }
 
 /* STATUS ICON */
+
 .csr-message-icon {
+
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
   width: 22px;
+
   height: 22px;
+
   min-width: 22px;
 
   border: 1px solid currentColor;
+
   border-radius: 50%;
 
   font-size: 13px;
+
   font-weight: 900;
+
 }
 
 /* =========================================
+
    AGENT PANEL - POLISHED UI
+
 ========================================= */
 
 .csr-agent {
+
   display: grid;
+
   grid-template-columns: minmax(260px, 1fr) auto auto;
+
   align-items: center;
+
   gap: 12px;
 
   padding: 14px 16px;
 
   border: 1px solid #2d3b50;
+
   border-radius: 14px;
 
   background: linear-gradient(
+
     145deg,
+
     #162233,
+
     #121c2a
+
   );
+
 }
 
 /* LEFT INFO BOX */
+
 .csr-agent-ready {
+
   min-width: 0;
 
   padding: 12px 14px;
 
   border: 1px solid #324157;
+
   border-radius: 12px;
 
   background: rgba(255, 255, 255, 0.02);
+
 }
 
 .csr-agent-ready.is-connected {
+
   border-color: rgba(34, 197, 94, 0.35);
+
   background: rgba(34, 197, 94, 0.06);
+
 }
 
 .csr-agent-ready.is-disconnected {
+
   border-color: rgba(120, 141, 169, 0.28);
+
   background: rgba(120, 141, 169, 0.05);
+
 }
 
 .csr-agent-ready-head {
+
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
+
   gap: 10px;
 
   margin-bottom: 5px;
+
 }
 
 .csr-agent-ready strong {
+
   color: #eef3fb;
+
   font-size: 15px;
+
   font-weight: 800;
+
   line-height: 1.2;
+
 }
 
 .csr-agent-ready small {
+
   display: block;
 
   color: #9eb0c6;
+
   font-size: 12px;
+
   line-height: 1.5;
+
 }
 
 /* STATUS BADGE */
+
 .csr-agent-ready-badge {
+
   display: inline-flex;
+
   align-items: center;
+
   justify-content: center;
 
   min-height: 28px;
+
   padding: 0 12px;
 
   border-radius: 999px;
 
   font-size: 11px;
+
   font-weight: 800;
+
   white-space: nowrap;
+
 }
 
 .csr-agent-ready-badge.connected {
+
   background: rgba(34, 197, 94, 0.14);
+
   border: 1px solid rgba(34, 197, 94, 0.35);
+
   color: #4ade80;
+
 }
 
 .csr-agent-ready-badge.disconnected {
+
   background: rgba(120, 141, 169, 0.12);
+
   border: 1px solid rgba(120, 141, 169, 0.28);
+
   color: #a7b7cb;
+
 }
 
 /* BUTTON GROUP */
+
 .csr-agent-actions {
+
   display: flex;
+
   align-items: center;
+
   gap: 10px;
+
   flex-wrap: wrap;
+
 }
 
 .csr-agent-actions button {
+
   min-width: 150px;
+
   height: 40px;
 
   display: inline-flex;
+
   align-items: center;
+
   justify-content: center;
 
   padding: 0 14px;
+
   box-sizing: border-box;
+
   white-space: nowrap;
+
 }
 
 /* PROGRESS BADGE */
+
 .csr-agent-progress {
+
   min-width: 110px;
+
   height: 40px;
 
   display: inline-flex;
+
   align-items: center;
+
   justify-content: center;
 
   padding: 0 14px;
 
   border: 1px solid #324157;
+
   border-radius: 10px;
 
   background: #182434;
+
   color: #eef3fb;
 
   font-size: 14px;
+
   font-weight: 800;
+
   white-space: nowrap;
+
 }
 
 /* RESPONSIVE */
+
 @media (max-width: 1200px) {
+
   .csr-agent {
+
     grid-template-columns: 1fr;
+
     align-items: stretch;
+
   }
 
   .csr-agent-actions {
+
     justify-content: flex-start;
+
   }
 
   .csr-agent-progress {
+
     justify-content: flex-start;
+
     width: fit-content;
+
   }
+
 }
 
 @media (max-width: 700px) {
+
   .csr-agent-actions {
+
     display: grid;
+
     grid-template-columns: 1fr 1fr;
+
     gap: 10px;
+
   }
 
   .csr-agent-actions button {
+
     min-width: 0;
+
     width: 100%;
+
   }
+
 }
 
 @media (max-width: 520px) {
+
   .csr-agent-actions {
+
     grid-template-columns: 1fr;
+
   }
 
   .csr-agent-ready-head {
+
     flex-direction: column;
+
     align-items: flex-start;
+
   }
+
 }
 
 /* =========================================
-   CCTV PING LIVE PROGRESS
-========================================= */
 
-/* แถบสถานะขณะ Ping */
-.csr-root .csr-message--info:has(.csr-ping-track) {
-  align-items: flex-start;
-  padding: 16px 18px;
-}
-
-/* เนื้อหาข้อความ */
-.csr-message-body {
-  flex: 1;
-  min-width: 0;
-}
-
-/* บรรทัดข้อความและเปอร์เซ็นต์ */
-.csr-message-line {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-
-  font-size: 13px;
-  font-weight: 600;
-}
-
-/* ตัวเลขเปอร์เซ็นต์ */
-.csr-ping-percent {
-  color: #38bdf8;
-  font-size: 22px;
-  font-weight: 900;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-/* =========================================
-   SPINNING INDICATOR
-========================================= */
-
-.csr-ping-spinner {
-  display: inline-block;
-
-  width: 21px;
-  height: 21px;
-  flex: 0 0 21px;
-
-  border: 3px solid rgba(56, 189, 248, 0.2);
-  border-top-color: #38bdf8;
-  border-right-color: #38bdf8;
-
-  border-radius: 50%;
-
-  animation: csr-ping-spin 0.8s linear infinite;
-}
-
-@keyframes csr-ping-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* =========================================
-   PROGRESS BAR
-========================================= */
-
-.csr-ping-track {
-  position: relative;
-
-  width: 100%;
-  height: 10px;
-
-  margin-top: 12px;
-
-  background: #0e1725;
-  border: 1px solid #2c4b67;
-  border-radius: 999px;
-
-  overflow: hidden;
-}
-
-/* แถบสีฟ้า */
-.csr-ping-fill {
-  position: relative;
-
-  height: 100%;
-
-  border-radius: 999px;
-
-  background: linear-gradient(
-    90deg,
-    #0284c7,
-    #0ea5e9,
-    #38bdf8
-  );
-
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
-
-  transition: width 0.35s ease;
-
-  overflow: hidden;
-}
-
-/* แสงวิ่งบนแถบ */
-.csr-ping-fill::after {
-  content: '';
-
-  position: absolute;
-  inset: 0;
-
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.55) 50%,
-    transparent 100%
-  );
-
-  transform: translateX(-100%);
-
-  animation: csr-ping-shine 1.3s linear infinite;
-}
-
-@keyframes csr-ping-shine {
-  from {
-    transform: translateX(-100%);
-  }
-
-  to {
-    transform: translateX(100%);
-  }
-}
-
-/* =========================================
-   BOTTOM PROGRESS TEXT
-========================================= */
-
-.csr-ping-caption {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-
-  margin-top: 9px;
-
-  color: #91b8d6;
-  font-size: 11px;
-}
-
-/* ข้อความกระพริบเบา ๆ */
-.csr-ping-animated-text {
-  color: #38bdf8;
-  font-weight: 700;
-
-  animation: csr-ping-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes csr-ping-pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.4;
-  }
-}
-
-/* สำหรับผู้ใช้ที่ปิด Animation */
-@media (prefers-reduced-motion: reduce) {
-  .csr-ping-spinner,
-  .csr-ping-fill::after,
-  .csr-ping-animated-text {
-    animation: none;
-  }
-}
-
-/* =========================================
    LIVE CCTV PING PROGRESS
+
 ========================================= */
 
 .csr-root .csr-live-progress {
+
   padding: 17px 20px;
+
   margin: 14px 0;
 
   background: #102239;
+
   border: 1px solid #2472a3;
+
   border-radius: 12px;
 
   box-sizing: border-box;
+
 }
 
 .csr-live-progress-header {
+
   display: flex;
+
   align-items: center;
+
   gap: 14px;
+
 }
 
 .csr-live-progress-title {
+
   flex: 1;
+
   min-width: 0;
+
   display: flex;
+
   flex-direction: column;
+
   gap: 4px;
+
 }
 
 .csr-live-progress-title strong {
+
   color: #e4f5ff;
+
   font-size: 14px;
+
 }
 
 .csr-live-progress-title small {
+
   color: #8fb5ce;
+
   font-size: 11px;
+
 }
 
 .csr-live-progress-percent {
+
   color: #38bdf8;
+
   font-size: 25px;
+
   font-weight: 900;
+
   font-variant-numeric: tabular-nums;
+
 }
 
 /* วงกลมหมุน */
+
 .csr-live-spinner {
+
   width: 24px;
+
   height: 24px;
+
   flex-shrink: 0;
 
   border: 3px solid rgba(56, 189, 248, 0.2);
+
   border-top-color: #38bdf8;
 
   border-radius: 50%;
+
   animation: csr-live-spin .8s linear infinite;
+
 }
 
 @keyframes csr-live-spin {
+
   to {
+
     transform: rotate(360deg);
+
   }
+
 }
 
 /* ราง Progress */
+
 .csr-live-progress-track {
+
   height: 12px;
+
   margin-top: 16px;
 
   background: #071421;
+
   border: 1px solid #28506c;
+
   border-radius: 999px;
 
   overflow: hidden;
+
 }
 
 /* แถบสีฟ้า */
+
 .csr-live-progress-fill {
+
   position: relative;
+
   height: 100%;
 
   background: linear-gradient(
+
     90deg,
+
     #0284c7,
+
     #0ea5e9,
+
     #38bdf8
+
   );
 
   border-radius: 999px;
+
   overflow: hidden;
 
   transition: width .35s ease;
+
 }
 
 /* แสงเคลื่อนไหว */
+
 .csr-live-progress-fill::after {
+
   content: '';
+
   position: absolute;
+
   inset: 0;
 
   background: linear-gradient(
+
     90deg,
+
     transparent,
+
     rgba(255, 255, 255, .5),
+
     transparent
+
   );
 
   animation: csr-live-shine 1.3s linear infinite;
+
 }
 
 @keyframes csr-live-shine {
+
   from { transform: translateX(-100%); }
+
   to { transform: translateX(100%); }
+
 }
 
 /* ข้อความด้านล่าง */
+
 .csr-live-progress-footer {
+
   display: flex;
+
   justify-content: space-between;
+
   gap: 12px;
+
   margin-top: 10px;
 
   color: #a1c4db;
+
   font-size: 12px;
+
 }
 
 .csr-live-progress-working {
+
   color: #38bdf8;
+
   font-weight: 700;
+
   animation: csr-live-pulse 1.3s ease-in-out infinite;
+
 }
 
 @keyframes csr-live-pulse {
+
   50% { opacity: .35; }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .csr-live-spinner,
+
   .csr-live-progress-fill::after,
+
   .csr-live-progress-working {
+
     animation: none;
+
   }
+
+}
+
+/* =========================================
+
+   CCTV NETWORKS - NEW LAYOUT
+
+========================================= */
+
+/* ตัวกรองหลักเหลือ ศูนย์ + วันที่ */
+
+.csr-controls.csr-main-filters {
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+}
+
+/* =========================================
+
+   TWO NETWORK OVERVIEW CARDS
+
+========================================= */
+
+.csr-network-overview {
+
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 14px;
+
+  margin: 20px 0 24px;
+
+}
+
+.csr-network-card {
+
+  min-width: 0;
+
+  padding: 17px;
+
+  border: 1px solid #33445a;
+
+  border-radius: 14px;
+
+  background: linear-gradient(
+
+    145deg,
+
+    #192638,
+
+    #141f2f
+
+  );
+
+}
+
+.csr-network-card.is-active {
+
+  border-color: #b6355d;
+
+  box-shadow: inset 0 3px 0 #c52d59;
+
+}
+
+.csr-network-card-header {
+
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  flex-wrap: wrap;
+
+  gap: 12px;
+
+  margin-bottom: 16px;
+
+}
+
+.csr-network-card-header > div {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+}
+
+.csr-network-card-header strong {
+
+  color: #fff;
+
+  font-size: 17px;
+
+  font-weight: 800;
+
+}
+
+.csr-network-card-header small {
+
+  color: #92a6bf;
+
+  font-size: 11px;
+
+  line-height: 1.5;
+
+}
+
+.csr-network-total {
+
+  padding: 7px 12px;
+
+  border: 1px solid #42516a;
+
+  border-radius: 9px;
+
+  color: #eaf3ff;
+
+  background: #223149;
+
+  font-size: 12px;
+
+  font-weight: 800;
+
+  white-space: nowrap;
+
+}
+
+.csr-network-metrics {
+
+  display: grid;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 9px;
+
+}
+
+.csr-network-metric {
+
+  min-width: 0;
+
+  padding: 12px;
+
+  border: 1px solid #324257;
+
+  border-radius: 10px;
+
+  background: #111b2b;
+
+}
+
+.csr-network-metric small {
+
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #9bacc3;
+
+  font-size: 11px;
+
+  line-height: 1.4;
+
+}
+
+.csr-network-metric strong {
+
+  color: #f3f7fc;
+
+  font-size: 24px;
+
+  font-weight: 900;
+
+  font-variant-numeric: tabular-nums;
+
+}
+
+.csr-network-metric.green strong {
+
+  color: #43d19a;
+
+}
+
+.csr-network-metric.red strong {
+
+  color: #f27885;
+
+}
+
+.csr-network-metric.yellow strong {
+
+  color: #facc15;
+
+}
+
+.csr-network-metric.orange strong {
+
+  color: #fb923c;
+
+}
+
+.csr-network-metric.muted strong {
+
+  color: #8fa5bf;
+
+}
+
+/* =========================================
+
+   NETWORK TABS
+
+========================================= */
+
+.csr-network-tabs {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-top: 26px;
+
+  padding: 6px;
+
+  border: 1px solid #304259;
+
+  border-radius: 12px;
+
+  background: #111b29;
+
+}
+
+.csr-root .csr-network-tabs button {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 13px;
+
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 13px 17px;
+
+  border: 1px solid transparent;
+
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: #9eb1cb;
+
+  font-size: 13px;
+
+  font-weight: 800;
+
+  transition:
+
+    background .2s ease,
+
+    border-color .2s ease,
+
+    color .2s ease;
+
+}
+
+.csr-root .csr-network-tabs button.is-active {
+
+  border-color: #a72e51;
+
+  background: linear-gradient(
+
+    135deg,
+
+    #9d2147,
+
+    #6f1b38
+
+  );
+
+  color: #fff;
+
+}
+
+.csr-network-tabs button strong {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-width: 36px;
+
+  padding: 4px 10px;
+
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, .1);
+
+  font-size: 12px;
+
+  font-weight: 900;
+
+  font-variant-numeric: tabular-nums;
+
+}
+
+.csr-root .csr-network-tabs button.is-active strong {
+
+  background: rgba(255, 255, 255, .18);
+
+  color: #fff;
+
+}
+
+/* =========================================
+
+   SELECTED NETWORK PING BAR
+
+========================================= */
+
+.csr-network-runbar {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 14px;
+
+  margin: 12px 0 18px;
+
+  padding: 15px 17px;
+
+  border: 1px solid #304157;
+
+  border-radius: 12px;
+
+  background: #152233;
+
+}
+
+.csr-network-runinfo {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+  min-width: 0;
+
+}
+
+.csr-network-runinfo strong {
+
+  color: #f2f6fd;
+
+  font-size: 14px;
+
+  font-weight: 800;
+
+}
+
+.csr-network-runinfo small {
+
+  color: #90a5bd;
+
+  font-size: 11px;
+
+}
+
+.csr-network-runbuttons {
+
+  display: flex;
+
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 9px;
+
+}
+
+.csr-root .csr-network-runbuttons .csr-primary {
+
+  min-width: 175px;
+
+  min-height: 42px;
+
+  background: #b41f49;
+
+  border-color: #d0315c;
+
+  color: #fff;
+
+}
+
+.csr-root .csr-network-runbuttons .csr-primary:hover:not(:disabled) {
+
+  background: #cc2856;
+
+  border-color: #ee5078;
+
+}
+
+.csr-table-head {
+
+  margin-top: 12px;
+
+}
+
+/* =========================================
+
+   NETWORK RESPONSIVE
+
+========================================= */
+
+@media (max-width: 950px) {
+
+  .csr-network-overview {
+
+    grid-template-columns: 1fr;
+
+  }
+
+}
+
+@media (max-width: 650px) {
+
+  .csr-controls.csr-main-filters {
+
+    grid-template-columns: 1fr;
+
+  }
+
+  .csr-network-card {
+
+    padding: 12px;
+
+  }
+
+  .csr-network-metrics {
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  }
+
+  .csr-network-metric strong {
+
+    font-size: 22px;
+
+  }
+
+  .csr-root .csr-network-tabs button {
+
+    padding: 11px 8px;
+
+    flex-direction: column;
+
+    gap: 7px;
+
+    font-size: 12px;
+
+  }
+
+  .csr-network-runbar {
+
+    padding: 12px;
+
+    align-items: stretch;
+
+  }
+
+  .csr-network-runbuttons {
+
+    width: 100%;
+
+  }
+
+  .csr-root .csr-network-runbuttons button {
+
+    flex: 1;
+
+    min-width: 0;
+
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .csr-root .csr-network-tabs button {
+
+    transition: none;
+
+  }
+
+}
+/* =========================================
+   PER-CAMERA PING + FOUR PING STATUS COLORS
+========================================= */
+.csr-root .csr-camera-reping {
+  min-width: 110px;
+  padding: 9px 12px;
+  border: 1px solid #416888;
+  background: #19344a;
+  color: #b9e6ff;
+  white-space: nowrap;
+}
+
+.csr-root .csr-camera-reping:hover:not(:disabled) {
+  border-color: #38bdf8;
+  background: #20516f;
+}
+
+.csr-review-hint {
+  color: #facc15 !important;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.csr-table th:last-child,
+.csr-table td:last-child {
+  width: 135px;
+  text-align: center;
+}
+
+.csr-network-card-header .csr-network-pending {
+  color: #facc15;
+  font-weight: 700;
+}
+
+
+/* =========================================
+   SINGLE CAMERA PING - LOCK WITHOUT DIMMING
+   Only the camera currently being re-pinged turns grey.
+========================================= */
+
+/* Keep all other disabled controls in their normal colors
+   while a single-camera Ping is in progress. */
+.csr-root.csr-ping-single-active button:disabled,
+.csr-root.csr-ping-single-active select:disabled {
+  opacity: 1;
+}
+
+/* Some browsers desaturate native selects even with full opacity. */
+.csr-root.csr-ping-single-active select:disabled {
+  color: #eef3fb;
+  -webkit-text-fill-color: #eef3fb;
+}
+
+/* Gray only the Ping button for the camera currently running. */
+.csr-root.csr-ping-single-active
+  .csr-camera-reping.csr-camera-reping--busy:disabled {
+  opacity: 1;
+  background: #505c6c;
+  border-color: #788497;
+  color: #f1f5f9;
+  cursor: progress;
+}
+
+/* Calendar icon - White */
+.csr-root input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 1;
+  cursor: pointer;
+}
+
+/* =========================================
+   CAMERA LIST - LARGER TEXT
+========================================= */
+
+/* ชื่อตู้ / ชื่อกลุ่มกล้อง */
+.csr-root .csr-box-info strong {
+  font-size: 16px;
+}
+
+/* รายละเอียดตู้ / จำนวนกล้อง */
+.csr-root .csr-box-info small {
+  font-size: 13px;
+}
+
+/* ป้ายสถานะของตู้ */
+.csr-root .csr-box-badge {
+  font-size: 12px;
+}
+
+/* ข้อความรอยืนยัน */
+.csr-root .csr-box-pending {
+  font-size: 12px;
+}
+
+/* ตารางรายละเอียดกล้อง */
+.csr-root .csr-box-details .csr-table {
+  font-size: 14px;
+}
+
+/* หัวตาราง */
+.csr-root .csr-box-details .csr-table th {
+  font-size: 13px;
+}
+
+/* IP / พิกัด / Loss */
+.csr-root .csr-box-details .csr-table td small {
+  font-size: 12px;
+}
+
+/* ผล Ping */
+.csr-root .csr-box-details .csr-level {
+  font-size: 14px;
+}
+
+/* ช่องเลือกสถานะ */
+.csr-root .csr-box-details select {
+  font-size: 14px;
+}
+
+/* ปุ่ม Ping ใหม่ / ยืนยันผล */
+.csr-root .csr-box-details button {
+  font-size: 13px;
 }
