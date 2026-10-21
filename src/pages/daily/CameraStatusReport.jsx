@@ -205,6 +205,194 @@ const levelLabel = level => ({
 })[level] || 'ยังไม่ Ping'
 
 /* =========================================
+   DAILY DASHBOARD HELPERS
+   - Derived from individual camera status
+   - No inferred failures for untested cameras
+========================================= */
+
+const networkLabel = value => NETWORKS.find(x => x.value === value)?.label || value
+
+const previewPercent = (count, total) =>
+  total > 0 ? (Number(count || 0) / total) * 100 : 0
+
+const previewPercentLabel = (count, total) =>
+  `${previewPercent(count, total).toFixed(1)}%`
+
+const previewThaiDate = value => {
+  if (!value) return '-'
+  return new Date(`${value}T12:00:00`).toLocaleDateString('th-TH', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  })
+}
+
+// A unit is a known Service Box, or the checkpoint identifier
+// provided in the Service Box Excel column. Unknown unit IDs are
+// NOT classified as full-unit outages.
+function buildOutageData(rows, networkType) {
+  const units = new Map()
+
+  for (const camera of rows) {
+    const label = String(camera.service_box || '').trim()
+    const key = label
+      ? `unit:${label.toLocaleUpperCase()}`
+      : `unmapped:${camera.ip}`
+    if (!units.has(key)) {
+      units.set(key, {
+        label: label || 'ไม่ระบุรหัสตู้/ด่าน',
+        known: Boolean(label),
+        cameras: [],
+      })
+    }
+    units.get(key).cameras.push(camera)
+  }
+
+  let fullUnitCount = 0
+  let fullUnitCameraCount = 0
+  let partialOfflineCount = 0
+  let unmappedOfflineCount = 0
+  const repairItems = []
+  const metadataByIp = {}
+  const problemUnits = []
+
+  for (const unit of units.values()) {
+    const down = unit.cameras.filter(camera => camera.status === 'offline')
+    const full = unit.known && down.length > 0 && down.length === unit.cameras.length
+
+    if (full) {
+      fullUnitCount += 1
+      fullUnitCameraCount += down.length
+    } else {
+      partialOfflineCount += down.length
+    }
+    if (!unit.known) unmappedOfflineCount += down.length
+    if (down.length) {
+      problemUnits.push({
+        name: unit.label,
+        total: unit.cameras.length,
+        down: down.length,
+        full,
+        known: unit.known,
+      })
+    }
+
+    for (const camera of unit.cameras) {
+      const isDown = camera.status === 'offline'
+      const scope = isDown ? (full ? 'full_unit' : 'single_camera') : null
+      metadataByIp[camera.ip] = {
+        unit_label: unit.label,
+        full_outage: full,
+        outage_scope: scope,
+      }
+      if (!isDown) continue
+      repairItems.push({
+        network_type: networkType,
+        unit_label: unit.label,
+        camera_name: camera.name || '-',
+        ip: camera.ip,
+        outage_scope: scope,
+        full_outage: full,
+        location_known: unit.known,
+        is_confirmed: Boolean(camera.confirmed),
+        ping_level: camera.ping_level || 'not_tested',
+        ping_source_level: camera.ping_source_level || null,
+        loss_pct: camera.loss_pct ?? null,
+        avg_ms: camera.avg_ms ?? null,
+        latitude: camera.latitude ?? camera.lat ?? null,
+        longitude: camera.longitude ?? camera.long ?? null,
+        // Candidate only; this does NOT create a repair ticket.
+        repair_status: 'not_created',
+      })
+    }
+  }
+
+  problemUnits.sort((a, b) => b.down - a.down || a.name.localeCompare(b.name, 'th'))
+  return {
+    fullUnitCount, fullUnitCameraCount,
+    partialOfflineCount, unmappedOfflineCount,
+    repairItems, problemUnits, metadataByIp,
+  }
+}
+
+function buildDashboardNetwork(report, networkType, inventoryCount = 0) {
+  const details = Array.isArray(report?.details) ? report.details : []
+  const hasReport = Boolean(report) && details.length > 0
+  const outage = buildOutageData(details, networkType)
+  const checked = details.filter(row => row.ping_level && row.ping_level !== 'not_tested')
+  const base = {
+    total: details.length || inventoryCount,
+    online: checked.filter(x => x.status === 'online').length,
+    offline: checked.filter(x => x.status === 'offline').length,
+    unknown: checked.filter(x => x.status === 'unknown').length,
+    notTested: Math.max(0, details.length - checked.length),
+  }
+  const saved = report?.manual_summary || report?.final_summary
+  // Only trust a manually edited saved total when its arithmetic is valid.
+  const savedCounts = ['online', 'offline', 'unknown'].map(k => Number(saved?.[k]))
+  const validSaved = saved && savedCounts.every(n => Number.isInteger(n) && n >= 0) &&
+    savedCounts.reduce((a, b) => a + b, 0) === base.total
+  const counts = validSaved
+    ? { ...base, online: savedCounts[0], offline: savedCounts[1], unknown: savedCounts[2], notTested: 0 }
+    : base
+
+  const colors = { green: 0, yellow: 0, orange: 0, red: 0 }
+  for (const row of details) {
+    const level = displayPingLevel(row)
+    const color = row.status === 'offline'
+      ? 'red'
+      : row.status === 'online'
+        ? 'green'
+        : level === 'yellow' ? 'yellow' : level === 'orange' ? 'orange' : null
+    if (color) colors[color] += 1
+  }
+
+  return {
+    networkType,
+    label: networkType === 'general' ? 'กล้องทั่วไป' : 'กล้องด่าน',
+    unitName: networkType === 'general' ? 'ตู้' : 'ด่าน',
+    hasReport,
+    isSaved: Boolean(report?.is_saved),
+    isFinal: Boolean(report?.is_final),
+    manualFromReport: Boolean(validSaved && report?.manual_summary),
+    ...counts,
+    ...colors,
+    ...outage,
+  }
+}
+
+function previewTextReport(snapshot) {
+  const parts = [
+    snapshot.title,
+    `ศูนย์: ${snapshot.centerName}`,
+    `วันที่: ${previewThaiDate(snapshot.reportDate)} • ${snapshot.shiftLabel}`,
+    '',
+  ]
+  for (const item of [snapshot.general, snapshot.checkpoint]) {
+    parts.push(item.label)
+    if (!item.hasReport) {
+      parts.push(`- ทะเบียน ${item.total} กล้อง • ยังไม่มีผลตรวจในกะนี้`, '')
+      continue
+    }
+    parts.push(
+      `- ทั้งหมด ${item.total} กล้อง`,
+      `- ปกติ ${item.online} (${previewPercentLabel(item.online, item.total)})`,
+      `- ดับ ${item.offline} (${previewPercentLabel(item.offline, item.total)})`,
+      `- ตรวจสอบ/ผิดปกติ ${item.unknown} (${previewPercentLabel(item.unknown, item.total)})`,
+      `- ดับทั้ง${item.unitName} ${item.fullUnitCount} ${item.unitName} รวม ${item.fullUnitCameraCount} กล้อง`,
+      `- ดับรายตัว (ไม่ซ้ำกับทั้ง${item.unitName}) ${item.partialOfflineCount} กล้อง`,
+      ''
+    )
+  }
+  parts.push(
+    `รายการกล้องดับรายตัวสำหรับเตรียมแจ้งซ่อม: ${snapshot.repairItems.length} กล้อง`,
+    'รายการแจ้งซ่อมเป็นเพียงข้อมูลเตรียมงาน ยังไม่ได้สร้างใบแจ้งซ่อม',
+  )
+  if (snapshot.note) parts.push(`หมายเหตุ: ${snapshot.note}`)
+  if (snapshot.edited) parts.push('หมายเหตุ: มีการปรับยอดเพื่อจัดทำพรีวิว ตัวเลขรายการซ่อมอ้างอิงสถานะรายกล้องจริง')
+  if (snapshot.hasDraft) parts.push('ข้อมูลบางเครือข่ายยังไม่ได้บันทึกลงฐานข้อมูล')
+  return parts.join('\n')
+}
+
+/* =========================================
    MESSAGE STATUS COLORS
 ========================================= */
 
@@ -341,6 +529,38 @@ export default function CameraStatusReport({
 
   const stopRef = useRef(false)
   const fileRef = useRef(null)
+
+  // Dashboard preview: the other network is loaded from the saved report.
+  const previewRef = useRef(null)
+  const [previewCache, setPreviewCache] = useState({ general: null, checkpoint: null })
+  const [previewCacheScope, setPreviewCacheScope] = useState('')
+  const [previewEditorOpen, setPreviewEditorOpen] = useState(false)
+  const [previewTitle, setPreviewTitle] = useState('สรุปรายงานสถานะกล้องประจำวัน')
+  const [previewNote, setPreviewNote] = useState('')
+  const [previewOverrides, setPreviewOverrides] = useState({ general: null, checkpoint: null })
+  const [exportingPreview, setExportingPreview] = useState(false)
+
+  // Manual status edits are saved atomically by a server-side RPC.
+  const [manualIpSearch, setManualIpSearch] = useState('')
+  const [manualIpMatches, setManualIpMatches] = useState([])
+  const [manualIpSearching, setManualIpSearching] = useState(false)
+  const [manualIpBusy, setManualIpBusy] = useState(false)
+  const [manualIpHistory, setManualIpHistory] = useState([])
+  const [manualIpActive, setManualIpActive] = useState(null)
+  const [manualIpMessage, setManualIpMessage] = useState('')
+
+  // An edit to one day/center must never carry over to another report.
+  useEffect(() => {
+    setPreviewTitle('สรุปรายงานสถานะกล้องประจำวัน')
+    setPreviewNote('')
+    setPreviewOverrides({ general: null, checkpoint: null })
+    setManualIpSearch('')
+    setManualIpMatches([])
+    setManualIpActive(null)
+    setManualIpHistory([])
+    setManualIpMessage('')
+  }, [centerId, reportDate, shift])
+
 
 
   /* =========================================
@@ -547,6 +767,8 @@ export default function CameraStatusReport({
       general: { ...EMPTY_OVERVIEW },
       checkpoint: { ...EMPTY_OVERVIEW },
     })
+    setPreviewCache({ general: null, checkpoint: null })
+    setPreviewCacheScope('')
 
     async function loadNetworkOverview() {
       const center = Number(centerId)
@@ -570,7 +792,7 @@ export default function CameraStatusReport({
           supabase
             .from('camera_status_daily')
             .select(
-              'network_type,details,final_summary,manual_summary'
+              'network_type,details,final_summary,manual_summary,is_final,updated_at'
             )
             .eq('center_id', center)
             .eq('report_date', reportDate)
@@ -595,6 +817,13 @@ export default function CameraStatusReport({
         general: generalCount.count ?? 0,
         checkpoint: checkpointCount.count ?? 0,
       }
+
+      // Cache both saved reports. Never use a cache from another center/date/shift.
+      setPreviewCache({
+        general: (() => { const r = (reports.data || []).find(x => x.network_type === 'general'); return r ? { ...r, is_saved: true } : null })(),
+        checkpoint: (() => { const r = (reports.data || []).find(x => x.network_type === 'checkpoint'); return r ? { ...r, is_saved: true } : null })(),
+      })
+      setPreviewCacheScope(`${centerId}|${reportDate}|${shift}`)
 
       const next = {}
 
@@ -729,6 +958,7 @@ export default function CameraStatusReport({
     function chooseNetwork(value) {
   if (
     value === network ||
+    manualIpBusy ||
     running ||
     !!pingingIp ||
     saving ||
@@ -1448,6 +1678,7 @@ const boxGroups = useMemo(() => {
       !agentKey ||
       !selectedLoaded ||
       running ||
+      manualIpBusy ||
       !!pingingIp
     ) {
       setMessage(
@@ -1658,6 +1889,7 @@ const boxGroups = useMemo(() => {
       !inventory.length ||
       !selectedLoaded ||
       saving ||
+      manualIpBusy ||
       running ||
       !!pingingIp
     ) return
@@ -1719,6 +1951,14 @@ const boxGroups = useMemo(() => {
       const summaryToSave =
         manual ? summary : raw
 
+      const outageSnapshot = buildOutageData(rows, network)
+      const repairItemsToSave = outageSnapshot.repairItems.map(item => ({
+        ...item,
+        center_id: Number(centerId),
+        report_date: reportDate,
+        shift,
+      }))
+
       const { error } =
         await supabase
           .from('camera_status_daily')
@@ -1748,6 +1988,12 @@ const boxGroups = useMemo(() => {
                   loss_pct,
                   status,
                   confirmed,
+                  manual_override,
+                  manual_original_status,
+                  manual_original_confirmed,
+                  manual_changed_at,
+                  manual_changed_by,
+                  manual_reason,
                 }) => ({
                   ip,
                   name,
@@ -1760,6 +2006,16 @@ const boxGroups = useMemo(() => {
                   loss_pct,
                   status,
                   confirmed,
+                  ...(manual_override ? {
+                    manual_override,
+                    manual_original_status,
+                    manual_original_confirmed,
+                    manual_changed_at,
+                    manual_changed_by,
+                    manual_reason,
+                  } : {}),
+                  // Snapshot of full-box/site outage classification at save time.
+                  ...outageSnapshot.metadataByIp[ip],
                 })
               ),
 
@@ -1771,8 +2027,19 @@ const boxGroups = useMemo(() => {
                 not_tested: rows.filter(x => x.display_level === 'not_tested').length,
               },
 
-              final_summary:
-                summaryToSave,
+              final_summary: {
+                ...summaryToSave,
+                dashboard_preview: {
+                  network_type: network,
+                  full_unit_count: outageSnapshot.fullUnitCount,
+                  full_unit_camera_count: outageSnapshot.fullUnitCameraCount,
+                  partial_offline_count: outageSnapshot.partialOfflineCount,
+                  unmapped_offline_count: outageSnapshot.unmappedOfflineCount,
+                  source: 'camera_status_daily.details',
+                },
+                // Stored candidates, not actual created repair tickets.
+                repair_items: repairItemsToSave,
+              },
 
               manual_summary:
                 manual || null,
@@ -1817,6 +2084,350 @@ const boxGroups = useMemo(() => {
     }
   }
 
+
+  /* =========================================
+     MANUAL DOWN/RESTORE VIA SERVER RPC
+     - Does not modify raw Ping measurements
+     - Server writes the audit record in the same transaction
+  ========================================= */
+
+  async function findManualCamera(event) {
+    event?.preventDefault()
+    const ip = manualIpSearch.trim()
+    setManualIpMessage('')
+    setManualIpActive(null)
+    setManualIpHistory([])
+    setManualIpMatches([])
+    if (!validIPv4(ip)) {
+      setManualIpMessage('กรุณากรอก IPv4 ที่ถูกต้อง เช่น 172.17.2.96')
+      return
+    }
+    if (!centerId) return
+    setManualIpSearching(true)
+    try {
+      const { data, error } = await supabase
+        .from('camera_inventory')
+        .select('ip,name,service_box,network_type')
+        .eq('center_id', Number(centerId))
+        .eq('ip', ip)
+        .eq('is_active', true)
+        .order('network_type')
+      if (error) throw error
+      setManualIpMatches(data || [])
+      if (!data?.length) setManualIpMessage('ไม่พบ IP นี้ในทะเบียนกล้องของศูนย์ที่เลือก')
+    } catch (error) {
+      setManualIpMessage(`ค้นหาไม่สำเร็จ: ${error.message}`)
+    } finally {
+      setManualIpSearching(false)
+    }
+  }
+
+  async function loadManualHistory(camera) {
+    const { data, error } = await supabase
+      .from('camera_manual_status_audit')
+      .select('id,action,previous_status,new_status,created_at,actor_id')
+      .eq('center_id', Number(centerId))
+      .eq('report_date', reportDate)
+      .eq('shift', shift)
+      .eq('network_type', camera.network_type)
+      .eq('camera_ip', camera.ip)
+      .order('created_at', { ascending: false })
+      .limit(30)
+    if (error) throw error
+    setManualIpHistory(data || [])
+  }
+
+  async function chooseManualCamera(camera) {
+    setManualIpActive(camera)
+    setManualIpMessage('')
+    setManualIpHistory([])
+    try {
+      await loadManualHistory(camera)
+    } catch (error) {
+      setManualIpMessage(`อ่านประวัติไม่สำเร็จ: ${error.message}`)
+    }
+  }
+
+  async function applyManualCamera(action) {
+    const camera = manualIpActive
+    if (!camera || manualIpBusy || running || pingingIp || saving || importing || loading) return
+    if (network === camera.network_type && Object.keys(results).length > 0 && !savedInfo) {
+      setManualIpMessage('เครือข่ายนี้มีผล Ping ที่ยังไม่ได้บันทึก กรุณาบันทึกรายงานก่อนแก้ด้วย IP')
+      return
+    }
+    const description = action === 'down' ? 'เพิ่มเป็นกล้องดับ' : action === 'up' ? 'นำออกจากกล้องดับและยืนยันว่าปกติ' : 'ย้อนกลับเป็นสถานะก่อนแก้ไขด้วยมือ'
+    if (!window.confirm(`${description}\n${camera.name} (${camera.ip})\nศูนย์ ${centerId} / ${reportDate} / ${SHIFTS[shift]}\n\nยืนยันการบันทึกลง Supabase จริงหรือไม่?`)) return
+    setManualIpBusy(true)
+    setManualIpMessage('')
+    try {
+      const { error } = await supabase.rpc('camera_set_manual_outage', {
+        p_center_id: Number(centerId),
+        p_report_date: reportDate,
+        p_shift: shift,
+        p_network_type: camera.network_type,
+        p_ip: camera.ip,
+        p_action: action,
+        p_reason: '', // Optional: audit records actor/time/previous/new status
+      })
+      if (error) throw error
+      // Invalidate preview-only number edits; individual camera data is now authoritative.
+      setPreviewOverrides({ general: null, checkpoint: null })
+      setManualIpMessage(`บันทึกแล้ว: ${description} (${camera.ip}) พร้อมประวัติการแก้ไข`)
+      // Re-query both network reports and active camera results.
+      setReloadIndex(x => x + 1)
+      await loadManualHistory(camera)
+    } catch (error) {
+      setManualIpMessage(`บันทึกไม่สำเร็จ: ${error.message}`)
+    } finally {
+      setManualIpBusy(false)
+    }
+  }
+
+    /* =========================================
+     RESET ALL MANUAL CAMERA OVERRIDES
+     Selected center / date / shift
+     Both general and checkpoint networks
+  ========================================= */
+
+  async function resetAllManualCameras() {
+    if (
+      !centerId ||
+      manualIpBusy ||
+      manualIpSearching ||
+      running ||
+      pingingIp ||
+      saving ||
+      importing ||
+      loading
+    ) return
+
+    if (
+      Object.keys(results).length > 0 &&
+      !savedInfo
+    ) {
+      setMessage(
+        'มีผลตรวจที่ยังไม่ได้บันทึก กรุณาบันทึกรายงานก่อนคืนค่าทั้งหมด'
+      )
+      return
+    }
+
+    const confirmed = window.confirm(
+      `ต้องการคืนสถานะกล้องทั้งหมดที่แก้ไขด้วยมือหรือไม่?\n\n` +
+      `วันที่: ${reportDate}\n` +
+      `กะ: ${SHIFTS[shift]}\n` +
+      `ศูนย์: ${
+        centers.find(c =>
+          String(c.id) === String(centerId)
+        )?.name || centerId
+      }\n\n` +
+      `ครอบคลุมกล้องทั่วไปและกล้องด่าน\n` +
+      `จะคืนสถานะก่อนแก้ด้วยมือของทุก IP\n` +
+      `โดยไม่ลบผล Ping เดิมหรือประวัติการแก้ไข`
+    )
+
+    if (!confirmed) return
+
+    setManualIpBusy(true)
+    setManualIpMessage('')
+
+    try {
+      const { data, error } = await supabase.rpc(
+        'camera_reset_all_manual_outages',
+        {
+          p_center_id: Number(centerId),
+          p_report_date: reportDate,
+          p_shift: shift,
+        }
+      )
+
+      if (error) throw error
+
+      const total = Number(data?.reset_count || 0)
+      const general = Number(data?.general_count || 0)
+      const checkpoint = Number(data?.checkpoint_count || 0)
+
+      // คืนค่าการปรับพรีวิวด้วย
+      setPreviewTitle('สรุปรายงานสถานะกล้องประจำวัน')
+      setPreviewNote('')
+      setPreviewOverrides({
+        general: null,
+        checkpoint: null,
+      })
+
+      // ล้าง IP ที่เลือกและประวัติบนหน้าจอ
+      setManualIpSearch('')
+      setManualIpMatches([])
+      setManualIpActive(null)
+      setManualIpHistory([])
+
+      const text = total > 0
+        ? `คืนค่าสำเร็จ ${total} กล้อง (ทั่วไป ${general}, ด่าน ${checkpoint})`
+        : 'ไม่มีสถานะกล้องที่แก้ด้วยมือค้างอยู่ พรีวิวถูกคืนค่าเริ่มต้นแล้ว'
+
+      setMessage(text)
+      setManualIpMessage(text)
+
+      // โหลดข้อมูลล่าสุดทั้งสองเครือข่าย
+      setReloadIndex(x => x + 1)
+
+    } catch (error) {
+      const text = `คืนค่าทั้งหมดไม่สำเร็จ: ${error.message}`
+      setMessage(text)
+      setManualIpMessage(text)
+
+    } finally {
+      setManualIpBusy(false)
+    }
+  }
+
+  /* =========================================
+     PREVIEW / PNG / CLIPBOARD
+     The editor changes presentation counts only; fault records always
+     come from each individual confirmed or pending camera result.
+  ========================================= */
+
+  const overviewScope = `${centerId}|${reportDate}|${shift}`
+  const readyPreviewCache = previewCacheScope === overviewScope
+  const previewNetworks = useMemo(() => {
+    const getReport = type => {
+      if (type === network && selectedLoaded) {
+        // Include current unsaved results only if a ping/report exists.
+        const hasCurrent = Boolean(savedInfo || Object.keys(results).length)
+        if (hasCurrent) {
+          return {
+            details: rows,
+            final_summary: summary,
+            manual_summary: manual,
+            is_saved: Boolean(savedInfo),
+            is_final: Boolean(savedInfo?.isFinal),
+          }
+        }
+      }
+      return readyPreviewCache ? previewCache[type] : null
+    }
+    return {
+      general: buildDashboardNetwork(
+        getReport('general'), 'general', networkOverview.general.total
+      ),
+      checkpoint: buildDashboardNetwork(
+        getReport('checkpoint'), 'checkpoint', networkOverview.checkpoint.total
+      ),
+    }
+  }, [network, selectedLoaded, rows, savedInfo, results, summary, manual,
+      readyPreviewCache, previewCache, networkOverview])
+
+  // Safe, preview-only number overrides; do not change camera fault records.
+  const getPreviewValues = type => {
+    const item = previewNetworks[type]
+    const override = previewOverrides[type]
+    if (!override || !item.hasReport) return item
+    const values = ['online', 'offline', 'unknown'].map(k => Number(override[k]))
+    const valid = values.every(Number.isInteger) && values.every(v => v >= 0) &&
+      values.reduce((a, b) => a + b, 0) === item.total
+    return valid ? {
+      ...item, online: values[0], offline: values[1], unknown: values[2],
+      notTested: 0, previewEdited: true,
+    } : item
+  }
+
+  const generalPreview = getPreviewValues('general')
+  const checkpointPreview = getPreviewValues('checkpoint')
+  const previewEditError = NETWORKS.map(n => {
+    const override = previewOverrides[n.value]
+    const original = previewNetworks[n.value]
+    if (!override) return ''
+    if (!original.hasReport) return `ยังไม่มีรายงาน${n.label}ให้แก้ไข`
+    const values = ['online', 'offline', 'unknown'].map(k => String(override[k]).trim())
+    if (values.some(v => !/^\d+$/.test(v))) return `${n.label}: กรุณากรอกจำนวนเต็มไม่ติดลบ`
+    if (values.map(Number).reduce((a, b) => a + b, 0) !== original.total)
+      return `${n.label}: ยอดรวมต้องเท่ากับ ${original.total} กล้อง`
+    return ''
+  }).find(Boolean)
+
+  const previewSnapshot = {
+    title: previewTitle.trim() || 'สรุปรายงานสถานะกล้องประจำวัน',
+    note: previewNote.trim(),
+    centerName: centers.find(x => String(x.id) === String(centerId))?.name || '-',
+    reportDate, shiftLabel: SHIFTS[shift] || '-',
+    general: generalPreview,
+    checkpoint: checkpointPreview,
+    repairItems: [
+      ...previewNetworks.general.repairItems.map(x => ({ ...x, network_label: 'กล้องทั่วไป' })),
+      ...previewNetworks.checkpoint.repairItems.map(x => ({ ...x, network_label: 'กล้องด่าน' })),
+    ],
+    edited: Boolean(previewOverrides.general || previewOverrides.checkpoint),
+    hasDraft: [generalPreview, checkpointPreview].some(x => x.hasReport && !x.isSaved),
+  }
+
+  // Keep report selection stable before preparing export.
+  async function renderDashboardCanvas() {
+    if (!previewRef.current) throw new Error('ไม่พบพื้นที่พรีวิว')
+    const { default: html2canvas } = await import('html2canvas')
+    return html2canvas(previewRef.current, {
+      backgroundColor: '#0d1728',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    })
+  }
+
+  async function copyPreviewText() {
+    if (previewEditError) { setMessage(previewEditError); return }
+    try {
+      await navigator.clipboard.writeText(previewTextReport(previewSnapshot))
+      setMessage('คัดลอกข้อความสรุปแล้ว')
+    } catch (error) {
+      setMessage(`คัดลอกข้อความไม่สำเร็จ: ${error.message}`)
+    }
+  }
+
+  async function exportPreviewPng(copyImage = false) {
+    if (previewEditError || exportingPreview) {
+      if (previewEditError) setMessage(previewEditError)
+      return
+    }
+    setExportingPreview(true)
+    try {
+      const canvas = await renderDashboardCanvas()
+      if (copyImage) {
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+        if (!blob) throw new Error('แปลงภาพไม่สำเร็จ')
+        if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined')
+          throw new Error('เบราว์เซอร์นี้ไม่รองรับการคัดลอกรูป กรุณาบันทึก PNG แทน')
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+        setMessage('คัดลอกภาพรายงานแล้ว')
+      } else {
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+        if (!blob) throw new Error('แปลงภาพไม่สำเร็จ')
+        const url = URL.createObjectURL(blob)
+        const anchor = document.createElement('a')
+        anchor.href = url
+        anchor.download = `cctv-daily-${centerId}-${reportDate}-${shift}.png`
+        anchor.click()
+        setTimeout(() => URL.revokeObjectURL(url), 1500)
+        setMessage('บันทึก PNG สำเร็จ')
+      }
+    } catch (error) {
+      setMessage(`ส่งออกพรีวิวไม่สำเร็จ: ${error.message}`)
+    } finally {
+      setExportingPreview(false)
+    }
+  }
+
+  function editPreviewNumber(type, key, value) {
+    if (!/^\d*$/.test(value)) return
+    const item = previewNetworks[type]
+    setPreviewOverrides(prev => ({
+      ...prev,
+      [type]: { ...(
+        prev[type] || {
+          online: String(item.online),
+          offline: String(item.offline),
+          unknown: String(item.unknown),
+        }
+      ), [key]: value },
+    }))
+  }
 
   /* =========================================
      RENDER
@@ -2746,6 +3357,213 @@ const boxGroups = useMemo(() => {
         </button>
 
       </div>
+
+      {/* REPORT DASHBOARD PREVIEW - always below the report form */}
+      <section className="csr-dashboard-section" aria-label="พรีวิวรายงานสรุปกล้อง">
+        <div className="csr-dashboard-tools">
+          <div>
+            <span className="csr-dashboard-eyebrow">DAILY CCTV REPORT</span>
+            <h3>พรีวิว Dashboard สำหรับส่งงาน</h3>
+            <p>สรุปสองเครือข่ายจากผลรายกล้อง และเตรียมรายการกล้องดับไว้สำหรับหน้าการแจ้งซ่อม</p>
+          </div>
+          <div className="csr-dashboard-actions">
+            <button type="button" onClick={() => setPreviewEditorOpen(x => !x)}>
+              {previewEditorOpen ? 'ปิดแถบแก้ไข' : 'แก้ไขพรีวิว'}
+            </button>
+            <button
+              type="button"
+              className="csr-reset-all-btn"
+              disabled={
+                manualIpBusy ||
+                manualIpSearching ||
+                running ||
+                !!pingingIp ||
+                saving ||
+                importing ||
+                loading ||
+                !centerId
+              }
+              onClick={resetAllManualCameras}
+            >
+              {manualIpBusy ? 'กำลังคืนค่า...' : '↺ คืนค่าทั้งหมด'}
+            </button>
+            <button type="button" disabled={!!previewEditError || exportingPreview} onClick={copyPreviewText}>
+              คัดลอกข้อความ
+            </button>
+            <button type="button" disabled={!!previewEditError || exportingPreview} onClick={() => exportPreviewPng(true)}>
+              คัดลอกรูป
+            </button>
+            <button type="button" className="csr-primary" disabled={!!previewEditError || exportingPreview} onClick={() => exportPreviewPng(false)}>
+              {exportingPreview ? 'กำลังสร้างภาพ...' : 'บันทึก PNG'}
+            </button>
+          </div>
+        </div>
+
+        {previewEditorOpen && (
+          <div className="csr-dashboard-editor">
+            <div className="csr-dashboard-editor-head">
+              <strong>แถบแก้ไขพรีวิว</strong>
+              
+               
+            </div>
+            <div className="csr-dashboard-editor-fields">
+              <label>หัวข้อรายงาน
+                <input type="text" value={previewTitle} maxLength={95} onChange={e => setPreviewTitle(e.target.value)} />
+              </label>
+              <label>ข้อความประกอบ
+                <input type="text" value={previewNote} maxLength={220} placeholder="เช่น สถานการณ์โดยรวม / หมายเหตุประจำวัน" onChange={e => setPreviewNote(e.target.value)} />
+              </label>
+            </div>
+            <div className="csr-dashboard-editor-networks">
+              {NETWORKS.map(n => {
+                const item = previewNetworks[n.value]
+                return (
+                  <div className="csr-dashboard-editor-network" key={n.value}>
+                    <strong>{n.label}</strong>
+                    <div className="csr-manual-ip-summary">
+                      <span>ทั้งหมด <b>{item.total}</b></span>
+                      <span>ติด <b>{item.online}</b></span>
+                      <span>ดับ <b>{item.offline}</b></span>
+                    </div>
+                    <small>เปลี่ยนสถานะกล้องผ่าน IP ด้านล่าง เพื่อให้ยอดรวมและข้อมูลแจ้งซ่อมตรงกัน</small>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="csr-manual-ip-panel">
+              <div className="csr-manual-ip-header">
+                <strong>แก้กล้องดับจริงด้วย IP (บันทึกลง Supabase)</strong>
+                <small>ต้องมีรายงานที่บันทึกแล้วของวัน/กะ/เครือข่ายนั้นก่อน</small>
+              </div>
+              <form onSubmit={findManualCamera} className="csr-manual-ip-search">
+                <label>ค้นหา IP กล้องจากทะเบียนของศูนย์
+                  <input type="text" value={manualIpSearch} onChange={e => setManualIpSearch(e.target.value)} placeholder="172.17.2.96" />
+                </label>
+                <button type="submit" disabled={manualIpSearching || manualIpBusy || !centerId}>
+                  {manualIpSearching ? 'กำลังค้นหา...' : 'ค้นหา IP'}
+                </button>
+              </form>
+              {!!manualIpMessage && <p className="csr-manual-ip-notice" role="status">{manualIpMessage}</p>}
+              {manualIpMatches.map(camera => {
+                const report = previewCacheScope === `${centerId}|${reportDate}|${shift}`
+                  ? previewCache[camera.network_type] : null
+                const savedRow = report?.details?.find(row => row.ip === camera.ip)
+                const selected = manualIpActive?.ip === camera.ip && manualIpActive?.network_type === camera.network_type
+                return (
+                  <div className={`csr-manual-ip-result ${selected ? 'is-active' : ''}`} key={`${camera.network_type}:${camera.ip}`}>
+                    <div><strong>{camera.name}</strong> <small>{camera.ip} · {networkLabel(camera.network_type)} · {camera.service_box || 'ไม่ระบุตู้/ด่าน'}</small></div>
+                    <div><span className={savedRow?.status === 'offline' ? 'csr-manual-ip-red' : 'csr-manual-ip-green'}>{!report ? 'ยังไม่บันทึกรายงาน' : !savedRow ? 'ไม่พบในผลตรวจที่บันทึก' : savedRow.status === 'offline' ? 'กล้องดับ' : savedRow.status === 'online' ? 'กล้องติด' : 'รอตรวจสอบ'}</span>
+                      <button type="button" disabled={!savedRow || manualIpBusy} onClick={() => chooseManualCamera(camera)}>เลือกแก้ไข</button>
+                    </div>
+                  </div>
+                )
+              })}
+              {manualIpActive && (() => {
+                const cam = manualIpActive
+                const report = previewCacheScope === `${centerId}|${reportDate}|${shift}` ? previewCache[cam.network_type] : null
+                const savedRow = report?.details?.find(r => r.ip === cam.ip)
+                return (
+                  <div className="csr-manual-ip-action-panel">
+                    <strong>{cam.name} • {cam.ip}</strong>
+                    <p>ผล Ping ดิบจะไม่ถูกแก้: {savedRow?.ping_level || 'ยังไม่มีผล'} • สถานะสรุปที่บันทึก: {savedRow?.status || 'ไม่พบ'}</p>
+                    <div className="csr-manual-ip-actions">
+                      <button type="button" className="csr-manual-ip-down" disabled={manualIpBusy || savedRow?.status === 'offline' || !savedRow} onClick={() => applyManualCamera('down')}>เพิ่มเป็นกล้องดับ</button>
+                      <button type="button" className="csr-manual-ip-up" disabled={manualIpBusy || savedRow?.status === 'online' || !savedRow} onClick={() => applyManualCamera('up')}>นำออกจากกล้องดับ (ปกติ)</button>
+                      
+                    </div>
+                    <div className="csr-manual-ip-history"><strong>ประวัติแก้ไขของ IP นี้ (สูงสุด 30 รายการ)</strong>
+                      {manualIpHistory.length ? manualIpHistory.map(item => <div key={item.id}>
+                        <span>{new Date(item.created_at).toLocaleString('th-TH')} · {item.previous_status} → {item.new_status}</span>
+                        <small>ผู้ดำเนินการ {String(item.actor_id).slice(0, 8)}…</small>
+                      </div>) : <small>ยังไม่มีประวัติการแก้ไขด้วยมือ</small>}
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+            <p className="csr-dashboard-edit-note">ข้อมูลแจ้งซ่อมและยอดดับทั้งตู้/ด่านจะคำนวณจากสถานะรายกล้องที่บันทึกจริง ไม่ใช่การกรอกยอดรวม</p>
+          </div>
+        )}
+
+        <div className="csr-dashboard-paper" ref={previewRef}>
+          <header className="csr-dashboard-paper-head">
+            <div>
+              <span className="csr-dashboard-paper-kicker">CCTV NETWORK · DAILY STATUS</span>
+              <h2>{previewSnapshot.title}</h2>
+              <p>ศูนย์ {previewSnapshot.centerName} <span>•</span> {previewThaiDate(reportDate)} <span>•</span> {SHIFTS[shift]}</p>
+            </div>
+            <div className="csr-dashboard-report-date">รายงานประจำวัน</div>
+          </header>
+          {previewSnapshot.edited && <p className="csr-dashboard-warning">* มีการปรับตัวเลขเฉพาะเพื่อจัดทำพรีวิว รายการกล้องดับ/แจ้งซ่อมยังอ้างอิงข้อมูลรายกล้อง</p>}
+          {previewSnapshot.hasDraft && <p className="csr-dashboard-warning">* มีผลตรวจที่ยังไม่ได้บันทึกในฐานข้อมูล แนะนำให้บันทึกรายงานก่อนส่งงาน</p>}
+          {previewSnapshot.note && <p className="csr-dashboard-report-note">{previewSnapshot.note}</p>}
+
+          <div className="csr-dashboard-network-grid">
+            {[previewSnapshot.general, previewSnapshot.checkpoint].map(item => {
+              const portions = item.total > 0 ? [
+                { key: 'green', value: item.online, color: '#27c997' },
+                { key: 'red', value: item.offline, color: '#f56876' },
+                { key: 'unknown', value: item.unknown, color: '#fbbf67' },
+              ] : []
+              let progress = 0
+              return (
+                <article className="csr-dashboard-network-panel" key={item.networkType}>
+                  <div className="csr-dashboard-panel-title">
+                    <div><span>{item.networkType === 'general' ? '01 / CAMERA NETWORK' : '02 / CHECKPOINT NETWORK'}</span><h3>{item.label}</h3></div>
+                    <div className={`csr-dashboard-data-label ${item.hasReport && item.isSaved ? 'is-saved' : 'is-unsaved'}`}>{!item.hasReport ? 'ยังไม่มีผลรายงาน' : item.isSaved ? (item.isFinal ? 'บันทึกแล้ว · ยืนยันครบ' : 'บันทึกแล้ว · ชั่วคราว') : 'ยังไม่บันทึก'}</div>
+                  </div>
+                  <div className="csr-dashboard-donut-row">
+                    <div className="csr-dashboard-donut">
+                      <svg viewBox="0 0 120 120" role="img" aria-label={`กล้องใช้งานได้ ${previewPercentLabel(item.online, item.total)}`}>
+                        <circle cx="60" cy="60" r="49" fill="none" stroke="#27384e" strokeWidth="13" />
+                        {item.hasReport && portions.map(portion => {
+                          const current = progress
+                          const length = previewPercent(portion.value, item.total)
+                          progress += length
+                          return <circle key={portion.key} cx="60" cy="60" r="49" fill="none" stroke={portion.color} strokeWidth="13" strokeDasharray={`${length * 3.07876} ${307.876 - length * 3.07876}`} strokeDashoffset={-current * 3.07876} transform="rotate(-90 60 60)" />
+                        })}
+                      </svg>
+                      <div className="csr-dashboard-donut-center"><strong>{item.hasReport ? previewPercentLabel(item.online, item.total) : '—'}</strong><small>กล้องใช้งานได้</small></div>
+                    </div>
+                    <div className="csr-dashboard-mini-stats">
+                      <div><small>กล้องทั้งหมด</small><strong>{item.total.toLocaleString('th-TH')}</strong></div>
+                      <div><span className="csr-dot is-green"/><small>กล้องติด</small><strong>{item.hasReport ? item.online.toLocaleString('th-TH') : '—'}</strong></div>
+                      <div><span className="csr-dot is-red"/><small>กล้องดับ</small><strong>{item.hasReport ? item.offline.toLocaleString('th-TH') : '—'}</strong></div>
+                    </div>
+                  </div>
+                  <div className="csr-dashboard-outage-box">
+                    <strong>{item.networkType === 'general' ? 'ปัญหาระดับตู้กล้อง' : 'ปัญหาระดับด่าน'}</strong>
+                    <div className="csr-dashboard-outage-three">
+                      <div><b>{item.hasReport ? item.fullUnitCount : '—'}</b><small>ดับทั้ง{item.unitName}</small></div>
+                      <div><b>{item.hasReport ? item.fullUnitCameraCount : '—'}</b><small>กล้องใน{item.unitName}ที่ดับทั้งชุด</small></div>
+                      <div><b>{item.hasReport ? item.partialOfflineCount : '—'}</b><small>กล้องดับรายตัว</small></div>
+                    </div>
+                    {item.unmappedOfflineCount > 0 && <p>มี {item.unmappedOfflineCount} กล้องไม่มีรหัสตู้/ด่าน จัดเป็นดับรายตัวเพื่อไม่สรุปว่าดับทั้งชุดผิดพลาด</p>}
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+
+          <section className="csr-dashboard-repair-section">
+            <div className="csr-dashboard-section-heading"><h3>รายการกล้องดับ — ข้อมูลเตรียมแจ้งซ่อม</h3><span>{previewSnapshot.repairItems.length} กล้อง</span></div>
+            <div className="csr-dashboard-table-scroll"><table className="csr-dashboard-repair-table">
+              <thead><tr><th>เครือข่าย</th><th>ตู้ / ด่าน</th><th>ชื่อกล้อง</th><th>IP</th><th>ประเภทการดับ</th><th>ยืนยัน</th></tr></thead>
+              <tbody>
+                {previewSnapshot.repairItems.slice(0, 12).map((item, i) => <tr key={`${item.network_type}-${item.ip}-${i}`}>
+                  <td>{item.network_label}</td><td>{item.unit_label}</td><td>{item.camera_name}</td>
+                  <td className="csr-dashboard-ip">{item.ip}</td>
+                  <td>{item.outage_scope === 'full_unit' ? `ดับทั้ง${item.network_type === 'general' ? 'ตู้' : 'ด่าน'}` : 'ดับรายตัว'}</td>
+                  <td>{item.is_confirmed ? 'ยืนยันแล้ว' : 'รอยืนยัน'}</td>
+                </tr>)}
+              </tbody>
+            </table></div>
+            {previewSnapshot.repairItems.length === 0 && <div className="csr-dashboard-nodata">ยังไม่พบกล้องดับในข้อมูลรายงาน</div>}
+            {previewSnapshot.repairItems.length > 12 && <p className="csr-dashboard-overflow-note">แสดงในภาพ 12 รายการแรกจาก {previewSnapshot.repairItems.length} รายการ • ระบบเก็บรายละเอียดครบทุกตัวไว้ในฐานข้อมูลเมื่อกดบันทึกรายงาน</p>}
+            <p className="csr-dashboard-footer-note">สรุปจากข้อมูลกล้องรายตัวตามวัน/กะที่เลือก • ยังไม่ได้สร้างใบแจ้งซ่อมหรือเปลี่ยนสถานะงานซ่อม</p>
+          </section>
+        </div>
+      </section>
 
     </div>
   )

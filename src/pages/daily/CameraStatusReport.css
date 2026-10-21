@@ -2,7 +2,7 @@
 
    CAMERA STATUS REPORT
 
-========================================= */
+\========================================= */
 
 .csr-root {
 
@@ -343,11 +343,13 @@
 .csr-level.yellow {
 
   color: #facc15;
+
 }
 
 .csr-level.orange {
 
   color: #fb923c;
+
 }
 
 .csr-level.red,
@@ -355,6 +357,7 @@
 .csr-level.unreachable {
 
   color: #f27783;
+
 }
 
 /* MANUAL EDIT */
@@ -453,7 +456,7 @@
 
    SERVICE BOX GROUPED VIEW
 
-========================================= */
+\========================================= */
 
 .csr-box-toolbar {
 
@@ -662,6 +665,7 @@
   background: rgba(250, 204, 21, .12);
 
   color: #facc15;
+
 }
 
 .csr-box-badge.orange {
@@ -669,6 +673,7 @@
   background: rgba(251, 146, 60, .12);
 
   color: #fb923c;
+
 }
 
 .csr-box-badge.red {
@@ -769,7 +774,7 @@
 
    SERVICE BOX GRID - 2 BOXES PER ROW
 
-========================================= */
+\========================================= */
 
 /* รายการตู้ แถวละ 2 ตู้ */
 
@@ -841,7 +846,7 @@
 
    MESSAGE STATUS COLORS
 
-========================================= */
+\========================================= */
 
 .csr-root .csr-message {
 
@@ -943,7 +948,7 @@
 
    AGENT PANEL - POLISHED UI
 
-========================================= */
+\========================================= */
 
 .csr-agent {
 
@@ -1225,7 +1230,7 @@
 
    LIVE CCTV PING PROGRESS
 
-========================================= */
+\========================================= */
 
 .csr-root .csr-live-progress {
 
@@ -1457,7 +1462,7 @@
 
    CCTV NETWORKS - NEW LAYOUT
 
-========================================= */
+\========================================= */
 
 /* ตัวกรองหลักเหลือ ศูนย์ + วันที่ */
 
@@ -1471,7 +1476,7 @@
 
    TWO NETWORK OVERVIEW CARDS
 
-========================================= */
+\========================================= */
 
 .csr-network-overview {
 
@@ -1665,7 +1670,7 @@
 
    NETWORK TABS
 
-========================================= */
+\========================================= */
 
 .csr-network-tabs {
 
@@ -1779,7 +1784,7 @@
 
    SELECTED NETWORK PING BAR
 
-========================================= */
+\========================================= */
 
 .csr-network-runbar {
 
@@ -1879,7 +1884,7 @@
 
    NETWORK RESPONSIVE
 
-========================================= */
+\========================================= */
 
 @media (max-width: 950px) {
 
@@ -1962,126 +1967,377 @@
   }
 
 }
+
 /* =========================================
+
    PER-CAMERA PING + FOUR PING STATUS COLORS
-========================================= */
+
+\========================================= */
+
 .csr-root .csr-camera-reping {
+
   min-width: 110px;
+
   padding: 9px 12px;
+
   border: 1px solid #416888;
+
   background: #19344a;
+
   color: #b9e6ff;
+
   white-space: nowrap;
+
 }
 
 .csr-root .csr-camera-reping:hover:not(:disabled) {
+
   border-color: #38bdf8;
+
   background: #20516f;
+
 }
 
 .csr-review-hint {
+
   color: #facc15 !important;
+
   font-size: 10px;
+
   line-height: 1.5;
+
 }
 
 .csr-table th:last-child,
+
 .csr-table td:last-child {
+
   width: 135px;
+
   text-align: center;
+
 }
 
 .csr-network-card-header .csr-network-pending {
+
   color: #facc15;
+
   font-weight: 700;
+
 }
 
-
 /* =========================================
+
    SINGLE CAMERA PING - LOCK WITHOUT DIMMING
+
    Only the camera currently being re-pinged turns grey.
-========================================= */
+
+\========================================= */
 
 /* Keep all other disabled controls in their normal colors
+
    while a single-camera Ping is in progress. */
+
 .csr-root.csr-ping-single-active button:disabled,
+
 .csr-root.csr-ping-single-active select:disabled {
+
   opacity: 1;
+
 }
 
 /* Some browsers desaturate native selects even with full opacity. */
+
 .csr-root.csr-ping-single-active select:disabled {
+
   color: #eef3fb;
+
   -webkit-text-fill-color: #eef3fb;
+
 }
 
 /* Gray only the Ping button for the camera currently running. */
+
 .csr-root.csr-ping-single-active
+
   .csr-camera-reping.csr-camera-reping--busy:disabled {
+
   opacity: 1;
+
   background: #505c6c;
+
   border-color: #788497;
+
   color: #f1f5f9;
+
   cursor: progress;
+
 }
 
 /* Calendar icon - White */
+
 .csr-root input[type="date"]::-webkit-calendar-picker-indicator {
+
   filter: invert(1);
+
   opacity: 1;
+
   cursor: pointer;
+
 }
 
 /* =========================================
+
    CAMERA LIST - LARGER TEXT
-========================================= */
+
+\========================================= */
 
 /* ชื่อตู้ / ชื่อกลุ่มกล้อง */
+
 .csr-root .csr-box-info strong {
+
   font-size: 16px;
+
 }
 
 /* รายละเอียดตู้ / จำนวนกล้อง */
+
 .csr-root .csr-box-info small {
+
   font-size: 13px;
+
 }
 
 /* ป้ายสถานะของตู้ */
+
 .csr-root .csr-box-badge {
+
   font-size: 12px;
+
 }
 
 /* ข้อความรอยืนยัน */
+
 .csr-root .csr-box-pending {
+
   font-size: 12px;
+
 }
 
 /* ตารางรายละเอียดกล้อง */
+
 .csr-root .csr-box-details .csr-table {
+
   font-size: 14px;
+
 }
 
 /* หัวตาราง */
+
 .csr-root .csr-box-details .csr-table th {
+
   font-size: 13px;
+
 }
 
 /* IP / พิกัด / Loss */
+
 .csr-root .csr-box-details .csr-table td small {
+
   font-size: 12px;
+
 }
 
 /* ผล Ping */
+
 .csr-root .csr-box-details .csr-level {
+
   font-size: 14px;
+
 }
 
 /* ช่องเลือกสถานะ */
+
 .csr-root .csr-box-details select {
+
   font-size: 14px;
+
 }
 
 /* ปุ่ม Ping ใหม่ / ยืนยันผล */
+
 .csr-root .csr-box-details button {
+
   font-size: 13px;
+
+}
+
+/* =========================================================
+   DAILY CCTV DASHBOARD • PREVIEW & EDIT BAR
+   Component-scoped; does not affect Ping or inventory cards
+========================================================= */
+.csr-dashboard-section { margin-top: 30px; display: grid; gap: 15px; }
+.csr-dashboard-tools { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: 15px; }
+.csr-dashboard-eyebrow { color: #fd6489; font-size: 11px; font-weight: 800; letter-spacing: .13em; }
+.csr-dashboard-tools h3 { margin: 4px 0 6px; font-size: 23px; color: #f6f9ff; }
+.csr-dashboard-tools p { margin: 0; color: #9eafc9; font-size: 12px; }
+.csr-dashboard-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.csr-dashboard-actions button { min-height: 38px; }
+.csr-dashboard-editor { border: 1px solid #395273; border-radius: 14px; background: #16253a; padding: 17px; display: grid; gap: 14px; }
+.csr-dashboard-editor-head, .csr-dashboard-editor-network-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.csr-dashboard-editor-head strong { font-size: 15px; color: #f8fbff; }
+.csr-dashboard-editor-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.csr-dashboard-editor-fields label { display: grid; gap: 6px; color: #b8c9df; font-size: 12px; }
+.csr-root .csr-dashboard-editor input { background: #0d192b; color: #fff; font-size: 14px; }
+.csr-dashboard-editor-networks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.csr-dashboard-editor-network { border: 1px solid #324966; border-radius: 12px; padding: 13px; background: #111e30; }
+.csr-dashboard-editor-network-title strong { color: #f1f6fd; font-size: 14px; }
+.csr-dashboard-editor-counts { grid-template-columns: repeat(3,minmax(0,1fr)); margin: 12px 0 9px; }
+.csr-dashboard-editor-network small,.csr-dashboard-edit-note { display: block; font-size: 11px; line-height: 1.6; color: #9fb4d2; }
+.csr-dashboard-edit-error { color: #ffb9bf; background: #4b2231; border: 1px solid #bd465d; border-radius: 8px; padding: 10px 12px; margin: 0; font-size: 13px; }
+.csr-dashboard-edit-note { margin: 0; }
+.csr-dashboard-paper { background: #0d1728; color: #f6faff; border-radius: 15px; border: 1px solid #324660; padding: 23px; display: grid; gap: 16px; min-width: 0; }
+.csr-dashboard-paper-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.csr-dashboard-paper-kicker { color: #9bbef9; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.csr-dashboard-paper-head h2 { margin: 5px 0 7px; color: #fff; font-size: 26px; line-height: 1.3; }
+.csr-dashboard-paper-head p { margin: 0; color: #bfd0e5; font-size: 13px; }
+.csr-dashboard-paper-head p span { color: #4e6784; margin: 0 6px; }
+.csr-dashboard-report-date { background: #1c2d47; color: #dce9ff; border: 1px solid #425975; border-radius: 9px; font-size: 12px; font-weight: 800; white-space: nowrap; padding: 9px 11px; }
+.csr-dashboard-warning { margin: 0; padding: 9px 12px; background: #342a20; border-left: 3px solid #f3a84e; color: #ffdea6; font-size: 12px; line-height: 1.5; }
+.csr-dashboard-report-note { padding: 10px 12px; border-left: 3px solid #6297ee; margin: 0; background: #172942; font-size: 13px; color: #dce8f7; overflow-wrap: anywhere; }
+.csr-dashboard-network-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
+.csr-dashboard-network-panel { min-width: 0; display: grid; gap: 16px; padding: 17px; border-radius: 14px; background: #152338; border: 1px solid #344b66; }
+.csr-dashboard-panel-title { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.csr-dashboard-panel-title span { color: #88a4c7; font-size: 9px; font-weight: 800; letter-spacing: .09em; }
+.csr-dashboard-panel-title h3 { font-size: 19px; margin: 4px 0 0; }
+.csr-dashboard-data-label { flex-shrink: 0; background: #20374f; color: #c7d8ee; border-radius: 7px; padding: 7px; font-weight: 700; font-size: 10px; }
+.csr-dashboard-donut-row { display: grid; grid-template-columns: minmax(150px,.9fr) minmax(130px,1fr); gap: 12px; align-items: center; }
+.csr-dashboard-donut { position: relative; width: 100%; max-width: 205px; aspect-ratio: 1; margin: auto; }
+.csr-dashboard-donut svg { width: 100%; height: 100%; display: block; }
+.csr-dashboard-donut-center { position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; flex-direction: column; pointer-events: none; }
+.csr-dashboard-donut-center strong { font-size: 26px; letter-spacing: -.03em; font-weight: 900; }
+.csr-dashboard-donut-center small { margin-top: 2px; font-size: 11px; color: #99b0cd; }
+.csr-dashboard-mini-stats { display: grid; gap: 7px; }
+.csr-dashboard-mini-stats>div { display: flex; align-items: center; gap: 5px; padding: 7px 9px; background: #0d1929; border: 1px solid #2b405a; border-radius: 8px; }
+.csr-dashboard-mini-stats small { flex: 1; color: #b1c2d8; font-size: 11px; }
+.csr-dashboard-mini-stats strong { font-size: 16px; color: #fff; font-variant-numeric: tabular-nums; }
+.csr-dot { display: inline-block; width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: #9fb0c7; }
+.csr-dot.is-green { background: #27c997; }.csr-dot.is-yellow { background: #f3cc4b; }.csr-dot.is-orange { background: #f5a550; }.csr-dot.is-red { background: #f56876; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+.csr-dashboard-outage-box { display: grid; gap: 11px; padding: 13px; background: #101b2c; border: 1px solid #33435a; border-radius: 10px; }
+.csr-dashboard-outage-box>strong { font-size: 13px; }
+.csr-dashboard-outage-three { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
+.csr-dashboard-outage-three>div { display: grid; gap: 5px; padding: 9px; background: #17283b; border-radius: 7px; }
+.csr-dashboard-outage-three b { font-size: 23px; color: #ff9a9e; font-weight: 900; }
+.csr-dashboard-outage-three small { font-size: 10px; line-height: 1.5; color: #b5c9df; }
+.csr-dashboard-outage-box p { color: #e8c089; margin: 0; font-size: 10px; }
+
+
+.csr-dashboard-section-heading { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 12px; }
+.csr-dashboard-section-heading h3 { margin: 0; font-size: 15px; color: #f8fbff; }
+.csr-dashboard-section-heading>span { color: #9fb9db; font-size: 12px; white-space: nowrap; }
+
+
+
+
+
+
+
+.csr-dashboard-nodata { margin: 4px 0; padding: 13px; font-size: 12px; text-align: center; color: #9fb2c9; }
+
+
+
+.csr-dashboard-repair-section { padding: 18px; }
+.csr-dashboard-table-scroll { overflow: hidden; border-radius: 8px; border: 1px solid #2c435d; }
+.csr-dashboard-repair-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
+.csr-dashboard-repair-table th { background: #20334a; color: #d2e2f5; font-size: 11px; text-align: left; padding: 10px 9px; }
+.csr-dashboard-repair-table td { border-top: 1px solid #293d56; color: #e6f1ff; overflow-wrap: anywhere; padding: 9px; vertical-align: top; }
+.csr-dashboard-repair-table th:nth-child(1) { width: 12%; }.csr-dashboard-repair-table th:nth-child(2) { width: 20%; }
+.csr-dashboard-repair-table th:nth-child(3) { width: 26%; }.csr-dashboard-repair-table th:nth-child(4) { width: 15%; }
+.csr-dashboard-repair-table th:nth-child(5) { width: 17%; }.csr-dashboard-repair-table th:nth-child(6) { width: 10%; }
+.csr-dashboard-ip { font-variant-numeric: tabular-nums; }
+.csr-dashboard-overflow-note,.csr-dashboard-footer-note { font-size: 10px; line-height: 1.5; color: #9eb4ce; margin: 10px 0 0; }
+@media (max-width: 1050px) {
+  .csr-dashboard-network-grid,.csr-dashboard-editor-networks { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .csr-dashboard-paper { padding: 12px; gap: 11px; }
+  .csr-dashboard-network-panel { padding: 12px; }
+  .csr-dashboard-donut-row { grid-template-columns: minmax(100px,.8fr) minmax(120px,1fr); }
+  .csr-dashboard-donut-center strong { font-size: 20px; }
+  .csr-dashboard-editor-fields { grid-template-columns: 1fr; }
+  .csr-dashboard-editor-counts { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .csr-dashboard-mini-stats>div { padding: 5px; }
+  .csr-dashboard-mini-stats small { font-size: 10px; }
+  .csr-dashboard-paper-head h2 { font-size: 20px; }
+  .csr-dashboard-paper-head { flex-wrap: wrap; }
+}
+
+/* Saved status colors */
+.csr-dashboard-data-label.is-saved { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.4); }
+.csr-dashboard-data-label.is-unsaved { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.4); }
+
+/* Manual per-IP Supabase editor */
+.csr-manual-ip-summary { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.csr-manual-ip-summary span { padding:7px 11px; background:#1a3043; border:1px solid #304b62; border-radius:7px; color:#dcecf6; font-size:12px; }
+.csr-manual-ip-summary b { color:#fff; }
+.csr-manual-ip-panel { padding:16px; border:1px solid #46627f; border-radius:12px; background:#101d30; display:grid; gap:12px; }
+.csr-manual-ip-header { display:flex; flex-direction:column; gap:4px; }
+.csr-manual-ip-header strong { font-size:16px; }
+.csr-manual-ip-header small { color:#afc3d9; }
+.csr-manual-ip-search { display:flex; gap:12px; align-items:end; flex-wrap:wrap; }
+.csr-manual-ip-search label { flex:1; min-width:200px; display:grid; gap:7px; color:#bbcee4; font-size:12px; }
+.csr-manual-ip-search button { min-height:40px; }
+.csr-manual-ip-notice { padding:10px; border-radius:7px; background:#283448; color:#ffe1a8; margin:0; }
+.csr-manual-ip-result { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; padding:12px; background:#182a3d; border:1px solid #30475c; border-radius:10px; }
+.csr-manual-ip-result.is-active { border-color:#5b9ce2; }
+.csr-manual-ip-result>div { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.csr-manual-ip-result small { color:#aec7df; }
+.csr-manual-ip-red { color:#ff8b9b; font-weight:800; }
+.csr-manual-ip-green { color:#68dda9; font-weight:800; }
+.csr-manual-ip-action-panel { display:grid; gap:12px; border:1px solid #36526d; border-radius:9px; padding:13px; }
+.csr-manual-ip-action-panel p { margin:0; color:#aabfd8; font-size:12px; }
+.csr-manual-ip-action-panel label { display:grid; gap:7px; color:#bdcde0; font-size:12px; }
+.csr-manual-ip-actions { display:flex; gap:9px; flex-wrap:wrap; }
+.csr-root .csr-manual-ip-down { background:#9b233f; border-color:#c7435d; color:white; }
+.csr-root .csr-manual-ip-up { background:#125c43; border-color:#2b9e74; color:white; }
+.csr-manual-ip-history { display:grid; gap:8px; border-top:1px solid #33475b; padding-top:12px; }
+.csr-manual-ip-history>div { display:grid; gap:3px; border-bottom:1px solid #26394d; padding:7px 0; }
+.csr-manual-ip-history small { color:#9ebbd8; }
+
+.csr-dashboard-repair-section {
+  background: #152338;
+  border: 1px solid #344b66;
+  border-radius: 14px;
+  padding: 18px;
+  min-width: 0;
+}
+
+/* =========================================
+   RESET ALL MANUAL CAMERA STATUS
+========================================= */
+
+.csr-root .csr-reset-all-btn {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  color: #fca5a5;
+  font-weight: 800;
+}
+
+.csr-root .csr-reset-all-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: #f87171;
+  color: #ffffff;
 }
