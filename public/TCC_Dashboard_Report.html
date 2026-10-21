@@ -248,8 +248,24 @@ function donut(cx,cy,R,thick,parts,center){
     let a=-Math.PI/2; const gap=parts.filter(p=>p.v>0).length>1 ? 2/(R) : 0;
     parts.forEach(p=>{
       if(p.v<=0) return;
-      const sw=p.v/tot*Math.PI*2;
-      ctx.beginPath(); ctx.arc(cx,cy,R-thick/2,a+gap/2,a+sw-gap/2); ctx.strokeStyle=p.c; ctx.lineWidth=thick; ctx.lineCap='butt'; ctx.stroke();
+
+      
+        const sw = p.v / tot * Math.PI * 2;
+
+        // จำกัดช่องว่างไม่ให้กว้างเกินชิ้นกราฟขนาดเล็ก
+        const safeGap = Math.min(gap, sw * 0.5);
+
+        const startAngle = a + safeGap / 2;
+        const endAngle = a + sw - safeGap / 2;
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, R - thick / 2, startAngle, endAngle);
+        ctx.strokeStyle = p.c;
+        ctx.lineWidth = thick;
+        ctx.lineCap = 'butt';
+        ctx.stroke();
+
+      
       const share=p.v/tot;
       if(share>=.07 && share<1 && thick>=40){
         const m=a+sw/2, lr=R-thick/2;
