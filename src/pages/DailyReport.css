@@ -593,3 +593,175 @@ button.daily-hub-card:hover
     border-radius: 10px;
   }
 }
+
+/* =========================================
+   SHIFT SELECTION
+========================================= */
+
+.daily-hub-shift-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.daily-hub-shift-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  min-height: 145px;
+  min-width: 0;
+  padding: 22px;
+
+  border: 1px solid #2a3749;
+  border-radius: 16px;
+
+  background: linear-gradient(
+    145deg,
+    #172230,
+    #111923
+  );
+
+  color: #eef3fb;
+  text-align: left;
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.daily-hub-shift-card:hover {
+  transform: translateY(-3px);
+  border-color: #ff416c;
+
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.25);
+}
+
+.daily-hub-shift-icon {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 15px;
+  border: 1px solid rgba(255, 65, 108, 0.25);
+  background: rgba(194, 26, 68, 0.14);
+  color: #ff4b74;
+}
+
+.daily-hub-shift-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.daily-hub-shift-info span {
+  color: #ff416c;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.daily-hub-shift-info h3 {
+  margin: 8px 0;
+  color: #ffffff;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.daily-hub-shift-info p {
+  margin: 0;
+  color: #8f9db0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.daily-hub-shift-arrow {
+  flex-shrink: 0;
+  color: #75869d;
+}
+
+.daily-hub-legacy-head {
+  padding: 18px 0 14px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #293548;
+}
+
+.daily-hub-legacy-head span {
+  color: #ff416c;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.daily-hub-legacy-head p {
+  margin: 7px 0 0;
+  color: #8f9db0;
+  font-size: 12px;
+}
+
+/* =========================================
+   EMPTY HOURLY REPORT
+========================================= */
+
+.daily-hub-empty-hour {
+  min-height: 220px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+  padding: 30px;
+
+  border: 1px dashed #35435a;
+  border-radius: 16px;
+
+  background: #141e2b;
+  color: #75869d;
+  text-align: center;
+}
+
+.daily-hub-empty-hour h3 {
+  margin: 0;
+  color: #dce7f5;
+  font-size: 20px;
+}
+
+.daily-hub-empty-hour p {
+  margin: 0;
+  color: #8f9db0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1120px) {
+  .daily-hub-shift-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .daily-hub-shift-card {
+    padding: 17px;
+    gap: 12px;
+  }
+
+  .daily-hub-shift-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .daily-hub-shift-info h3 {
+    font-size: 18px;
+  }
+}

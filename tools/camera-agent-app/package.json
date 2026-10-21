@@ -1,0 +1,43 @@
+{
+  "name": "cctv-ping-agent",
+  "version": "1.0.11",
+  "private": true,
+  "description": "Local CCTV Ping Agent for Blacklist Narathiwat",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "uk.melonman.cctv-ping-agent",
+    "productName": "CCTV Ping Agent",
+    "directories": {
+      "output": "release"
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://updates.melonman.uk/"
+      }
+    ],
+    "files": [
+      "main.cjs"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "artifactName": "CCTV-Ping-Agent-Setup-${version}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
+}

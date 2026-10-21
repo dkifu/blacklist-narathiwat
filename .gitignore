@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# CCTV Ping Agent - generated files
+/tools/camera-agent-app/release/
+/tools/camera-agent-app/dist/
+/tools/camera-agent-app/node_modules/
