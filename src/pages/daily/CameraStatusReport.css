@@ -2341,3 +2341,531 @@
   border-color: #f87171;
   color: #ffffff;
 }
+
+
+
+
+
+
+/* =========================================
+   CCTV ALL CENTERS - READ ONLY DASHBOARD
+========================================= */
+
+.csr-multi-root {
+  display: grid;
+  gap: 18px;
+}
+
+.csr-multi-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.csr-multi-filters label {
+  display: grid;
+  gap: 7px;
+  color: #b6c9e2;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.csr-multi-filters input,
+.csr-multi-filters select {
+  min-width: 160px;
+  color: #ffffff;
+  background: #18283c;
+}
+
+.csr-multi-filters select option {
+  background: #ffffff;
+  color: #172235;
+}
+
+.csr-multi-filters button {
+  height: 40px;
+}
+
+.csr-multi-actions {
+  justify-content: flex-end;
+}
+
+.csr-multi-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.csr-multi-paper {
+  min-width: 1080px;
+  box-sizing: border-box;
+}
+
+.csr-multi-breakdown,
+.csr-multi-submissions {
+  border: 1px solid #344b66;
+  border-radius: 13px;
+  background: #152338;
+  padding: 16px;
+}
+
+.csr-multi-breakdown h3,
+.csr-multi-submissions h3 {
+  margin: 0 0 14px;
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.csr-multi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.csr-multi-table th,
+.csr-multi-table td {
+  border: 1px solid #34465e;
+  padding: 11px 9px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.csr-multi-table th {
+  background: #213550;
+  color: #d5e5f9;
+  font-weight: 800;
+}
+
+.csr-multi-table td {
+  color: #eef5ff;
+  background: #111e30;
+  font-variant-numeric: tabular-nums;
+}
+
+.csr-multi-table td:first-child {
+  text-align: left;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.csr-multi-table tbody tr:nth-child(even) td {
+  background: #18283d;
+}
+
+.csr-multi-breakdown p {
+  margin: 12px 0 0;
+  color: #9eb4ce;
+  font-size: 12px;
+}
+
+.csr-multi-submissions .csr-multi-table {
+  min-width: 780px;
+}
+
+.csr-multi-status {
+  display: inline-block;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-weight: 800;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+/* บันทึกครบแล้ว - เขียว */
+.csr-multi-status.complete {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+/* บันทึกชั่วคราว - เหลือง */
+.csr-multi-status.draft {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.14);
+}
+
+/* ยังไม่บันทึก - แดง */
+.csr-multi-status.missing {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.csr-multi-error {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.10);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+@media (max-width: 900px) {
+  .csr-multi-filters {
+    width: 100%;
+  }
+}
+
+/* =========================================
+   CENTRAL CENTER SELECTOR
+   Admin / Supervisor only
+========================================= */
+
+.csr-central-center-picker {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 14px 20px;
+}
+
+.csr-central-center-picker label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #c6d6e9;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.csr-central-center-picker select {
+  width: 280px;
+  max-width: 100%;
+  min-width: 0;
+  color: #ffffff;
+  background: #19283d;
+  border: 1px solid #40536f;
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+
+.csr-central-center-picker select option {
+  color: #142235;
+  background: #ffffff;
+}
+
+@media (max-width: 600px) {
+  .csr-central-center-picker {
+    justify-content: stretch;
+  }
+
+  .csr-central-center-picker label {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .csr-central-center-picker select {
+    width: 100%;
+  }
+}
+
+/* =========================================
+   ALL CENTERS DASHBOARD - SUMMARY TABLE
+========================================= */
+
+/* เพิ่มพื้นที่ให้ตาราง 15 คอลัมน์ */
+.csr-multi-paper {
+  min-width: 1550px;
+}
+
+/* ตารางอยู่ภายในภาพ PNG ทั้งหมด */
+.csr-multi-breakdown > .csr-multi-scroll {
+  overflow-x: visible;
+}
+
+/* หัวตาราง */
+.csr-multi-breakdown .csr-multi-table th {
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 10px 7px;
+}
+
+/* ข้อมูล */
+.csr-multi-breakdown .csr-multi-table td {
+  font-size: 12px;
+  padding: 11px 7px;
+  white-space: nowrap;
+}
+
+/* แถวรวม */
+.csr-multi-breakdown .csr-multi-total-row td {
+  background: #234066;
+  color: #ffffff;
+  font-weight: 900;
+  border-top: 2px solid #58a6ef;
+}
+
+/* หัวข้อตารางรวมทั่วไป + ด่าน */
+.csr-multi-overall-title {
+  margin-top: 24px !important;
+  margin-bottom: 12px !important;
+  color: #ffffff;
+  font-size: 17px;
+}
+
+/* ตารางรวมสองประเภท */
+.csr-multi-overall-table {
+  width: 100%;
+}
+
+.csr-multi-overall-table th,
+.csr-multi-overall-table td {
+  white-space: normal;
+  line-height: 1.45;
+  vertical-align: middle;
+}
+
+.csr-multi-overall-table td:nth-child(3),
+.csr-multi-overall-table td:nth-child(5) {
+  text-align: left;
+}
+
+/* =========================================
+   ALL CENTERS - FIX TABLE WIDTH
+========================================= */
+
+/* ยกเลิกความกว้างขั้นต่ำ 1550px */
+.csr-root .csr-multi-paper {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* ไม่ให้ตารางดันกรอบ Dashboard */
+.csr-multi-breakdown {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.csr-multi-breakdown > .csr-multi-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* เฉพาะตารางสรุปรายศูนย์ */
+.csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table) {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+/* คอลัมน์ศูนย์กว้าง 12% */
+/* อีก 14 คอลัมน์แบ่งพื้นที่ที่เหลือเท่ากัน */
+.csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+thead tr:first-child th:first-child {
+  width: 12%;
+}
+
+/* ทุกคอลัมน์ข้อมูลใช้ขนาดสม่ำเสมอ */
+.csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table) th,
+.csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table) td {
+  min-width: 0;
+  padding: 9px 4px;
+  box-sizing: border-box;
+  text-align: center;
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.4;
+}
+
+/* ขนาดข้อความหัวตาราง */
+.csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table) th {
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+/* ตัวเลขภายในตาราง */
+.csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table) td {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ชื่อศูนย์ชิดซ้าย */
+.csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+tbody td:first-child,
+.csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+tfoot td:first-child {
+  text-align: left;
+  padding-left: 9px;
+}
+
+/* จัดข้อความสรุปการดับให้อยู่กึ่งกลาง */
+.csr-root .csr-multi-overall-table tbody td:last-child {
+  text-align: center;
+}
+
+/* จัดคอลัมน์ ศูนย์ และ ตู้/ด่าน ให้อยู่กึ่งกลาง */
+.csr-root .csr-multi-overall-table tbody td:first-child,
+.csr-root .csr-multi-overall-table tbody td:nth-child(3) {
+  text-align: center;
+}
+
+/* =========================================
+   ALL CENTERS - 4 COLOR COLUMN GROUPS
+========================================= */
+
+/* กลุ่มที่ 1 : กล้องทั่วไป - สถานะ (เขียว) */
+.csr-root .csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+tbody td:nth-child(n+2):nth-child(-n+5) {
+  background: #15312f;
+}
+
+/* กลุ่มที่ 2 : กล้องทั่วไป - การดับ (ส้ม) */
+.csr-root .csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+tbody td:nth-child(n+6):nth-child(-n+8) {
+  background: #332a23;
+}
+
+/* กลุ่มที่ 3 : กล้องด่าน - สถานะ (ฟ้า) */
+.csr-root .csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+tbody td:nth-child(n+9):nth-child(-n+12) {
+  background: #183044;
+}
+
+/* กลุ่มที่ 4 : กล้องด่าน - การดับ (แดง) */
+.csr-root .csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+tbody td:nth-child(n+13):nth-child(-n+15) {
+  background: #352631;
+}
+
+/* =========================================
+   HEADER COLORS
+========================================= */
+
+/* หัวตารางชั้นบน */
+.csr-root .csr-multi-breakdown
+.csr-multi-table thead tr:first-child th:nth-child(2) {
+  background: #205047;
+  color: #a7f3d0;
+}
+
+.csr-root .csr-multi-breakdown
+.csr-multi-table thead tr:first-child th:nth-child(3) {
+  background: #215075;
+  color: #bae6fd;
+}
+
+/* หัวคอลัมน์ชั้นที่สอง */
+.csr-root .csr-multi-breakdown
+.csr-multi-table thead tr:nth-child(2)
+th:nth-child(-n+4) {
+  background: #205047;
+}
+
+.csr-root .csr-multi-breakdown
+.csr-multi-table thead tr:nth-child(2)
+th:nth-child(n+5):nth-child(-n+7) {
+  background: #69452d;
+}
+
+.csr-root .csr-multi-breakdown
+.csr-multi-table thead tr:nth-child(2)
+th:nth-child(n+8):nth-child(-n+11) {
+  background: #215075;
+}
+
+.csr-root .csr-multi-breakdown
+.csr-multi-table thead tr:nth-child(2)
+th:nth-child(n+12):nth-child(-n+14) {
+  background: #703748;
+}
+
+/* =========================================
+   SEPARATOR LINES
+========================================= */
+
+/* เส้นแบ่งแต่ละกลุ่ม */
+.csr-root .csr-multi-breakdown
+.csr-multi-table tbody td:nth-child(2),
+.csr-root .csr-multi-breakdown
+.csr-multi-table tbody td:nth-child(6),
+.csr-root .csr-multi-breakdown
+.csr-multi-table tbody td:nth-child(9),
+.csr-root .csr-multi-breakdown
+.csr-multi-table tbody td:nth-child(13) {
+  border-left: 2px solid #607b98;
+}
+
+/* แถวรวมด้านล่างยังใช้สีเดิม */
+.csr-root .csr-multi-breakdown
+.csr-multi-table tfoot .csr-multi-total-row td {
+  background: #234066;
+  color: #ffffff;
+  font-weight: 900;
+}
+/* =========================================
+   CCTV DASHBOARD - OUTAGE COLOR HIGHLIGHT
+========================================= */
+
+/* 1. กลุ่มกล้องทั่วไปที่มีการดับ - สีเหลือง */
+.csr-root .csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+tbody td:nth-child(n+6):nth-child(-n+8) {
+  background: #3d341f;
+}
+
+/* 2. กลุ่มกล้องด่านที่มีการดับ - สีเหลือง */
+.csr-root .csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+tbody td:nth-child(n+13):nth-child(-n+15) {
+  background: #3d341f;
+}
+
+/* 3. หัวตารางของกลุ่มกล้องทั่วไปที่ดับ */
+.csr-root .csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+thead tr:nth-child(2)
+th:nth-child(n+5):nth-child(-n+7) {
+  background: #786023;
+  color: #fff2ba;
+}
+
+/* 4. หัวตารางของกลุ่มกล้องด่านที่ดับ */
+.csr-root .csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+thead tr:nth-child(2)
+th:nth-child(n+12):nth-child(-n+14) {
+  background: #786023;
+  color: #fff2ba;
+}
+
+
+/* กล้องดับมากกว่า 0 ให้พื้นหลังแดงทั้งช่อง */
+.csr-root .csr-multi-breakdown
+.csr-multi-table:not(.csr-multi-overall-table)
+tbody td.csr-outage-alert {
+  background: #8b2635 !important;
+  color: #ffffff !important;
+  font-weight: 900;
+  box-shadow: inset 0 0 0 1px #f87171;
+}
+
+/* =========================================
+   RESTORE LOWER TABLE HEADER
+========================================= */
+
+/* คืนสีหัวตารางล่างเป็นน้ำเงินปกติ */
+.csr-root .csr-multi-breakdown
+.csr-multi-table.csr-multi-overall-table
+thead tr:first-child th:nth-child(2),
+
+.csr-root .csr-multi-breakdown
+.csr-multi-table.csr-multi-overall-table
+thead tr:first-child th:nth-child(3) {
+  background: #213550;
+  color: #d5e5f9;
+}

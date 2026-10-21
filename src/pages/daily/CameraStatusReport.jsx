@@ -416,11 +416,12 @@ const getMessageTone = (message) => {
   return 'info'
 }
 
-export default function CameraStatusReport({
+function CameraStatusReportCenter({
   profile,
   shift,
+  initialCenterId,
+  onCenterChange,
 }) {
-
   const role = String(
     profile?.role || ''
   ).toLowerCase()
@@ -439,7 +440,9 @@ export default function CameraStatusReport({
     useState([])
 
   const [centerId, setCenterId] =
-    useState(String(profile?.center_id || ''))
+    useState(
+      String(initialCenterId || profile?.center_id || '')
+    )
 
   const [network, setNetwork] =
     useState('general')
@@ -2487,9 +2490,14 @@ const boxGroups = useMemo(() => {
               importing ||
               loading
             }
-            onChange={e =>
-              setCenterId(e.target.value)
-            }
+            onChange={e => {
+              const value = e.target.value
+
+              setCenterId(value)
+
+              // แจ้ง Component ด้านนอกว่าผู้ใช้เลือกศูนย์อะไร
+              onCenterChange?.(value)
+            }}
           >
             {centers.map(c => (
               <option
@@ -3566,5 +3574,1181 @@ const boxGroups = useMemo(() => {
       </section>
 
     </div>
+  )
+}
+
+/* =========================================
+   CENTRAL DASHBOARD - SAME JSX FILE
+   READ ONLY / NOT MOUNTING PING COMPONENT
+========================================= */
+
+function CameraAllCentersView({ shift }) {
+  const [day, setDay] = useState(todayTH)
+
+  const [selectedShift, setSelectedShift] = useState(
+    SHIFTS[shift] ? shift : 'morning'
+  )
+
+  const [reports, setReports] = useState([])
+  const [outageUnitRows, setOutageUnitRows] = useState([])
+  const [outageUnitsLoading, setOutageUnitsLoading] = useState(true)
+  const [outageUnitsError, setOutageUnitsError] = useState('')
+  const [loadingAll, setLoadingAll] = useState(true)
+  const [allError, setAllError] = useState('')
+  const [refreshAll, setRefreshAll] = useState(0)
+  const [exportingAll, setExportingAll] = useState(false)
+
+  const allReportRef = useRef(null)
+
+  useEffect(() => {
+    if (SHIFTS[shift]) setSelectedShift(shift)
+  }, [shift])
+
+  /* โหลดข้อมูลจาก Supabase */
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadAll() {
+      setLoadingAll(true)
+      setAllError('')
+
+      const { data, error } = await supabase.rpc(
+        'camera_all_centers_daily',
+        {
+          p_report_date: day,
+          p_shift: selectedShift,
+        }
+      )
+
+      if (cancelled) return
+
+      setReports(error ? [] : (data || []))
+
+      if (error) {
+        setAllError(error.message)
+      }
+
+      setLoadingAll(false)
+    }
+
+    loadAll()
+
+    return () => {
+      cancelled = true
+    }
+  }, [day, selectedShift, refreshAll])
+
+  /* =========================================
+    LOAD OUTAGE UNITS FOR CENTRAL DASHBOARD
+  ========================================= */
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadOutageUnits() {
+      setOutageUnitsLoading(true)
+      setOutageUnitsError('')
+      setOutageUnitRows([])
+
+      const { data, error } = await supabase.rpc(
+        'camera_all_centers_outage_units',
+        {
+          p_report_date: day,
+          p_shift: selectedShift,
+        }
+      )
+
+      if (cancelled) return
+
+      if (error) {
+        setOutageUnitsError(error.message)
+        setOutageUnitRows([])
+      } else {
+        setOutageUnitRows(data || [])
+      }
+
+      setOutageUnitsLoading(false)
+    }
+
+    loadOutageUnits()
+
+    return () => {
+      cancelled = true
+    }
+  }, [day, selectedShift, refreshAll])
+
+  /* จัดกลุ่มข้อมูลรายศูนย์ และคำนวณยอดรวม */
+
+  const overview = useMemo(() => {
+    const map = new Map()
+
+    // ไม่รวมศูนย์ศชต.ในยอดและสถานะการส่งรายงาน
+    const fieldReports = reports.filter(
+      report => !isCctvCentralCenter(report.center_name)
+    )
+
+    for (const report of fieldReports) {
+      const id = String(report.center_id)
+
+      if (!map.has(id)) {
+        map.set(id, {
+          id,
+          name: report.center_name,
+          general: null,
+          checkpoint: null,
+        })
+      }
+
+      if (
+        report.network_type === 'general' ||
+        report.network_type === 'checkpoint'
+      ) {
+        map.get(id)[report.network_type] = report
+      }
+    }
+
+    const centers = [...map.values()].sort((a, b) =>
+      a.name.localeCompare(b.name, 'th')
+    )
+
+    const aggregate = type => {
+      const saved = fieldReports.filter(
+        x => x.network_type === type && x.is_saved
+      )
+
+      const sum = key =>
+        saved.reduce(
+          (acc, item) => acc + Number(item[key] || 0),
+          0
+        )
+
+      return {
+        label:
+          type === 'general' ? 'กล้องทั่วไป' : 'กล้องด่าน',
+        type,
+        hasReport: saved.length > 0,
+        total: sum('total'),
+        online: sum('online'),
+        offline: sum('offline'),
+        unknown: sum('unknown'),
+        fullUnitCount: sum('full_unit_count'),
+        fullUnitCameraCount: sum('full_unit_camera_count'),
+        partialOfflineCount: sum('single_camera_offline_count'),
+      }
+    }
+
+    return {
+      centers,
+      general: aggregate('general'),
+      checkpoint: aggregate('checkpoint'),
+    }
+  }, [reports])
+
+  
+
+    const formatCount = x =>
+      Number(x || 0).toLocaleString('th-TH')
+
+    // คำนวณเปอร์เซ็นต์กล้องที่ใช้งานได้
+    const cameraPercent = (online, total) =>
+      Number(total) > 0
+        ? `${((Number(online) || 0) / Number(total) * 100).toFixed(2)}%`
+        : '—'
+
+    // รวมกล้องทั่วไป + กล้องด่าน
+    const allCameraTotals = {
+      hasReport:
+        overview.general.hasReport ||
+        overview.checkpoint.hasReport,
+
+      total:
+        overview.general.total +
+        overview.checkpoint.total,
+
+      online:
+        overview.general.online +
+        overview.checkpoint.online,
+
+      offline:
+        overview.general.offline +
+        overview.checkpoint.offline,
+
+      unknown:
+        overview.general.unknown +
+        overview.checkpoint.unknown,
+    }
+
+    const multiCenterOutageRows = useMemo(() => {
+    // รวมเฉพาะศูนย์ที่อยู่ใน Dashboard หลัก
+    // ไม่รวมศูนย์ศชต.
+    const validCenterIds = new Set(
+      overview.centers.map(c => String(c.id))
+    )
+
+    return outageUnitRows
+      .filter(item =>
+        validCenterIds.has(String(item.center_id)) &&
+        Number(item.down_count) > 0
+      )
+      .map(item => ({
+        centerId: item.center_id,
+        centerName: item.center_name,
+        networkType: item.network_type,
+        networkName:
+          item.network_type === 'general'
+            ? 'กล้องทั่วไป'
+            : 'กล้องด่าน',
+        unitLabel: item.unit_label,
+        totalCount: Number(item.total_count || 0),
+        downCount: Number(item.down_count || 0),
+        isFull: item.is_full === true,
+      }))
+      .sort((a, b) =>
+        a.centerName.localeCompare(b.centerName, 'th') ||
+        a.networkName.localeCompare(b.networkName, 'th') ||
+        b.downCount - a.downCount ||
+        a.unitLabel.localeCompare(b.unitLabel, 'th')
+      )
+  }, [outageUnitRows, overview.centers])
+
+  const fmtDateTime = value =>
+    value
+      ? new Date(value).toLocaleString('th-TH', {
+          timeZone: 'Asia/Bangkok',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : '—'
+
+  const savedCell = (report, key) =>
+    report?.is_saved ? formatCount(report[key]) : '—'
+
+  /* คัดลอกข้อความ */
+
+  async function copyAllText() {
+    const lines = [
+      'สรุปสถานะกล้อง CCTV ทุกศูนย์',
+      `${previewThaiDate(day)} • ${SHIFTS[selectedShift]}`,
+    ]
+
+    for (const n of [overview.general, overview.checkpoint]) {
+      lines.push(
+        `${n.label}: ทั้งหมด ${n.total} ติด ${n.online} ` +
+        `ดับ ${n.offline} ดับทั้ง` +
+        `${n.type === 'general' ? 'ตู้' : 'ด่าน'} ` +
+        `${n.fullUnitCount} จุด ดับรายตัว ${n.partialOfflineCount}`
+      )
+    }
+
+    for (const c of overview.centers) {
+      lines.push(
+        `${c.name}: ` +
+        `ทั่วไป ติด ${savedCell(c.general, 'online')} / ` +
+        `ดับ ${savedCell(c.general, 'offline')}; ` +
+        `ด่าน ติด ${savedCell(c.checkpoint, 'online')} / ` +
+        `ดับ ${savedCell(c.checkpoint, 'offline')}`
+      )
+    }
+
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'))
+      window.alert('คัดลอกข้อความแล้ว')
+    } catch (error) {
+      window.alert(`คัดลอกไม่สำเร็จ: ${error.message}`)
+    }
+  }
+
+  /* คัดลอกรูป / บันทึก PNG */
+
+  async function exportAllPng(copy = false) {
+    if (exportingAll || !allReportRef.current) return
+
+    setExportingAll(true)
+
+    try {
+      const { default: html2canvas } =
+        await import('html2canvas')
+
+      const element = allReportRef.current
+
+      const canvas = await html2canvas(element, {
+        backgroundColor: '#0d1728',
+        scale: 2,
+        useCORS: true,
+        width: element.scrollWidth,
+        windowWidth: Math.max(
+          window.innerWidth,
+          element.scrollWidth
+        ),
+      })
+
+      const blob = await new Promise(resolve =>
+        canvas.toBlob(resolve, 'image/png')
+      )
+
+      if (!blob) {
+        throw new Error('สร้าง PNG ไม่สำเร็จ')
+      }
+
+      if (copy) {
+        if (
+          !navigator.clipboard?.write ||
+          typeof ClipboardItem === 'undefined'
+        ) {
+          throw new Error('เบราว์เซอร์ไม่รองรับการคัดลอกรูป')
+        }
+
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob }),
+        ])
+
+        
+      } else {
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+
+        link.href = url
+        link.download =
+          `cctv-all-centers-${day}-${selectedShift}.png`
+
+        link.click()
+
+        setTimeout(() => URL.revokeObjectURL(url), 1500)
+      }
+    } catch (error) {
+      window.alert(`ส่งออก PNG ไม่สำเร็จ: ${error.message}`)
+    } finally {
+      setExportingAll(false)
+    }
+  }
+
+  return (
+    <div className="csr-root csr-multi-root">
+
+      {/* HEADER / FILTERS */}
+
+      <div className="csr-dashboard-tools">
+        <div>
+          <span className="csr-dashboard-eyebrow">
+            CCTV NETWORK · ALL CENTERS
+          </span>
+
+          <h3>สรุปสถานะกล้องทุกศูนย์</h3>
+
+          <p>
+            ภาพรวมแบบอ่านอย่างเดียว
+            จากข้อมูลที่บันทึกใน Supabase
+          </p>
+        </div>
+
+        <div className="csr-multi-filters">
+          <label>
+            วันที่รายงาน
+            <input
+              type="date"
+              value={day}
+              onChange={e => setDay(e.target.value)}
+            />
+          </label>
+
+          <label>
+            กะ
+            <select
+              value={selectedShift}
+              onChange={e =>
+                setSelectedShift(e.target.value)
+              }
+            >
+              {Object.entries(SHIFTS).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button
+            type="button"
+            onClick={() => setRefreshAll(v => v + 1)}
+          >
+            รีเฟรช
+          </button>
+        </div>
+      </div>
+
+      {loadingAll ? (
+        <p>กำลังโหลดภาพรวมทุกศูนย์...</p>
+      ) : allError ? (
+        <p className="csr-multi-error">
+          โหลดข้อมูลไม่สำเร็จ: {allError}
+        </p>
+      ) : (
+        <>
+
+          {/* EXPORT ACTIONS */}
+
+          <div className="csr-dashboard-actions csr-multi-actions">
+            <button type="button" onClick={copyAllText}>
+              คัดลอกข้อความ
+            </button>
+
+            <button
+              type="button"
+              disabled={exportingAll}
+              onClick={() => exportAllPng(true)}
+            >
+              คัดลอกรูป
+            </button>
+
+            <button
+              type="button"
+              className="csr-primary"
+              disabled={exportingAll}
+              onClick={() => exportAllPng(false)}
+            >
+              {exportingAll
+                ? 'กำลังส่งออก...'
+                : 'บันทึก PNG'}
+            </button>
+          </div>
+
+          {/* DASHBOARD: เฉพาะกรอบนี้ถูกส่งออก PNG */}
+
+          <div className="csr-multi-scroll">
+            <div
+              className="csr-dashboard-paper csr-multi-paper"
+              ref={allReportRef}
+            >
+              <header className="csr-dashboard-paper-head">
+                <div>
+                  <span className="csr-dashboard-paper-kicker">
+                    CCTV NETWORK · DAILY STATUS
+                  </span>
+
+                  <h2>สรุปรายงานสถานะกล้องทุกศูนย์</h2>
+
+                  <p>
+                    {previewThaiDate(day)}
+                    {' • '}
+                    {SHIFTS[selectedShift]}
+                  </p>
+                </div>
+
+                <div className="csr-dashboard-report-date">
+                  รายงานส่วนกลาง
+                </div>
+              </header>
+
+              {/* DONUTS: ข้อมูลรวมทุกศูนย์ */}
+
+              <div className="csr-dashboard-network-grid">
+                {[overview.general, overview.checkpoint].map(
+                  item => {
+                    const parts = item.total > 0
+                      ? [
+                          {
+                            key: 'green',
+                            value: item.online,
+                            color: '#27c997',
+                          },
+                          {
+                            key: 'red',
+                            value: item.offline,
+                            color: '#f56876',
+                          },
+                          {
+                            key: 'unknown',
+                            value: item.unknown,
+                            color: '#fbbf67',
+                          },
+                        ]
+                      : []
+
+                    let currentPct = 0
+
+                    return (
+                      <article
+                        className="csr-dashboard-network-panel"
+                        key={item.type}
+                      >
+                        <div className="csr-dashboard-panel-title">
+                          <div>
+                            <span>
+                              {item.type === 'general'
+                                ? '01 / CAMERA NETWORK'
+                                : '02 / CHECKPOINT NETWORK'}
+                            </span>
+
+                            <h3>{item.label}</h3>
+                          </div>
+                        </div>
+
+                        <div className="csr-dashboard-donut-row">
+                          <div className="csr-dashboard-donut">
+                            <svg
+                              viewBox="0 0 120 120"
+                              role="img"
+                              aria-label={
+                                `ใช้งานได้ ${previewPercentLabel(
+                                  item.online,
+                                  item.total
+                                )}`
+                              }
+                            >
+                              <circle
+                                cx="60"
+                                cy="60"
+                                r="49"
+                                fill="none"
+                                stroke="#27384e"
+                                strokeWidth="13"
+                              />
+
+                              {parts.map(part => {
+                                const offset = currentPct
+
+                                const length = previewPercent(
+                                  part.value,
+                                  item.total
+                                )
+
+                                currentPct += length
+
+                                return (
+                                  <circle
+                                    key={part.key}
+                                    cx="60"
+                                    cy="60"
+                                    r="49"
+                                    fill="none"
+                                    stroke={part.color}
+                                    strokeWidth="13"
+                                    strokeDasharray={
+                                      `${length * 3.07876} ` +
+                                      `${307.876 - length * 3.07876}`
+                                    }
+                                    strokeDashoffset={
+                                      -offset * 3.07876
+                                    }
+                                    transform="rotate(-90 60 60)"
+                                  />
+                                )
+                              })}
+                            </svg>
+
+                            <div className="csr-dashboard-donut-center">
+                              <strong>
+                                {item.hasReport
+                                  ? previewPercentLabel(
+                                      item.online,
+                                      item.total
+                                    )
+                                  : '—'}
+                              </strong>
+
+                              <small>กล้องใช้งานได้</small>
+                            </div>
+                          </div>
+
+                          <div className="csr-dashboard-mini-stats">
+                            <div>
+                              <small>กล้องทั้งหมด</small>
+                              <strong>
+                                {item.hasReport
+                                  ? formatCount(item.total)
+                                  : '—'}
+                              </strong>
+                            </div>
+
+                            <div>
+                              <span className="csr-dot is-green" />
+                              <small>กล้องติด</small>
+                              <strong>
+                                {item.hasReport
+                                  ? formatCount(item.online)
+                                  : '—'}
+                              </strong>
+                            </div>
+
+                            <div>
+                              <span className="csr-dot is-red" />
+                              <small>กล้องดับ</small>
+                              <strong>
+                                {item.hasReport
+                                  ? formatCount(item.offline)
+                                  : '—'}
+                              </strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="csr-dashboard-outage-box">
+                          <strong>
+                            {item.type === 'general'
+                              ? 'ปัญหาระดับตู้กล้อง'
+                              : 'ปัญหาระดับด่าน'}
+                          </strong>
+
+                          <div className="csr-dashboard-outage-three">
+                            <div>
+                              <b>
+                                {item.hasReport
+                                  ? formatCount(item.fullUnitCount)
+                                  : '—'}
+                              </b>
+                              <small>
+                                ดับทั้ง
+                                {item.type === 'general'
+                                  ? 'ตู้'
+                                  : 'ด่าน'}
+                              </small>
+                            </div>
+
+                            <div>
+                              <b>
+                                {item.hasReport
+                                  ? formatCount(item.fullUnitCameraCount)
+                                  : '—'}
+                              </b>
+                              <small>
+                                กล้องในจุดที่ดับทั้งชุด
+                              </small>
+                            </div>
+
+                            <div>
+                              <b>
+                                {item.hasReport
+                                  ? formatCount(item.partialOfflineCount)
+                                  : '—'}
+                              </b>
+                              <small>กล้องดับรายตัว</small>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    )
+                  }
+                )}
+              </div>
+
+              {/* SUMMARY BY CENTER */}
+
+                            {/* SUMMARY BY CENTER — อยู่ในภาพ PNG */}
+              <section className="csr-multi-breakdown">
+                <h3>สรุปสถานะกล้องรายศูนย์</h3>
+
+                <div className="csr-multi-scroll">
+                  <table className="csr-multi-table">
+                    <thead>
+                      <tr>
+                        <th rowSpan="2">ศูนย์</th>
+                        <th colSpan="7">กล้องทั่วไป</th>
+                        <th colSpan="7">กล้องด่าน</th>
+                      </tr>
+
+                      <tr>
+                        <th>ทั้งหมด</th>
+                        <th>ติด</th>
+                        <th>ดับ</th>
+                        <th>% ใช้งาน</th>
+                        <th>ดับทั้งตู้ (ตู้)</th>
+                        <th>กล้องในตู้ที่ดับ (กล้อง)</th>
+                        <th>ดับรายตัว</th>
+
+                        <th>ทั้งหมด</th>
+                        <th>ติด</th>
+                        <th>ดับ</th>
+                        <th>% ใช้งาน</th>
+                        <th>ดับทั้งด่าน (ด่าน)</th>
+                        <th>กล้องในด่านที่ดับ (กล้อง)</th>
+                        <th>ดับรายตัว</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {overview.centers.map(center => (
+                        <tr key={center.id}>
+                          <td>{center.name}</td>
+
+                          {['general', 'checkpoint'].flatMap(type => {
+                            const report = center[type]
+
+                            return [
+                              <td key={`${type}-total`}>
+                                {savedCell(report, 'total')}
+                              </td>,
+
+                              <td key={`${type}-online`}>
+                                {savedCell(report, 'online')}
+                              </td>,
+
+                              <td key={`${type}-offline`}>
+                                {savedCell(report, 'offline')}
+                              </td>,
+
+                              <td key={`${type}-percent`}>
+                                {report?.is_saved
+                                  ? cameraPercent(report.online, report.total)
+                                  : '—'}
+                              </td>,
+
+                              <td
+                                key={`${type}-units`}
+                                className={
+                                  report?.is_saved && Number(report.full_unit_count) > 0
+                                    ? 'csr-outage-alert'
+                                    : ''
+                                }
+                              >
+                                {savedCell(report, 'full_unit_count')}
+                              </td>,
+
+                              <td
+                                key={`${type}-unit-cameras`}
+                                className={
+                                  report?.is_saved && Number(report.full_unit_camera_count) > 0
+                                    ? 'csr-outage-alert'
+                                    : ''
+                                }
+                              >
+                                {savedCell(report, 'full_unit_camera_count')}
+                              </td>,
+
+                              <td
+                                key={`${type}-single`}
+                                className={
+                                  report?.is_saved && Number(report.single_camera_offline_count) > 0
+                                    ? 'csr-outage-alert'
+                                    : ''
+                                }
+                              >
+                                {savedCell(report, 'single_camera_offline_count')}
+                              </td>,
+                            ]
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+
+                    {/* รวมทุกศูนย์ */}
+                    <tfoot>
+                      <tr className="csr-multi-total-row">
+                        <td>รวมทุกศูนย์</td>
+
+                        {['general', 'checkpoint'].flatMap(type => {
+                          const item = overview[type]
+
+                          const show = key =>
+                            item.hasReport
+                              ? formatCount(item[key])
+                              : '—'
+
+                          return [
+                            <td key={`${type}-total`}>
+                              {show('total')}
+                            </td>,
+
+                            <td key={`${type}-online`}>
+                              {show('online')}
+                            </td>,
+
+                            <td key={`${type}-offline`}>
+                              {show('offline')}
+                            </td>,
+
+                            <td key={`${type}-percent`}>
+                              {item.hasReport
+                                ? cameraPercent(item.online, item.total)
+                                : '—'}
+                            </td>,
+
+                            <td key={`${type}-units`}></td>,
+
+                            <td key={`${type}-unit-cameras`}></td>,
+
+                            <td key={`${type}-single`}></td>,
+                          ]
+                        })}
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* ตารางรวมทั้งสองประเภท */}
+                <h3 className="csr-multi-overall-title">
+                  ศูนย์ที่มีกล้องดับ / ตู้หรือด่านที่มีปัญหา
+                </h3>
+
+                <table className="csr-multi-table csr-multi-overall-table">
+                  <thead>
+                    <tr>
+                      <th>ศูนย์</th>
+                      <th>เครือข่าย</th>
+                      <th>ตู้ / ด่าน</th>
+                      <th>สถานะ</th>
+                      <th>สรุปการดับ</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {outageUnitsLoading ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center' }}>
+                          กำลังโหลดข้อมูลกล้องดับรายตู้/ด่าน...
+                        </td>
+                      </tr>
+                    ) : outageUnitsError ? (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          style={{ textAlign: 'center', color: '#f87171' }}
+                        >
+                          โหลดข้อมูลไม่สำเร็จ: {outageUnitsError}
+                        </td>
+                      </tr>
+                    ) : multiCenterOutageRows.length > 0 ? (
+                      multiCenterOutageRows.map((item, index) => (
+                        <tr
+                          key={`${item.centerId}-${item.networkType}-${item.unitLabel}-${index}`}
+                        >
+                          <td>{item.centerName}</td>
+
+                          <td>{item.networkName}</td>
+
+                          <td>{item.unitLabel}</td>
+
+                          <td>
+                            {item.isFull
+                              ? item.networkType === 'general'
+                                ? 'ดับทั้งตู้'
+                                : 'ดับทั้งด่าน'
+                              : 'ดับบางกล้อง'}
+                          </td>
+
+                          <td>
+                            {`ดับ ${formatCount(item.downCount)} กล้อง`}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center' }}>
+                          ไม่มีรายการกล้องดับจากรายงานที่บันทึกไว้
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+
+                <p>
+                  แสดงเฉพาะศูนย์ที่บันทึกรายงานแล้ว และมีอย่างน้อย 1 กล้องดับ
+                  {' • '}
+                  ไม่แสดงรายละเอียดรายชื่อกล้องย่อย
+                  {' • '}
+                  ถ้าดับทั้งตู้/ด่าน จะแสดงเป็น “ดับ X กล้อง จาก X กล้อง”
+                </p>
+              </section>
+
+            </div>
+          </div>
+
+          {/* SUBMISSION STATUS: นอกภาพ PNG */}
+
+          <section className="csr-multi-submissions">
+            <h3>
+              ติดตามสถานะการบันทึกรายงานของแต่ละศูนย์
+            </h3>
+
+            <div className="csr-multi-scroll">
+              <table className="csr-multi-table">
+                <thead>
+                  <tr>
+                    <th>ศูนย์</th>
+                    <th>กล้องทั่วไป</th>
+                    <th>บันทึกล่าสุด</th>
+                    <th>กล้องด่าน</th>
+                    <th>บันทึกล่าสุด</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {overview.centers.map(center => (
+                    <tr key={center.id}>
+                      <td>{center.name}</td>
+
+                      {['general', 'checkpoint'].map(type => {
+                        const report = center[type]
+
+                        return [
+                          <td key={`${type}-status`}>
+                            <span
+                              className={`csr-multi-status ${
+                                !report?.is_saved
+                                  ? 'missing'
+                                  : report.is_final
+                                    ? 'complete'
+                                    : 'draft'
+                              }`}
+                            >
+                              {!report?.is_saved
+                                ? 'ยังไม่บันทึก'
+                                : report.is_final
+                                  ? 'บันทึกแล้ว · ยืนยันครบ'
+                                  : 'บันทึกแล้ว · ชั่วคราว'}
+                            </span>
+                          </td>,
+
+                          <td key={`${type}-time`}>
+                            {report?.is_saved
+                              ? fmtDateTime(report.updated_at)
+                              : '—'}
+                          </td>,
+                        ]
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+        </>
+      )}
+    </div>
+  )
+}
+
+/* =========================================
+   SAME PAGE - CENTER SELECTION ROUTER
+   centercctv = Central dashboard
+   Admin / Supervisor:
+     ศูนย์ศชต. = Central dashboard
+     Other center = Existing Ping page
+========================================= */
+
+function isCctvCentralCenter(name) {
+  const normalized = String(name || '')
+    .replace(/[\s.\u200B\uFF0E]/g, '')
+    .toLowerCase()
+
+  return (
+    normalized === 'ศูนย์ศชต' ||
+    normalized === 'ศชต'
+  )
+}
+
+export default function CameraStatusReport(props) {
+  const role = String(props.profile?.role || '').toLowerCase()
+
+  // super เป็นคำเรียกย่อ แต่ Role จริงคือ supervisor
+  const isManager =
+    role === 'admin' ||
+    role === 'supervisor'
+
+  const [centralAccess, setCentralAccess] = useState(null)
+  const [accessError, setAccessError] = useState('')
+
+  const [allCenters, setAllCenters] = useState([])
+  const [centerLoading, setCenterLoading] = useState(isManager)
+  const [centerError, setCenterError] = useState('')
+
+  const [selectedCenterId, setSelectedCenterId] = useState(
+    () => String(props.profile?.center_id || '')
+  )
+
+  // ตรวจสิทธิ์ดูข้อมูลทุกศูนย์จาก Supabase
+  useEffect(() => {
+    let cancelled = false
+
+    async function checkAccess() {
+      setCentralAccess(null)
+      setAccessError('')
+
+      const { data, error } = await supabase.rpc(
+        'camera_can_view_all_centers'
+      )
+
+      if (cancelled) return
+
+      if (error) {
+        setAccessError(error.message)
+      } else {
+        setCentralAccess(data === true)
+      }
+    }
+
+    checkAccess()
+
+    return () => {
+      cancelled = true
+    }
+  }, [props.profile?.id])
+
+  // Admin / Supervisor อ่านรายชื่อศูนย์เพื่อเลือกหน้า
+  useEffect(() => {
+    let cancelled = false
+
+    if (!isManager) {
+      setCenterLoading(false)
+      setAllCenters([])
+      return
+    }
+
+    async function loadCenters() {
+      setCenterLoading(true)
+      setCenterError('')
+
+      const { data, error } = await supabase
+        .from('centers')
+        .select('id,name')
+        .order('name')
+
+      if (cancelled) return
+
+      if (error) {
+        setCenterError(error.message)
+        setAllCenters([])
+      } else {
+        const items = data || []
+
+        setAllCenters(items)
+
+        setSelectedCenterId(previous => {
+          const exists = items.some(
+            c => String(c.id) === String(previous)
+          )
+
+          if (exists) return String(previous)
+
+          const profileCenter = String(
+            props.profile?.center_id || ''
+          )
+
+          const profileCenterExists = items.some(
+            c => String(c.id) === profileCenter
+          )
+
+          return profileCenterExists
+            ? profileCenter
+            : String(items[0]?.id || '')
+        })
+      }
+
+      setCenterLoading(false)
+    }
+
+    loadCenters()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    isManager,
+    props.profile?.id,
+    props.profile?.center_id,
+  ])
+
+  // หาศูนย์ที่ Admin/Supervisor กำลังเลือก
+  const selectedCenter = allCenters.find(
+    c => String(c.id) === String(selectedCenterId)
+  )
+
+  const selectedCentralCenter =
+    isManager &&
+    isCctvCentralCenter(selectedCenter?.name)
+
+  // บัญชีส่วนกลางที่ได้รับสิทธิ์เข้า Dashboard โดยตรง
+  // Admin/Supervisor ต้องเลือกศูนย์ศชต. ก่อน
+  const showCentralDashboard = isManager
+    ? selectedCentralCenter
+    : centralAccess === true
+
+  if (accessError) {
+    return (
+      <div className="csr-root">
+        ตรวจสอบสิทธิ์ไม่สำเร็จ: {accessError}
+      </div>
+    )
+  }
+
+  if (centralAccess === null || (isManager && centerLoading)) {
+    return (
+      <div className="csr-root">
+        กำลังตรวจสอบสิทธิ์และรายชื่อศูนย์...
+      </div>
+    )
+  }
+
+  if (isManager && centerError) {
+    return (
+      <div className="csr-root">
+        โหลดรายชื่อศูนย์ไม่สำเร็จ: {centerError}
+      </div>
+    )
+  }
+
+  // เลือกศูนย์ศชต. แต่ยังไม่ได้รับสิทธิ์อ่านข้อมูลรวม
+  if (selectedCentralCenter && !centralAccess) {
+    return (
+      <div className="csr-root">
+        บัญชีนี้ยังไม่ได้รับสิทธิ์ดู Dashboard ทุกศูนย์
+        กรุณาตรวจ SQL camera_can_view_all_centers
+      </div>
+    )
+  }
+
+  // =========================================
+  // CENTRAL DASHBOARD
+  // =========================================
+
+  if (showCentralDashboard) {
+    return (
+      <>
+        {/* Admin / Supervisor ต้องเลือกกลับไปศูนย์อื่นได้ */}
+        {isManager && (
+          <div className="csr-root csr-central-center-picker">
+            <label>
+              <span>เลือกศูนย์</span>
+
+              <select
+                value={selectedCenterId}
+                onChange={e =>
+                  setSelectedCenterId(e.target.value)
+                }
+              >
+                {allCenters.map(center => (
+                  <option
+                    key={center.id}
+                    value={center.id}
+                  >
+                    {center.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+
+        <CameraAllCentersView shift={props.shift} />
+      </>
+    )
+  }
+
+  // =========================================
+  // ORIGINAL CCTV PING PAGE
+  // =========================================
+
+  return (
+    <CameraStatusReportCenter
+      {...props}
+      initialCenterId={isManager ? selectedCenterId : undefined}
+      onCenterChange={
+        isManager ? setSelectedCenterId : undefined
+      }
+    />
   )
 }
