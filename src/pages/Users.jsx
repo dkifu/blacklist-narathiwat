@@ -2,6 +2,53 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+/* =========================================
+   CENTER MEMBER PHONE FORMAT
+   Mobile:  xxx-xxxxxxx
+   Landline: xx-xxxxxxx
+========================================= */
+
+function formatMemberPhone(value) {
+  const source = String(value ?? '')
+    .trim()
+    .replace(/[๐-๙]/g, (ch) =>
+      String('๐๑๒๓๔๕๖๗๘๙'.indexOf(ch))
+    )
+    .replace(/[０-９]/g, (ch) =>
+      String(ch.charCodeAt(0) - 0xff10)
+    )
+
+  if (!source) return ''
+
+  let digits = source.replace(/\D/g, '')
+
+  // รองรับ +66, 66 และ 0066
+  if (
+    /^\+66/.test(source) ||
+    digits.startsWith('0066') ||
+    /^66\d{8,9}$/.test(digits)
+  ) {
+    digits =
+      '0' +
+      digits
+        .replace(/^(0066|66)/, '')
+        .replace(/^0/, '')
+  }
+
+  // ต้องเป็นเบอร์ไทย 9 หรือ 10 หลัก
+  if (!/^0\d{8,9}$/.test(digits)) {
+    return ''
+  }
+
+  // 10 หลัก: 091-8468408
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`
+  }
+
+  // 9 หลัก: 02-1234567
+  return `${digits.slice(0, 2)}-${digits.slice(2)}`
+}
+
 function Users({ profile }) {
   const [centers, setCenters] = useState([])
   const [members, setMembers] = useState([])
@@ -870,7 +917,7 @@ function Users({ profile }) {
       name: member.name || '',
       rank: member.rank || '',
       position: member.position || '',
-      phone: member.phone || '',
+      phone: formatMemberPhone(member.phone) || member.phone || '',
     })
     
 
@@ -912,6 +959,17 @@ function Users({ profile }) {
       return
     }
 
+    const rawPhone = String(memberForm.phone || '').trim()
+      const formattedPhone = formatMemberPhone(rawPhone)
+
+      if (rawPhone && !formattedPhone) {
+        showMessage(
+          'error',
+          'เบอร์โทรไม่ถูกต้อง ต้องเป็น 9 หรือ 10 หลัก เช่น 02-1234567 หรือ 091-8468408'
+        )
+        return
+      }
+
     setSaving(true)
     setMessage('')
 
@@ -929,7 +987,7 @@ function Users({ profile }) {
         memberForm.position.trim() || null,
 
       phone:
-        String(memberForm.phone || '').trim() || null,  
+        formattedPhone || null,  
     }
 
     let error
@@ -1778,6 +1836,16 @@ function Users({ profile }) {
                     phone: e.target.value,
                   }))
                 }
+                onBlur={(e) => {
+                  const formatted = formatMemberPhone(e.target.value)
+
+                  if (formatted) {
+                    setMemberForm((prev) => ({
+                      ...prev,
+                      phone: formatted,
+                    }))
+                  }
+                }}
                 placeholder="เช่น 081-234-5678"
               />
             </div>
@@ -1889,7 +1957,12 @@ function Users({ profile }) {
                       </span>
 
                       <span>
-                        โทร. {member.phone || 'ยังไม่ระบุเบอร์โทร'}
+                        โทร. {member.phone
+                        ? (
+                            formatMemberPhone(member.phone) ||
+                            'กรุณาตรวจสอบเบอร์โทร'
+                          )
+                        : 'ยังไม่ระบุเบอร์โทร'}
                       </span>
 
                     </div>
