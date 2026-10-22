@@ -48,6 +48,7 @@ function Users({ profile }) {
     name: '',
     rank: '',
     position: '',
+    phone: '',
   })
 
   const isAdmin =
@@ -824,6 +825,7 @@ function Users({ profile }) {
       name: '',
       rank: '',
       position: '',
+      phone: '',
     })
 
     setShowForm(false)
@@ -851,6 +853,7 @@ function Users({ profile }) {
       name: '',
       rank: '',
       position: '',
+      phone: '',
     })
 
     setShowForm(true)
@@ -867,6 +870,7 @@ function Users({ profile }) {
       name: member.name || '',
       rank: member.rank || '',
       position: member.position || '',
+      phone: member.phone || '',
     })
     
 
@@ -923,6 +927,9 @@ function Users({ profile }) {
 
       position:
         memberForm.position.trim() || null,
+
+      phone:
+        String(memberForm.phone || '').trim() || null,  
     }
 
     let error
@@ -1757,6 +1764,24 @@ function Users({ profile }) {
 
             </div>
 
+            <div className="modern-field">
+              <label>เบอร์โทรศัพท์</label>
+
+              <input
+                type="tel"
+                inputMode="tel"
+                maxLength={25}
+                value={memberForm.phone || ''}
+                onChange={(e) =>
+                  setMemberForm((prev) => ({
+                    ...prev,
+                    phone: e.target.value,
+                  }))
+                }
+                placeholder="เช่น 081-234-5678"
+              />
+            </div>
+
 
             <div className="users-form-actions">
 
@@ -1861,6 +1886,10 @@ function Users({ profile }) {
                       <span>
                         {member.position ||
                           'สมาชิกประจำศูนย์'}
+                      </span>
+
+                      <span>
+                        โทร. {member.phone || 'ยังไม่ระบุเบอร์โทร'}
                       </span>
 
                     </div>
