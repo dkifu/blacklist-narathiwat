@@ -1,0 +1,870 @@
+/* =========================================
+   CCTV REPAIR ORDERS
+   DARK THEME - MATCH CAMERA STATUS REPORT
+========================================= */
+
+.repair-page {
+  --repair-bg: #111822;
+  --repair-panel: #151f2d;
+  --repair-card: #172232;
+  --repair-input: #192332;
+  --repair-border: #304055;
+  --repair-text: #eef3fb;
+  --repair-muted: #9aabc1;
+  --repair-accent: #ff416c;
+
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+
+  color: var(--repair-text);
+  background: var(--repair-bg);
+  border: 1px solid #293548;
+  border-radius: 16px;
+
+  color-scheme: dark;
+}
+
+.repair-page *,
+.repair-page *::before,
+.repair-page *::after {
+  box-sizing: border-box;
+}
+
+
+/* =========================================
+   PAGE HEADER
+========================================= */
+
+.repair-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  padding: 0 0 20px;
+  margin-bottom: 20px;
+
+  background: transparent;
+  color: var(--repair-text);
+  border-bottom: 1px solid #293548;
+}
+
+.repair-heading h1 {
+  margin: 7px 0;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: #ffffff;
+}
+
+.repair-heading p {
+  margin: 0;
+  color: #9aabc1;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.repair-eyebrow {
+  color: var(--repair-accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.repair-heading > svg {
+  color: var(--repair-accent);
+  flex-shrink: 0;
+}
+
+
+/* =========================================
+   PANELS
+========================================= */
+
+.repair-panel {
+  min-width: 0;
+  margin-bottom: 18px;
+  padding: 20px;
+
+  background: var(--repair-panel);
+  border: 1px solid #2c3c53;
+  border-radius: 14px;
+
+  color: var(--repair-text);
+}
+
+.repair-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  margin: 0 0 18px;
+
+  color: #eef3fb;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.repair-panel h2 svg {
+  color: #a9b9d0;
+}
+
+
+/* =========================================
+   FILTERS
+========================================= */
+
+.repair-filters {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.repair-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  color: #a9b9d0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.repair-page .repair-filters input,
+.repair-page .repair-filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+
+  padding: 10px 12px;
+
+  color: #eef3fb;
+  background: #192332;
+  border: 1px solid #35445b;
+  border-radius: 9px;
+
+  font: inherit;
+  font-size: 12px;
+
+  outline: none;
+  transition:
+    border-color .2s ease,
+    box-shadow .2s ease;
+}
+
+.repair-page .repair-filters input:focus,
+.repair-page .repair-filters select:focus {
+  border-color: #ff416c;
+  box-shadow: 0 0 0 3px rgba(255, 65, 108, .12);
+}
+
+.repair-page .repair-filters select option {
+  color: #eef3fb;
+  background: #192332;
+}
+
+.repair-page .repair-filters select:disabled {
+  opacity: .75;
+  cursor: not-allowed;
+}
+
+
+/* =========================================
+   PRIMARY BUTTON
+========================================= */
+
+.repair-page .repair-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 42px;
+  padding: 10px 16px;
+
+  color: #ffffff;
+  background: #b41f49;
+  border: 1px solid #d0315c;
+  border-radius: 9px;
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    background .2s ease,
+    border-color .2s ease;
+}
+
+.repair-page .repair-primary-button:hover:not(:disabled) {
+  background: #cb2856;
+  border-color: #ff416c;
+}
+
+
+/* =========================================
+   TWO COLUMNS
+========================================= */
+
+.repair-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.repair-columns > .repair-panel {
+  min-width: 0;
+}
+
+
+/* =========================================
+   SCROLLABLE LISTS
+========================================= */
+
+.repair-card-list,
+.repair-order-list {
+  display: grid;
+  gap: 10px;
+
+  max-height: 550px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding-right: 4px;
+}
+
+.repair-card-list::-webkit-scrollbar,
+.repair-order-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.repair-card-list::-webkit-scrollbar-track,
+.repair-order-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.repair-card-list::-webkit-scrollbar-thumb,
+.repair-order-list::-webkit-scrollbar-thumb {
+  background: #3b4c63;
+  border-radius: 99px;
+}
+
+
+/* =========================================
+   OFFLINE UNIT CARDS
+========================================= */
+
+.repair-unit-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+
+  min-width: 0;
+  padding: 15px 16px;
+
+  background: #172232;
+  border: 1px solid #304055;
+  border-left: 3px solid #ed5a70;
+  border-radius: 12px;
+
+  color: #eef3fb;
+
+  transition:
+    background .2s ease,
+    border-color .2s ease;
+}
+
+.repair-unit-card:hover {
+  background: #1b293b;
+  border-color: #455671;
+  border-left-color: #ff416c;
+}
+
+.repair-unit-card strong {
+  color: #f4f7ff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.repair-unit-card span {
+  color: #d8e2f1;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.repair-unit-card small {
+  color: #91a4bc;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+
+/* =========================================
+   UNIT ACTION BUTTONS
+========================================= */
+
+.repair-page .repair-unit-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  margin-top: 5px;
+  padding: 9px 13px;
+
+  color: #eef3fb;
+  background: #1b293b;
+  border: 1px solid #455169;
+  border-radius: 9px;
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background .2s ease,
+    border-color .2s ease;
+}
+
+.repair-page .repair-unit-card button:hover:not(:disabled) {
+  background: #28374c;
+  border-color: #ff416c;
+}
+
+
+/* =========================================
+   REMOVE UNIT BUTTON
+========================================= */
+
+.repair-page .repair-unit-card .repair-remove-button {
+  background: rgba(240, 107, 121, .10);
+  border: 1px solid rgba(240, 107, 121, .35);
+  color: #fa8793;
+}
+
+.repair-page .repair-unit-card .repair-remove-button:hover:not(:disabled) {
+  background: rgba(240, 107, 121, .18);
+  border-color: #fa8793;
+}
+
+
+/* =========================================
+   REPAIR ORDER LIST
+========================================= */
+
+.repair-page .repair-order-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+
+  width: 100%;
+  min-width: 0;
+  padding: 15px 16px;
+
+  color: #eef3fb;
+  background: #172232;
+  border: 1px solid #304055;
+  border-radius: 12px;
+
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+
+  transition:
+    background .2s ease,
+    border-color .2s ease;
+}
+
+.repair-page .repair-order-button:hover:not(:disabled) {
+  background: #203047;
+  border-color: #536782;
+}
+
+.repair-page .repair-order-button.is-selected {
+  background: #231e30;
+  border-color: #b41f49;
+  box-shadow: inset 3px 0 0 #ff416c;
+}
+
+.repair-order-button strong {
+  color: #f4f7ff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.repair-order-button span {
+  color: #a9b9d0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.repair-order-button small {
+  color: #91a4bc;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+
+/* =========================================
+   SELECTED REPAIR ORDER SUMMARY
+========================================= */
+
+.repair-order-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  margin-bottom: 14px;
+  padding: 13px 15px;
+
+  background: #192536;
+  border: 1px solid #324157;
+  border-radius: 10px;
+}
+
+.repair-order-summary strong {
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.repair-order-summary span {
+  padding: 5px 11px;
+
+  color: #f7a2b7;
+  background: rgba(255, 65, 108, .12);
+  border: 1px solid rgba(255, 65, 108, .28);
+  border-radius: 7px;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+
+/* =========================================
+   SYSTEM MESSAGES
+========================================= */
+
+.repair-message {
+  padding: 12px 15px;
+  margin-bottom: 16px;
+
+  color: #d8e2f1;
+  background: #1a2636;
+  border: 1px solid #455169;
+  border-radius: 10px;
+
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+
+/* =========================================
+   EMPTY STATE
+========================================= */
+
+.repair-muted {
+  margin: 12px 0;
+
+  color: #91a4bc;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+
+/* =========================================
+   DISABLED STATES
+========================================= */
+
+.repair-page button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1050px) {
+  .repair-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 850px) {
+  .repair-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .repair-page {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .repair-heading {
+    gap: 12px;
+  }
+
+  .repair-heading h1 {
+    font-size: 20px;
+  }
+
+  .repair-heading > svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .repair-panel {
+    padding: 14px;
+  }
+
+  .repair-unit-card,
+  .repair-page .repair-order-button {
+    padding: 12px;
+  }
+}
+
+/* =========================================
+   REPAIR FORM ACTIONS
+========================================= */
+
+.repair-form-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.repair-page .repair-submit-button {
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid rgba(54, 199, 142, .5);
+  border-radius: 9px;
+  background: rgba(54, 199, 142, .12);
+  color: #44cd95;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.repair-page .repair-submit-button:hover:not(:disabled) {
+  background: rgba(54, 199, 142, .22);
+  border-color: #44cd95;
+}
+
+/* =========================================
+   DELETE REPAIR DRAFT
+========================================= */
+
+.repair-order-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  min-width: 0;
+}
+
+.repair-order-row .repair-order-button {
+  flex: 1;
+  min-width: 0;
+}
+
+.repair-page .repair-delete-draft-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-width: 78px;
+  padding: 10px 12px;
+
+  color: #fa8793;
+  background: rgba(240, 107, 121, 0.09);
+  border: 1px solid rgba(240, 107, 121, 0.35);
+  border-radius: 10px;
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.repair-page .repair-delete-draft-button:hover:not(:disabled) {
+  background: rgba(240, 107, 121, 0.20);
+  border-color: #fa8793;
+}
+
+@media (max-width: 600px) {
+  .repair-order-row {
+    gap: 7px;
+  }
+
+  .repair-page .repair-delete-draft-button {
+    min-width: 62px;
+    padding: 8px;
+  }
+}
+
+/* =========================================
+   CCTV REPAIR DRAG & DROP
+========================================= */
+
+.repair-page .repair-unit-card.is-draggable {
+  cursor: grab;
+  user-select: none;
+}
+
+.repair-page .repair-unit-card.is-draggable:active {
+  cursor: grabbing;
+}
+
+.repair-page .repair-unit-card.is-draggable:hover {
+  border-color: #ff416c;
+  border-left-color: #ff416c;
+  background: #203047;
+}
+
+.repair-page .repair-drop-zone {
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.repair-page .repair-drop-zone.is-drag-over {
+  background: #241d2b;
+  border-color: #ff416c;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 65, 108, 0.35);
+}
+
+.repair-drop-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px;
+  margin-bottom: 15px;
+
+  color: #d3a9ba;
+  background: rgba(255, 65, 108, 0.06);
+  border: 1px dashed rgba(255, 65, 108, 0.45);
+  border-radius: 10px;
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.repair-drop-hint svg {
+  color: #ff416c;
+  flex-shrink: 0;
+}
+
+.repair-page .repair-drop-zone.is-drag-over
+.repair-drop-hint {
+  background: rgba(255, 65, 108, 0.13);
+  border-color: #ff416c;
+  color: #ffffff;
+}
+
+/* =========================================
+   SNAPSHOT OF FAILED CAMERAS
+========================================= */
+
+.repair-camera-snapshot {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  margin-top: 8px;
+
+  background: #101925;
+  border: 1px solid #304055;
+  border-radius: 9px;
+}
+
+.repair-camera-snapshot > strong {
+  color: #eef3fb;
+  font-size: 12px;
+}
+
+.repair-camera-snapshot-item {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 5px 12px;
+  padding: 7px 0;
+  border-top: 1px solid #27364a;
+}
+
+.repair-camera-snapshot-item span {
+  color: #dce6f5;
+  font-size: 12px;
+}
+
+.repair-camera-snapshot-item small {
+  color: #90a4bb;
+  font-size: 11px;
+}
+
+@media (max-width: 850px) {
+  .repair-drop-hint {
+    padding: 11px;
+  }
+}
+
+/* =========================================
+   A4 DOCUMENT PREVIEW BUTTON
+========================================= */
+
+.repair-page .repair-preview-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  width: 100%;
+  min-height: 42px;
+  margin: 0 0 15px;
+  padding: 10px 14px;
+
+  border: 1px solid #455169;
+  border-radius: 9px;
+
+  color: #eef3fb;
+  background: #1b293b;
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.repair-page .repair-preview-button:hover:not(:disabled) {
+  border-color: #ff416c;
+  background: #28374c;
+}
+
+
+/* =========================================
+   REPAIR ORDERS - TWO TECHNICIAN TEAMS
+========================================= */
+
+.repair-team-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+  width: 100%;
+}
+
+.repair-team-panel {
+  min-width: 0;
+  padding: 14px;
+  background: #172232;
+  border: 1px solid #304055;
+  border-radius: 12px;
+}
+
+/* ช่างตากใบ */
+.repair-team-takbai {
+  border-top: 3px solid #e94c79;
+}
+
+/* ช่างปัตตานี */
+.repair-team-pattani {
+  border-top: 3px solid #24a984;
+}
+
+.repair-team-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.repair-team-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.repair-team-title strong {
+  color: #eef3fb;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.repair-team-takbai .repair-team-title svg {
+  color: #e94c79;
+}
+
+.repair-team-pattani .repair-team-title svg {
+  color: #24a984;
+}
+
+.repair-team-count {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  color: #a9b9d0;
+  background: #1d2b3d;
+  border: 1px solid #35445b;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* แต่ละทีมเลื่อนรายการแยกกัน */
+.repair-team-panel .repair-order-list {
+  display: grid;
+  gap: 10px;
+  max-height: 450px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+
+/* การ์ดให้ขยายเต็มพื้นที่คอลัมน์ */
+.repair-team-panel .repair-order-row {
+  width: 100%;
+  min-width: 0;
+}
+
+.repair-team-panel .repair-order-button {
+  width: 100%;
+  min-width: 0;
+}
+
+/* หน้าจอเล็ก เรียงบน-ล่าง */
+@media (max-width: 900px) {
+  .repair-team-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .repair-team-panel {
+    padding: 12px;
+  }
+}

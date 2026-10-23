@@ -11,6 +11,7 @@ import {
   Moon,
   Clock3,
   FileText,
+  Wrench,
 } from 'lucide-react'
 
 
@@ -19,6 +20,7 @@ import AlertReport from './daily/AlertReport'
 import UsageStatisticsReport from './daily/UsageStatisticsReport'
 import CctvAiReport from './daily/CctvAiReport'
 import CameraStatusReport from './daily/CameraStatusReport'
+import CctvRepairOrders from './daily/CctvRepairOrders'
 import './DailyReport.css'
 
 /* =========================================
@@ -342,6 +344,34 @@ function DailyReport({ profile }) {
     }
 
     /* =========================================
+      CCTV REPAIR ORDERS
+    ========================================= */
+
+    if (activeReport === 'repair-orders') {
+      return (
+        <div className="daily-hub-report-view">
+          <div className="daily-hub-backbar">
+            <button
+              type="button"
+              className="daily-hub-back-button"
+              onClick={() => setActiveReport(null)}
+            >
+              <ArrowLeft size={18} />
+              {reportBackLabel}
+            </button>
+
+            <div className="daily-hub-current-report">
+              <Wrench size={18} />
+              <span>ระบบใบแจ้งซ่อม CCTV</span>
+            </div>
+          </div>
+
+          <CctvRepairOrders profile={profile} />
+        </div>
+      )
+    }
+
+    /* =========================================
    CAMERA STATUS REPORT
     HOUR 1 - ALL SHIFTS
   ========================================= */
@@ -540,6 +570,40 @@ function DailyReport({ profile }) {
                     </div>
 
                   </button>
+
+                  {/* =====================================
+                      CCTV REPAIR ORDERS
+                      MORNING SHIFT - HOUR 1 ONLY
+                  ===================================== */}
+
+                  {activeShift === 'morning' && (
+                    <button
+                      type="button"
+                      className="daily-hub-card"
+                      onClick={() => setActiveReport('repair-orders')}
+                    >
+                      <div className="daily-hub-card-number-box">
+                        02
+                      </div>
+
+                      <div className="daily-hub-card-content">
+                        <span className="daily-hub-card-number">
+                          CCTV REPAIR ORDERS
+                        </span>
+
+                        <h3>ระบบใบแจ้งซ่อม CCTV</h3>
+
+                        <p>
+                          เลือกตู้และด่านที่มีกล้องขัดข้อง
+                          จัดทำใบแจ้งซ่อม และติดตามสถานะการดำเนินงาน
+                        </p>
+                      </div>
+
+                      <div className="daily-hub-card-arrow">
+                        <ChevronRight size={22} />
+                      </div>
+                    </button>
+                  )}
 
                 </div>
 
@@ -863,6 +927,8 @@ function DailyReport({ profile }) {
                   <ChevronRight size={22} />
                 </div>
               </button>
+
+              
 
               {/* =====================================
                   CCTV REQUESTS

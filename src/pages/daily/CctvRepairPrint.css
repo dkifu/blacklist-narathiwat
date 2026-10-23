@@ -1,0 +1,928 @@
+/* =========================================
+   CCTV REPAIR PRINT
+   A4 PORTRAIT - CLEAN VERSION
+========================================= */
+
+.rp-overlay,
+.rp-overlay * {
+  box-sizing: border-box;
+}
+
+.rp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  color: #eaf1fa;
+  background: rgba(7, 12, 20, 0.97);
+}
+
+/* =========================================
+   TOOLBAR
+========================================= */
+
+.rp-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 24px;
+  background: #151f2d;
+  border-bottom: 1px solid #35445b;
+}
+
+.rp-toolbar-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rp-toolbar-copy strong {
+  font-size: 14px;
+}
+
+.rp-toolbar-copy small {
+  color: #a6b6cc;
+  font-size: 11px;
+}
+
+.rp-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.rp-toolbar-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  color: #eaf1fa;
+  background: #1b293b;
+  border: 1px solid #455169;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rp-toolbar-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.rp-toolbar-actions .rp-print-button {
+  color: #fff;
+  background: #b41f49;
+  border-color: #d0315c;
+}
+
+/* =========================================
+   A4 PAPER
+========================================= */
+
+.rp-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+  text-align: center;
+}
+
+.rp-paper {
+  position: relative;
+  isolation: isolate;
+
+  display: flex;
+  flex-direction: column;
+
+  width: 210mm;
+  min-height: 297mm;
+
+  margin: 0 auto;
+  padding: 10mm;
+
+  color: #172033;
+  background: #ffffff;
+
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.32);
+
+  text-align: left;
+
+  font-family:
+    'Noto Sans Thai',
+    'Sarabun',
+    Tahoma,
+    sans-serif;
+
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+/* =========================================
+   DRAFT WATERMARK
+========================================= */
+
+.rp-watermark {
+  position: absolute;
+  z-index: -1;
+
+  top: 95mm;
+  left: 17%;
+
+  color: rgba(180, 31, 73, 0.10);
+
+  font-size: 70px;
+  font-weight: 900;
+  white-space: nowrap;
+
+  pointer-events: none;
+
+  transform: rotate(-30deg);
+}
+
+/* =========================================
+   DOCUMENT HEADER
+========================================= */
+
+.rp-doc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 4mm;
+  padding-bottom: 3mm;
+
+  border-bottom: 1px solid #263247;
+
+  break-after: avoid;
+}
+
+.rp-doc-brand {
+  display: flex;
+  flex: 1 1 auto;
+
+  align-items: center;
+  gap: 3mm;
+
+  min-width: 0;
+}
+
+/* โลโก้ VISION ในหัวใบแจ้งซ่อม A4 */
+.rp-doc-logo {
+  display: block;
+  width: 38mm;
+  height: 17mm;
+  flex: 0 0 38mm;
+  object-fit: contain;
+  object-position: center;
+}
+
+.rp-doc-title {
+  min-width: 0;
+}
+
+.rp-doc-title h1 {
+  margin: 0;
+
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.rp-doc-title p {
+  margin: 3px 0 0;
+
+  color: #64748b;
+
+  font-size: 10px;
+  letter-spacing: 0.6px;
+}
+
+.rp-doc-title small {
+  display: block;
+  margin-top: 5px;
+
+  color: #64748b;
+  font-size: 10px;
+}
+
+/* =========================================
+   DOCUMENT META
+========================================= */
+
+.rp-doc-meta {
+  display: grid;
+
+  grid-template-columns: repeat(
+    2,
+    minmax(0, 1fr)
+  );
+
+  flex: 0 0 55mm;
+
+  gap: 6px 9px;
+
+  width: 55mm;
+  padding: 8px 9px;
+
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+}
+
+.rp-doc-meta > div {
+  min-width: 0;
+}
+
+.rp-doc-meta b,
+.rp-info-grid b {
+  display: block;
+
+  color: #64748b;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.rp-doc-meta span {
+  display: block;
+
+  color: #172033;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  overflow-wrap: anywhere;
+}
+
+/* =========================================
+   SECTION TITLES
+========================================= */
+
+.rp-section-title {
+  flex: 0 0 auto;
+
+  margin: 3mm 0 2mm;
+  padding: 4px 8px;
+
+  color: #172033;
+  background: #edf1f5;
+
+  border-left: 3px solid #263247;
+
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.5;
+
+  break-after: avoid;
+}
+
+/* =========================================
+   SECTION 1 - REPORTER
+========================================= */
+
+.rp-info-grid {
+  display: grid;
+
+  grid-template-columns: repeat(
+    4,
+    minmax(0, 1fr)
+  );
+
+  align-items: center;
+  column-gap: 5mm;
+
+  width: 100%;
+  margin: 0;
+
+  padding: 2mm 3mm;
+
+  background: #ffffff;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.rp-info-grid > div {
+  min-width: 0;
+}
+
+.rp-info-grid span {
+  display: block;
+
+  font-size: 10px;
+
+  overflow-wrap: anywhere;
+}
+
+/* =========================================
+   SECTION 2 - SUMMARY
+========================================= */
+
+.rp-summary {
+  flex: 0 0 auto;
+
+  margin: 0 0 1.5mm;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* =========================================
+   SECTION 2 - FIXED OUTER FRAME
+========================================= */
+
+.rp-unit-collection {
+  display: grid;
+
+  grid-template-columns: repeat(
+    var(--rp-unit-columns, 1),
+    minmax(0, 1fr)
+  );
+
+  grid-template-rows:
+    repeat(var(--rp-unit-rows, 1), minmax(0, 1fr));
+
+    align-content: stretch;
+    align-items: stretch;
+
+  gap: 1.2mm;
+
+  width: 100%;
+  height: var(--rp-unit-height, 52mm);
+    min-height: 52mm;
+
+  flex-shrink: 0;
+
+  margin: 0;
+  padding: 2mm;
+
+  background: #ffffff;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.rp-units-empty {
+  grid-column: 1 / -1;
+
+  color: #94a3b8;
+  font-size: 10px;
+
+  text-align: center;
+}
+
+/* =========================================
+   SECTION 2 - UNIT CARD
+========================================= */
+
+.rp-mini-unit {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  padding: 1.3mm 1.5mm;
+
+  background: #f8fafc;
+
+  border: 1px solid #dbe3ee;
+  border-radius: 4px;
+
+  line-height: 1.25;
+
+  break-inside: avoid;
+}
+
+.rp-mini-unit-top {
+  display: flex;
+
+  align-items: baseline;
+  justify-content: space-between;
+
+  gap: 1mm 2mm;
+
+  min-width: 0;
+}
+
+/* ซ้าย: ชื่อตู้ + พิกัด */
+
+.rp-mini-unit-left {
+  display: flex;
+
+  align-items: baseline;
+  flex-wrap: wrap;
+
+  gap: 1mm 2mm;
+
+  min-width: 0;
+}
+
+.rp-mini-unit-left strong {
+  color: #172033;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  overflow-wrap: anywhere;
+}
+
+.rp-mini-unit-coordinate,
+.rp-mini-unit-condition {
+  color: #64748b;
+  font-size: 9px;
+}
+
+/* ขวา: ประเภท + สถานะ + จำนวนกล้อง */
+
+.rp-mini-unit-right {
+  display: flex;
+
+  align-items: baseline;
+  flex: 0 0 auto;
+
+  gap: 3mm;
+
+  white-space: nowrap;
+}
+
+.rp-mini-unit-down {
+  color: #b42342;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+/* IP จาก Snapshot */
+
+.rp-mini-unit-ips {
+  margin-top: 0.8mm;
+
+  color: #334155;
+
+  font-size: 9.5px;
+  line-height: 1.35;
+
+  overflow-wrap: anywhere;
+}
+
+.rp-mini-unit-ips b {
+  color: #172033;
+}
+
+/* =========================================
+   1-4 UNITS - FULL WIDTH
+========================================= */
+
+.rp-unit-collection.rp-units-wide {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.2mm;
+}
+
+.rp-units-wide .rp-mini-unit {
+  padding: 1.2mm 1.5mm;
+}
+
+.rp-units-wide .rp-mini-unit-top {
+  flex-wrap: nowrap;
+}
+
+/* =========================================
+   5+ UNITS - COMPACT GRID
+========================================= */
+
+.rp-units-compact {
+  gap: 1mm;
+}
+
+.rp-units-compact .rp-mini-unit {
+  padding: 1mm 1.2mm;
+}
+
+.rp-units-compact .rp-mini-unit-top {
+  flex-wrap: wrap;
+}
+
+.rp-units-compact .rp-mini-unit-left strong {
+  font-size: 9px;
+}
+
+.rp-units-compact .rp-mini-unit-coordinate,
+.rp-units-compact .rp-mini-unit-condition {
+  font-size: 8px;
+}
+
+.rp-units-compact .rp-mini-unit-down {
+  font-size: 9px;
+}
+
+.rp-units-compact .rp-mini-unit-right {
+  flex-wrap: wrap;
+  gap: 1mm;
+
+  white-space: normal;
+}
+
+/* =========================================
+   SECTION 3 - RESULT TABLE
+========================================= */
+
+.rp-result-table {
+  width: 100%;
+  margin: 0;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+
+  border-collapse: separate;
+  border-spacing: 0;
+
+  table-layout: fixed;
+
+  color: #172033;
+  background: #ffffff;
+
+  font-size: 10px;
+
+  overflow: hidden;
+}
+
+.rp-result-table td {
+  height: 8mm;
+
+  padding: 1.3mm 2mm;
+
+  border-bottom: 1px solid #e2e8f0;
+
+  vertical-align: middle;
+
+  overflow-wrap: anywhere;
+}
+
+.rp-result-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.rp-result-table strong {
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* จำนวนกล้อง 4 ส่วน */
+
+.rp-result-numbers {
+  display: grid;
+
+  grid-template-columns:
+    29mm
+    23mm
+    30mm
+    minmax(0, 1fr);
+
+  column-gap: 1mm;
+
+  align-items: center;
+}
+
+/* วันที่และเวลา */
+
+.rp-result-date {
+  display: grid;
+
+  grid-template-columns: repeat(
+    2,
+    minmax(0, 1fr)
+  );
+
+  gap: 3mm;
+}
+
+/* SLA */
+
+.rp-result-sla {
+  display: grid;
+
+  grid-template-columns:
+    44mm
+    minmax(0, 1fr);
+
+  align-items: center;
+
+  column-gap: 3mm;
+  min-height: 6mm;
+}
+
+.rp-sla-options {
+  display: flex;
+  align-items: center;
+
+  gap: 3mm;
+
+  white-space: nowrap;
+}
+
+.rp-sla-options span {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 2mm;
+}
+
+.rp-checkbox {
+  display: inline-block;
+
+  flex: 0 0 3.5mm;
+
+  width: 3.5mm;
+  height: 3.5mm;
+
+  margin: 0;
+
+  border: 1px solid #64748b;
+  border-radius: 2px;
+
+  background: #ffffff;
+
+  transform: translateY(-1px);
+}
+
+/* =========================================
+   SECTION 4 - EQUIPMENT TABLE
+========================================= */
+
+.rp-equipment-table {
+  width: 100%;
+  margin: 0 0 2mm;
+
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  color: #172033;
+
+  font-size: 11px;
+}
+
+.rp-equipment-table th,
+.rp-equipment-table td {
+  padding: 1mm 1.4mm;
+
+  border: 1px solid #475569;
+
+  text-align: left;
+  vertical-align: middle;
+
+  overflow-wrap: anywhere;
+}
+
+.rp-equipment-table th {
+  background: #e5e7eb;
+
+  font-weight: 800;
+  text-align: center;
+}
+
+/* ความสูงแถวอุปกรณ์
+   เดิม 4.8mm -> ใหม่ 6mm */
+
+.rp-equipment-table td {
+  height: 6mm;
+}
+
+.rp-equipment-table td:nth-child(2),
+.rp-equipment-table td:nth-child(3) {
+  text-align: center;
+}
+
+/* =========================================
+   TECHNICIAN SIGNATURE
+========================================= */
+
+.rp-tech-inline {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 4mm;
+
+  width: 100%;
+
+  margin: auto 0 2mm;
+  padding-top: 3mm;
+
+  color: #172033;
+
+  font-size: 12px;
+
+  break-inside: avoid;
+}
+
+.rp-tech-inline span {
+  display: inline-flex;
+  align-items: baseline;
+
+  gap: 1.5mm;
+
+  min-width: 0;
+
+  white-space: nowrap;
+}
+
+.rp-tech-inline i {
+  display: inline-block;
+
+  height: 1em;
+
+  border-bottom: 1px dotted #475569;
+}
+
+.rp-tech-name i {
+  width: 85mm;
+}
+
+.rp-tech-phone i {
+  width: 50mm;
+}
+
+.rp-tech-inline strong {
+  flex: 0 0 auto;
+
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+/* =========================================
+   PRINT FALLBACK
+========================================= */
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: visible !important;
+
+    background: #ffffff !important;
+  }
+
+  body > *:not(.rp-overlay) {
+    display: none !important;
+  }
+
+  body > .rp-overlay {
+    position: static !important;
+
+    display: block !important;
+
+    width: auto !important;
+    height: auto !important;
+
+    background: #ffffff !important;
+  }
+
+  .rp-toolbar {
+    display: none !important;
+  }
+
+  .rp-scroll {
+    display: block !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: visible !important;
+  }
+
+  .rp-paper {
+    width: 210mm !important;
+    min-height: 297mm !important;
+
+    margin: 0 !important;
+    padding: 10mm !important;
+
+    box-shadow: none !important;
+  }
+
+  .rp-section-title,
+  .rp-equipment-table th,
+  .rp-mini-unit {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* =========================================
+   4 COLUMNS - COMPACT VERTICAL SPACING
+   ลดช่องว่างภายในการ์ด ไม่เปลี่ยน Grid
+========================================= */
+
+/* ลดช่องว่างระหว่างแถวในกรอบใหญ่ */
+.rp-unit-collection.rp-units-four-columns {
+  row-gap: 0.7mm;
+  padding: 1.5mm 2mm;
+}
+
+/* ลดพื้นที่บน-ล่างภายในการ์ด */
+.rp-units-four-columns .rp-mini-unit {
+  padding: 0.5mm 1mm;
+  line-height: 1.05;
+}
+
+/* ชื่อตู้ / พิกัด / สถานะ */
+.rp-units-four-columns .rp-mini-unit-top {
+  row-gap: 1;
+  column-gap: 1mm;
+}
+
+/* ชื่อตู้และพิกัดอยู่ชิดกันขึ้น */
+.rp-units-four-columns .rp-mini-unit-left {
+  row-gap: 1;
+  column-gap: 1mm;
+  line-height: 1.05;
+}
+
+/* สถานะและจำนวนกล้องดับ */
+.rp-units-four-columns .rp-mini-unit-right {
+  row-gap: 0;
+  column-gap: 1mm;
+  line-height: 1.05;
+}
+
+/* ลดความสูงบรรทัด โดยไม่ลดขนาดตัวอักษร */
+.rp-units-four-columns .rp-mini-unit-left strong,
+.rp-units-four-columns .rp-mini-unit-coordinate,
+.rp-units-four-columns .rp-mini-unit-condition,
+.rp-units-four-columns .rp-mini-unit-down {
+  line-height: 1.05;
+}
+
+/* =========================================
+   SECTION 2 - DENSE GRID
+   สำหรับ 4 คอลัมน์ขึ้นไป
+========================================= */
+
+/* ลดช่องว่างระหว่างการ์ด */
+.rp-unit-collection.rp-units-tight {
+  column-gap: 0.8mm;
+  row-gap: 0.6mm;
+  padding: 1.5mm;
+}
+
+/* การ์ดใช้พื้นที่แถวเดิม แต่ลดขอบด้านใน */
+.rp-unit-collection.rp-units-tight .rp-mini-unit {
+  height: 100%;
+  min-height: 0;
+  padding: 0.4mm 0.8mm;
+  justify-content: center;
+  line-height: 1.05;
+}
+
+/* ลดช่องว่างภายในบรรทัด */
+.rp-unit-collection.rp-units-tight .rp-mini-unit-top {
+  row-gap: 0;
+  column-gap: 0.8mm;
+  line-height: 1.05;
+}
+
+.rp-unit-collection.rp-units-tight .rp-mini-unit-left,
+.rp-unit-collection.rp-units-tight .rp-mini-unit-right {
+  row-gap: 0;
+  column-gap: 0.8mm;
+  line-height: 1.05;
+}
+
+/* ชื่อตู้ */
+.rp-unit-collection.rp-units-tight .rp-mini-unit-left strong {
+  font-size: 8.5px;
+  line-height: 1.75;
+}
+
+/* พิกัดและสถานะ */
+.rp-unit-collection.rp-units-tight .rp-mini-unit-coordinate,
+.rp-unit-collection.rp-units-tight .rp-mini-unit-condition {
+  font-size: 7.5px;
+  line-height: 1.05;
+}
+
+/* จำนวนกล้องดับ */
+.rp-unit-collection.rp-units-tight .rp-mini-unit-down {
+  font-size: 9px;
+  line-height: 1.5;
+}
