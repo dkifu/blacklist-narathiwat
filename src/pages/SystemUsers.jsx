@@ -7,6 +7,13 @@ import {
 import { supabase } from '../lib/supabase'
 
 
+const REPAIR_TEAM_LABELS = {
+  takbai: 'ช่างตากใบ',
+  pattani: 'ช่างปัตตานี',
+}
+
+
+
 function SystemUsers({ profile }) {
 
   const [users, setUsers] =
@@ -47,6 +54,8 @@ function SystemUsers({ profile }) {
       password: '',
       role: 'supervisor',
       center_id: '',
+      repair_team_code: '',
+
     })
 
 
@@ -207,7 +216,7 @@ function SystemUsers({ profile }) {
 
 
       setLoading(true)
-      setMessage('')
+      
 
 
       try {
@@ -301,6 +310,8 @@ function SystemUsers({ profile }) {
       password: '',
       role: 'supervisor',
       center_id: '',
+      repair_team_code: '',
+
     })
 
     setEditingUserId(null)
@@ -322,6 +333,8 @@ function SystemUsers({ profile }) {
       password: '',
       role: 'supervisor',
       center_id: '',
+      repair_team_code: '',
+
     })
 
     setShowForm(true)
@@ -363,6 +376,8 @@ function SystemUsers({ profile }) {
               user.center_id
             )
           : '',
+      repair_team_code:
+        user.repair_team_code || '',
     })
 
 
@@ -377,24 +392,24 @@ function SystemUsers({ profile }) {
   }
 
 
-  const handleRoleChange =
-    (value) => {
+  
+  const handleRoleChange = (value) => {
+    setForm((prev) => ({
+      ...prev,
+      role: value,
 
-      setForm(
-        (prev) => ({
-          ...prev,
+      center_id:
+        value === 'operator'
+          ? prev.center_id
+          : '',
 
-          role: value,
+      repair_team_code:
+        value === 'technician'
+          ? prev.repair_team_code
+          : '',
+    }))
+  }
 
-          center_id:
-            value ===
-            'supervisor'
-              ? ''
-              : prev.center_id,
-        })
-      )
-
-    }
 
 
   const saveUser =
@@ -439,6 +454,23 @@ function SystemUsers({ profile }) {
         return
       }
 
+      
+      if (
+        form.role === 'technician' &&
+        !['takbai', 'pattani'].includes(form.repair_team_code)
+      ) {
+        showMessage('error', 'กรุณาเลือกชุดช่าง')
+        return
+      }
+
+      
+      if (form.role === 'operator' && !form.center_id) {
+        showMessage('error', 'กรุณาเลือกศูนย์ที่สังกัด')
+        return
+      }
+
+
+
 
       setSaving(true)
       setMessage('')
@@ -446,70 +478,35 @@ function SystemUsers({ profile }) {
 
       try {
 
-        const body =
-          editingUserId
-            ? {
-                action:
-                  'update',
+                
+        const payload = {
+          full_name: form.full_name.trim(),
+          username: form.username.trim(),
+          email: form.email.trim(),
+          role: form.role,
 
-                user_id:
-                  editingUserId,
+          center_id:
+            form.role === 'operator' && form.center_id
+              ? Number(form.center_id)
+              : null,
 
-                full_name:
-                  form.full_name
-                    .trim(),
+          repair_team_code:
+            form.role === 'technician'
+              ? form.repair_team_code
+              : null,
+        }
 
-                username:
-                  form.username
-                    .trim(),
-
-                email:
-                  form.email
-                    .trim(),
-
-                role:
-                  form.role,
-
-                center_id:
-                  form.role ===
-                    'operator' &&
-                  form.center_id
-                    ? Number(
-                        form.center_id
-                      )
-                    : null,
-              }
-            : {
-                action:
-                  'create',
-
-                full_name:
-                  form.full_name
-                    .trim(),
-
-                username:
-                  form.username
-                    .trim(),
-
-                email:
-                  form.email
-                    .trim(),
-
-                password:
-                  form.password,
-
-                role:
-                  form.role,
-
-                center_id:
-                  form.role ===
-                    'operator' &&
-                  form.center_id
-                    ? Number(
-                        form.center_id
-                      )
-                    : null,
-              }
+        const body = editingUserId
+          ? {
+              action: 'update',
+              user_id: editingUserId,
+              ...payload,
+            }
+          : {
+              action: 'create',
+              password: form.password,
+              ...payload,
+            }
 
 
         await callSystemUsers(
@@ -839,6 +836,15 @@ function SystemUsers({ profile }) {
       [users]
     )
 
+    
+const technicianCount = useMemo(
+  () => users.filter(
+    (user) => user.role === 'technician'
+  ).length,
+  [users]
+)
+
+
 
   // =========================================
   // ACCESS
@@ -895,7 +901,7 @@ function SystemUsers({ profile }) {
           </h2>
 
           <p>
-            จัดการบัญชี Supervisor และ Operator
+            จัดการบัญชี Supervisor, Operator และ Technician
           </p>
 
         </div>
@@ -977,6 +983,14 @@ function SystemUsers({ profile }) {
 
         </div>
 
+        
+        <div className="list-stat-card">
+          <span>Technician (ช่าง)</span>
+          <strong>{technicianCount}</strong>
+          <small>บัญชี</small>
+        </div>
+
+
 
         <div className="list-stat-card">
 
@@ -1012,7 +1026,7 @@ function SystemUsers({ profile }) {
           </span>
 
           <strong>
-            Supervisor / Operator
+            Supervisor / Operator / Technician
           </strong>
 
         </div>
@@ -1218,6 +1232,12 @@ function SystemUsers({ profile }) {
                   Operator
                 </option>
 
+                
+                <option value="technician">
+                  Technician (ช่าง)
+                </option>
+
+
               </select>
 
             </div>
@@ -1233,26 +1253,24 @@ function SystemUsers({ profile }) {
                     ศูนย์
                   </label>
 
+                  
                   <select
-                    value={
-                      form.center_id
-                    }
+                    value={form.center_id}
+                    required
                     onChange={(e) =>
-                      setForm(
-                        (prev) => ({
-                          ...prev,
-
-                          center_id:
-                            e.target
-                              .value,
-                        })
-                      )
+                      setForm((prev) => ({
+                        ...prev,
+                        center_id: e.target.value,
+                      }))
                     }
                   >
 
-                    <option value="">
-                      -- ไม่จำกัดศูนย์ --
-                    </option>
+
+                    
+                  <option value="">
+                    -- เลือกศูนย์ --
+                  </option>
+
 
                     {
                       centers.map(
@@ -1284,6 +1302,39 @@ function SystemUsers({ profile }) {
 
               )
             }
+
+            
+            {form.role === 'technician' && (
+              <div className="modern-field">
+                <label>
+                  ชุดช่าง <span className="req">*</span>
+                </label>
+
+                <select
+                  value={form.repair_team_code}
+                  required
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      repair_team_code: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="">
+                    -- เลือกชุดช่าง --
+                  </option>
+
+                  <option value="takbai">
+                    ช่างตากใบ
+                  </option>
+
+                  <option value="pattani">
+                    ช่างปัตตานี
+                  </option>
+                </select>
+              </div>
+            )}
+
 
 
             <div className="users-form-actions">
@@ -1463,7 +1514,7 @@ function SystemUsers({ profile }) {
             ? (
 
               <div className="users-empty">
-                ยังไม่มี Supervisor หรือ Operator
+                ยังไม่มีผู้ใช้งานระบบ
               </div>
 
             )
@@ -1562,10 +1613,13 @@ function SystemUsers({ profile }) {
 
                               <strong>
                                 {
-                                  user.role ===
-                                    'supervisor'
+                                  
+                                  user.role === 'supervisor'
                                     ? 'Supervisor'
+                                    : user.role === 'technician'
+                                    ? 'Technician (ช่าง)'
                                     : 'Operator'
+
                                 }
                               </strong>
 
@@ -1579,15 +1633,16 @@ function SystemUsers({ profile }) {
                               </span>
 
                               <strong>
-                                {
-                                  user.role ===
-                                    'supervisor'
-                                    ? 'ทุกศูนย์'
-                                    : user.center_id
-                                    ? center?.name ||
-                                      'ศูนย์ที่กำหนด'
-                                    : 'ทุกศูนย์'
-                                }
+                                
+                                {user.role === 'technician'
+                                  ? REPAIR_TEAM_LABELS[user.repair_team_code] ||
+                                    'ยังไม่กำหนดชุดช่าง'
+                                  : user.role === 'supervisor'
+                                  ? 'ทุกศูนย์'
+                                  : user.center_id
+                                  ? center?.name || 'ศูนย์ที่กำหนด'
+                                  : 'ทุกศูนย์'}
+
                               </strong>
 
                             </div>

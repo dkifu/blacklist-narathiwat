@@ -8957,3 +8957,28 @@ input[type="checkbox"] {
 
   transform: translateX(-50%);
 }
+
+
+/* System Users - 5 summary cards */
+.users-page .list-stat-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+@media (max-width: 1200px) {
+  .users-page .list-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .users-page .list-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+@media (max-width: 450px) {
+  .users-page .list-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
