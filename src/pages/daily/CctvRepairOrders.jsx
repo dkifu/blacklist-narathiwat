@@ -147,6 +147,9 @@ export default function CctvRepairOrders({ profile }) {
   const [availableUnits, setAvailableUnits] = useState([])
   const [orders, setOrders] = useState([])
   const [ticketNo, setTicketNo] = useState('')
+  
+  const [lastTicketNo, setLastTicketNo] = useState('')
+
   const [ticketLoading, setTicketLoading] = useState(false)
   const [ticketError, setTicketError] = useState('')
   const [editingTicketId, setEditingTicketId] = useState('')
@@ -456,31 +459,63 @@ export default function CctvRepairOrders({ profile }) {
     useEffect(() => {
     let cancelled = false
 
+    
+
     if (!centerId || isCentral) {
+        setLastTicketNo('')
         setTicketNo('')
         setTicketError('')
         setTicketLoading(false)
         return
     }
 
-    setTicketNo('')
-    setTicketError('')
-    setTicketLoading(true)
+    
+        setTicketNo('')
+        setLastTicketNo('')
+        setTicketError('')
+        setTicketLoading(true)
 
+
+    
     async function loadTicket() {
-        const { data, error } = await supabase.rpc(
-        'cctv_repair_next_ticket',
-        {
-            p_center_id: Number(centerId),
-        }
-        )
+      const [nextResult, lastResult] = await Promise.all([
+        supabase.rpc('cctv_repair_next_ticket', {
+          p_center_id: Number(centerId),
+        }),
 
-        if (cancelled) return
+        supabase
+          .from('cctv_repair_orders')
+          .select('ticket_no')
+          .eq('center_id', Number(centerId))
+          .not('ticket_no', 'is', null)
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .limit(1),
+      ])
 
-        setTicketNo(error ? '' : String(data || ''))
-        setTicketError(error?.message || '')
-        setTicketLoading(false)
+      if (cancelled) return
+
+      setTicketNo(
+        nextResult.error
+          ? ''
+          : String(nextResult.data || '')
+      )
+
+      setLastTicketNo(
+        lastResult.error
+          ? ''
+          : String(lastResult.data?.[0]?.ticket_no || '')
+      )
+
+      setTicketError(
+        nextResult.error?.message ||
+        lastResult.error?.message ||
+        ''
+      )
+
+      setTicketLoading(false)
     }
+
 
     loadTicket()
 
@@ -496,16 +531,42 @@ export default function CctvRepairOrders({ profile }) {
     setTicketLoading(true)
     setTicketError('')
 
-    const { data, error } = await supabase.rpc(
-        'cctv_repair_next_ticket',
-        {
+    
+    const [nextResult, lastResult] = await Promise.all([
+      supabase.rpc('cctv_repair_next_ticket', {
         p_center_id: Number(centerId),
-        }
+      }),
+
+      supabase
+        .from('cctv_repair_orders')
+        .select('ticket_no')
+        .eq('center_id', Number(centerId))
+        .not('ticket_no', 'is', null)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(1),
+    ])
+
+    setTicketNo(
+      nextResult.error
+        ? ''
+        : String(nextResult.data || '')
     )
 
-    setTicketNo(error ? '' : String(data || ''))
-    setTicketError(error?.message || '')
+    setLastTicketNo(
+      lastResult.error
+        ? ''
+        : String(lastResult.data?.[0]?.ticket_no || '')
+    )
+
+    setTicketError(
+      nextResult.error?.message ||
+      lastResult.error?.message ||
+      ''
+    )
+
     setTicketLoading(false)
+
     }
 
   async function runAction(callback) {
@@ -1237,6 +1298,21 @@ function openRepairPrint(orderId) {
                     spellCheck={false}
                     />
                 </label>
+                
+                  <p
+                    className="repair-muted"
+                    style={{
+                      margin: '4px 0 0',
+                      fontSize: 12,
+                      color: '#a5b2c3',
+                    }}
+                  >
+                    เลขใบงานที่ออกก่อนหน้า:{' '}
+                    <strong style={{ color: '#f3c36a' }}>
+                      {lastTicketNo || 'ยังไม่มีข้อมูลในระบบ'}
+                    </strong>
+                  </p>
+
                 </div>
 
                 {ticketError ? (
@@ -1247,7 +1323,8 @@ function openRepairPrint(orderId) {
                 <p className="repair-muted">
                     {ticketLoading
                     ? 'กำลังตรวจสอบเลขใบงาน...'
-                    : 'ระบบเสนอเลขถัดไปอัตโนมัติ สามารถกำหนดเลขเริ่มต้นเองได้เฉพาะครั้งแรกของศูนย์'}
+                    : 'ระบบเสนอเลขถัดไปอัตโนมัติ สามารถแก้เลขเองได้ทุกครั้ง โดยเลขต้องไม่ซ้ำ'
+}
                 </p>
                 )}
 
@@ -1353,6 +1430,22 @@ function openRepairPrint(orderId) {
         <section className="repair-panel">
             <h2>ข้อมูลผู้แจ้งซ่อม</h2>
 
+            
+              <p className="repair-muted" style={{ marginBottom: 14 }}>
+                ใบงานที่กำลังแก้ไข:{' '}
+                <strong>{currentOrder.ticket_no || `#${currentOrder.id}`}</strong>
+                {' · '}วันที่รายงาน: {formatRepairBE(currentOrder.report_date)}
+                {' · '}{SHIFT_LABELS[currentOrder.shift] || '-'}
+              </p>
+
+              {!canAddToCurrentOrder && (
+                <p className="repair-muted" style={{ color: '#ffb67c' }}>
+                  วันที่หรือกะที่เลือกด้านบนไม่ตรงกับใบงานฉบับร่างนี้
+                  กรุณาเลือกให้ตรงกัน หรือสร้างใบงานใหม่สำหรับวันที่ต้องการ
+                </p>
+              )}
+
+
             <div className="repair-filters">
             <label>
                 ผู้แจ้งซ่อม
@@ -1409,7 +1502,9 @@ function openRepairPrint(orderId) {
                 type="button"
                 className="repair-primary-button"
                 onClick={saveDraftInfo}
-                disabled={busy}
+                
+                disabled={busy || !canAddToCurrentOrder}
+
             >
                 บันทึกข้อมูลผู้แจ้ง
             </button>
