@@ -13,6 +13,8 @@ import AdminTasks from './pages/AdminTasks'
 import CenterTasks from './pages/CenterTasks'
 import DailyReport from './pages/DailyReport'
 import MonthlyReport from './pages/MonthlyReport'
+import TechnicianRepair from './pages/TechnicianRepair'
+
 
 
 
@@ -186,6 +188,7 @@ function App() {
     systemUsers: 'ผู้ใช้งานระบบ',
     adminTasks: 'งาน Admin',
     centerTasks: 'งานศูนย์',
+    technicianRepair: 'งานซ่อม',
     dailyReport: 'รายงานประจำวัน',
     monthlyReport: 'รายงานประจำเดือน',
     activityLog: 'Activity Log',
@@ -203,7 +206,13 @@ function App() {
 
   const isCenter =
     profile?.role === 'center'
+  
+  const isTechnician =
+    profile?.role === 'technician'
 
+  const displayTitle =
+    isTechnician ? 'งานซ่อม' : pageTitle
+    
   const canUseAdminPages =
     isAdmin || isSupervisor
 
@@ -211,7 +220,30 @@ function App() {
   // DASHBOARD
   // =========================
 
-  if (session) {
+  
+  
+    if (
+      session &&
+      (!profile || profile.id !== session.user.id)
+    ) {
+      return (
+        <div className="loading-page">
+          <p>กำลังตรวจสอบสิทธิ์บัญชี...</p>
+
+          <button
+            type="button"
+            className="logout-button"
+            onClick={handleLogout}
+          >
+            ออกจากระบบ
+          </button>
+        </div>
+      )
+    }
+
+    if (session) {
+
+  
     return (
       <div className="app-layout">
 
@@ -248,6 +280,19 @@ function App() {
           </div>
 
           <nav className="sidebar-menu">
+
+            
+            {isTechnician ? (
+              <button
+                type="button"
+                className="menu-item active"
+                onClick={() => setCurrentPage('technicianRepair')}
+              >
+                งานซ่อม
+              </button>
+            ) : (
+              <>
+
 
             <button
               className={`menu-item ${currentPage === 'dashboard' ? 'active' : ''}`}
@@ -320,6 +365,22 @@ function App() {
               </button>
             )}
 
+            
+            {canUseAdminPages && (
+              <button
+                type="button"
+                className={`menu-item ${
+                  currentPage === 'technicianRepair'
+                    ? 'active'
+                    : ''
+                }`}
+                onClick={() => setCurrentPage('technicianRepair')}
+              >
+                งานซ่อม
+              </button>
+            )}
+
+
             {isCenter && (
               <button
                 className={`menu-item ${
@@ -390,6 +451,10 @@ function App() {
                 ตั้งค่าระบบ
               </button>
             )}
+            
+              </>
+            )}
+
 
           </nav>
 
@@ -409,8 +474,14 @@ function App() {
           <header className="topbar">
 
             <div>
-              <h1>{pageTitle}</h1>
-              <p>Vehicle Blacklist Management System</p>
+              
+              <h1>{displayTitle}</h1>
+              <p>
+                {isTechnician
+                  ? 'CCTV Repair Management'
+                  : 'Vehicle Blacklist Management System'}
+              </p>
+
             </div>
 
             <div className="user-info">
@@ -439,7 +510,15 @@ function App() {
 
           <section className="dashboard-body">
 
-            {currentPage === 'addVehicle' ? (
+            
+            
+            {(
+              isTechnician ||
+              (canUseAdminPages && currentPage === 'technicianRepair')
+            ) ? (
+              <TechnicianRepair profile={profile} />
+            ) : currentPage === 'addVehicle' ? (
+
 
               <AddVehicle
                 profile={profile}

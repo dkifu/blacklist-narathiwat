@@ -984,12 +984,10 @@ const handleDailyDateChange = (nextDate) => {
   const cameraReadyPercent = useMemo(() => {
     if (!totalCamera) return 0
 
-    return Math.round(
-      (
-        Number(form.cameraReady || 0) /
-        totalCamera
-      ) * 100
-    )
+    return (
+      Number(form.cameraReady || 0) /
+      totalCamera
+    ) * 100
   }, [
     totalCamera,
     form.cameraReady,
@@ -2967,6 +2965,17 @@ function Donut({ percent }) {
 
   const brokenPercent = 100 - safePercent
 
+    const formatPercent = (value) => {
+    if (value > 0 && value < 100) {
+      return Math.min(
+        99.9,
+        Math.max(0.1, Math.round(value * 10) / 10)
+      ).toFixed(1)
+    }
+
+    return value.toFixed(1)
+  }
+
   // คำนวณตำแหน่งป้ายตามเปอร์เซ็นต์จริง
   const getLabelPosition = (startPct, endPct) => {
     const midPct = (startPct + endPct) / 2
@@ -2988,7 +2997,7 @@ function Donut({ percent }) {
     >
       {/* ตัวเลขเปอร์เซ็นต์ตรงกลาง */}
       <div className="daily-donut-center">
-        <strong>{safePercent.toFixed(1)}</strong>
+        <strong>{formatPercent(safePercent)}</strong>
         <span>%</span>
       </div>
 
@@ -2998,7 +3007,7 @@ function Donut({ percent }) {
           className="daily-donut-label daily-donut-label--green"
           style={getLabelPosition(0, safePercent)}
         >
-          {safePercent.toFixed(1)}%
+          {formatPercent(safePercent)}%
         </span>
       )}
 
@@ -3008,7 +3017,7 @@ function Donut({ percent }) {
           className="daily-donut-label daily-donut-label--red"
           style={getLabelPosition(safePercent, 100)}
         >
-          {brokenPercent.toFixed(1)}%
+          {formatPercent(brokenPercent)}%
         </span>
       )}
     </div>
