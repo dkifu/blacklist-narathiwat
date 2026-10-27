@@ -35,6 +35,7 @@ function App() {
 
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [selectedVehicleId, setSelectedVehicleId] = useState(null)
 
   useEffect(() => {
@@ -246,14 +247,30 @@ function App() {
   
     return (
       <div className="app-layout">
+        {mobileMenuOpen && (
+          <button
+            type="button"
+            className="mobile-sidebar-backdrop"
+            aria-label="ปิดเมนู"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
 
         <aside
-          className={
-            sidebarCollapsed
-              ? 'sidebar collapsed'
-              : 'sidebar'
-          }
+          id="app-sidebar"
+          className={`sidebar ${
+            sidebarCollapsed ? 'collapsed' : ''
+          } ${mobileMenuOpen ? 'mobile-open' : ''}`}
         >
+
+        <button
+          type="button"
+          className="mobile-sidebar-close"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-label="ปิดเมนู"
+        >
+          ✕
+        </button>  
 
         <button
           type="button"
@@ -279,7 +296,14 @@ function App() {
             </div>
           </div>
 
-          <nav className="sidebar-menu">
+          <nav
+            className="sidebar-menu"
+            onClick={e => {
+              if (e.target.closest('button.menu-item')) {
+                setMobileMenuOpen(false)
+              }
+            }}
+          >
 
             
             {isTechnician ? (
@@ -472,6 +496,16 @@ function App() {
         <main className="main-content">
 
           <header className="topbar">
+            <button
+              type="button"
+              className="mobile-menu-button"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="เปิดเมนูหลัก"
+              aria-controls="app-sidebar"
+              aria-expanded={mobileMenuOpen}
+            >
+              ☰
+            </button>
 
             <div>
               

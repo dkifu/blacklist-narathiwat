@@ -8982,3 +8982,232 @@ input[type="checkbox"] {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* =========================================
+   MOBILE SIDEBAR DRAWER
+   รองรับมือถือทั้งแนวตั้งและแนวนอน
+========================================= */
+
+/* ซ่อนปุ่มมือถือบนคอมพิวเตอร์ */
+.mobile-menu-button,
+.mobile-sidebar-close,
+.mobile-sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 900px) {
+
+  /* พื้นที่แสดงเนื้อหา */
+  .app-layout {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .main-content {
+    width: 100%;
+    min-width: 0;
+    flex: 1;
+  }
+
+  /* แถบเมนูเลื่อนจากซ้าย */
+  .sidebar,
+  .sidebar.collapsed {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: min(300px, 86vw);
+    min-width: 0;
+    max-width: 100%;
+
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+
+    padding: 65px 16px 18px;
+
+    flex-direction: column;
+
+    background: #151820;
+    border-right: 1px solid #343b49;
+
+    z-index: 1101;
+
+    transform: translateX(-105%);
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+      transform .25s ease,
+      visibility .25s ease;
+
+    box-shadow: 12px 0 35px rgba(0,0,0,.35);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  /* แสดงเนื้อหาเมนูแม้ Desktop เคยกดย่อไว้ */
+  .sidebar.collapsed .sidebar-brand {
+    display: flex;
+  }
+
+  .sidebar.collapsed .sidebar-menu {
+    display: flex;
+  }
+
+  .sidebar.collapsed .sidebar-bottom {
+    display: block;
+  }
+
+  /* ซ่อนปุ่มย่อแบบ Desktop */
+  .sidebar-collapse-button,
+  .sidebar.collapsed .sidebar-collapse-button {
+    display: none;
+  }
+
+  .sidebar-menu {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow-y: auto;
+    min-height: 0;
+    overscroll-behavior: contain;
+  }
+
+  .sidebar-bottom {
+    flex: 0 0 auto;
+    margin-top: 16px;
+  }
+
+  .menu-item {
+    min-height: 46px;
+    font-size: 14px;
+  }
+
+  /* ปุ่มปิดเมนู */
+  .mobile-sidebar-close {
+    display: flex;
+    position: absolute;
+    top: 16px;
+    right: 14px;
+
+    width: 38px;
+    height: 38px;
+
+    align-items: center;
+    justify-content: center;
+
+    background: #202735;
+    border: 1px solid #3c4960;
+    border-radius: 9px;
+
+    color: #ffffff;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  /* ฉากมืดหลัง Sidebar */
+  .mobile-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+
+    width: 100%;
+    height: 100%;
+
+    padding: 0;
+    border: 0;
+    background: rgba(0, 0, 0, .7);
+    cursor: pointer;
+  }
+
+  /* ปุ่ม Hamburger */
+  .mobile-menu-button {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    padding: 0;
+    border: 1px solid #394355;
+    border-radius: 9px;
+
+    background: #202735;
+    color: #ffffff;
+    font-size: 23px;
+
+    cursor: pointer;
+  }
+
+  .topbar {
+    gap: 12px;
+    padding: 12px 18px;
+    min-height: 76px;
+    height: auto;
+  }
+
+  .topbar > div:first-of-type {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .topbar h1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* มือถือจอแคบ */
+@media (max-width: 650px) {
+  .topbar {
+    padding: 12px;
+    gap: 9px;
+  }
+
+  .topbar h1 {
+    font-size: 18px;
+  }
+
+  .topbar p {
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .user-info {
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+
+  /* ซ่อนชื่อผู้ใช้งานบน Header จอแคบ
+     แต่ยังแสดง Avatar และ Role */
+  .user-info > div:nth-child(2) {
+    display: none;
+  }
+
+  .user-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
+  }
+
+  .role-badge {
+    font-size: 9px;
+    padding: 6px;
+  }
+
+  .dashboard-body {
+    padding: 14px;
+  }
+}
+
