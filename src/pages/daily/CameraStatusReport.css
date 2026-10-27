@@ -1,2227 +1,4451 @@
 /* =========================================
 
+
+
    CAMERA STATUS REPORT
 
+
+
 \========================================= */
+
+
 
 .csr-root {
 
+
+
   color: #eef3fb;
+
+
 
   background: #111822;
 
+
+
   border: 1px solid #293548;
+
+
 
   border-radius: 16px;
 
+
+
   padding: 24px;
 
+
+
 }
+
+
 
 .csr-title {
 
+
+
   display: flex;
 
+
+
   justify-content: space-between;
+
+
 
   margin-bottom: 20px;
 
+
+
 }
+
+
 
 .csr-title span {
 
+
+
   color: #ff416c;
 
+
+
   font-size: 11px;
+
+
 
   letter-spacing: .13em;
 
+
+
   font-weight: 800;
 
+
+
 }
+
+
 
 .csr-title h2 {
 
+
+
   margin: 7px 0;
+
+
 
   font-size: 23px;
 
+
+
 }
+
+
 
 .csr-title p,
 
+
+
 .csr-hint {
+
+
 
   color: #9aabc1;
 
+
+
   font-size: 12px;
+
+
 
   line-height: 1.7;
 
+
+
 }
+
+
 
 /* INPUTS */
 
+
+
 .csr-controls {
+
+
 
   display: grid;
 
+
+
   grid-template-columns: repeat(3, minmax(0, 1fr));
+
+
 
   gap: 12px;
 
+
+
   margin: 14px 0;
 
+
+
 }
+
+
 
 .csr-controls label,
 
+
+
 .csr-agent label {
+
+
 
   display: flex;
 
+
+
   flex-direction: column;
+
+
 
   gap: 7px;
 
+
+
   color: #a9b9d0;
+
+
 
   font-size: 12px;
 
+
+
   font-weight: 700;
 
+
+
 }
+
+
 
 .csr-root input:not([type=checkbox]),
 
+
+
 .csr-root select {
+
+
 
   min-width: 0;
 
+
+
   width: 100%;
 
+
+
   box-sizing: border-box;
+
+
 
   padding: 10px 11px;
 
+
+
   color: #eef3fb;
+
+
 
   background: #192332;
 
+
+
   border: 1px solid #35445b;
+
+
 
   border-radius: 9px;
 
+
+
   font: inherit;
 
+
+
 }
+
+
 
 .csr-root select option {
 
+
+
   color: #182335;
+
+
 
   background: #ffffff;
 
+
+
 }
+
+
 
 .csr-root button {
 
+
+
   border: 1px solid #455169;
+
+
 
   padding: 10px 13px;
 
+
+
   border-radius: 9px;
+
+
 
   background: #1b293b;
 
+
+
   color: #eef3fb;
 
+
+
   cursor: pointer;
+
+
 
   font: inherit;
 
+
+
   font-size: 12px;
+
+
 
   font-weight: 700;
 
+
+
 }
+
+
 
 .csr-root button:hover:not(:disabled) {
 
+
+
   border-color: #ff416c;
 
+
+
 }
+
+
 
 .csr-root button:disabled {
 
+
+
   opacity: .45;
+
+
 
   cursor: not-allowed;
 
+
+
 }
+
+
 
 .csr-root .csr-primary {
 
+
+
   background: #b41f49;
+
+
 
   color: #ffffff;
 
+
+
   border-color: #d0315c;
 
+
+
 }
+
+
 
 /* ACTIONS */
 
+
+
 .csr-actions,
+
+
 
 .csr-agent,
 
+
+
 .csr-footer {
+
+
 
   display: flex;
 
+
+
   flex-wrap: wrap;
+
+
 
   align-items: center;
 
+
+
   gap: 10px;
+
+
 
   margin: 16px 0;
 
+
+
 }
+
+
 
 .csr-actions small {
 
+
+
   color: #7f90a7;
+
+
 
 }
 
+
+
 .csr-agent {
+
+
 
   padding: 15px;
 
+
+
   background: #151f2d;
+
+
 
   border: 1px solid #2c3c53;
 
+
+
   border-radius: 12px;
 
+
+
 }
+
+
 
 .csr-agent label {
 
+
+
   flex: 1 1 260px;
 
+
+
 }
+
+
 
 .csr-message {
 
+
+
   border: 1px solid #455169;
+
+
 
   color: #d8e2f1;
 
+
+
   padding: 11px 13px;
+
+
 
   background: #1a2636;
 
+
+
   border-radius: 9px;
+
+
 
   margin: 12px 0;
 
+
+
 }
+
+
 
 /* CAMERA TABLE */
 
+
+
 .csr-table-head {
+
+
 
   display: flex;
 
+
+
   justify-content: space-between;
+
+
 
   align-items: center;
 
+
+
   gap: 14px;
+
+
 
   margin-top: 22px;
 
+
+
 }
+
+
 
 .csr-table-head h3 {
 
+
+
   font-size: 17px;
 
+
+
 }
+
+
 
 .csr-table-head input {
 
+
+
   max-width: 340px;
 
+
+
 }
+
+
 
 .csr-table-scroll {
 
+
+
   overflow: auto;
+
+
 
   border: 1px solid #304055;
 
+
+
   border-radius: 12px;
 
+
+
 }
+
+
 
 .csr-table {
 
+
+
   border-collapse: collapse;
 
+
+
   width: 100%;
+
+
 
   min-width: 860px;
 
+
+
   text-align: left;
+
+
 
   font-size: 12px;
 
+
+
 }
+
+
 
 .csr-table th {
 
+
+
   padding: 13px;
+
+
 
   background: #1c2a3a;
 
+
+
   color: #abbad0;
 
+
+
 }
+
+
 
 .csr-table td {
 
+
+
   padding: 10px 13px;
+
+
 
   border-top: 1px solid #2b3a4e;
 
+
+
   vertical-align: middle;
 
+
+
 }
+
+
 
 .csr-table td small {
 
+
+
   display: block;
+
+
 
   margin-top: 6px;
 
+
+
   color: #8798af;
 
+
+
 }
+
+
 
 .csr-table td select {
 
+
+
   min-width: 165px;
 
+
+
 }
+
+
 
 .csr-table td button {
 
+
+
   padding: 7px 9px;
 
+
+
 }
+
+
 
 .csr-level {
 
+
+
   font-weight: 800;
+
+
 
   color: #8da1b9;
 
+
+
 }
+
+
 
 .csr-level.green,
 
+
+
 .csr-yes {
+
+
 
   color: #44cd95;
 
+
+
 }
+
+
 
 .csr-level.yellow {
 
+
+
   color: #facc15;
 
+
+
 }
+
+
 
 .csr-level.orange {
 
+
+
   color: #fb923c;
 
+
+
 }
+
+
 
 .csr-level.red,
 
+
+
 .csr-level.unreachable {
+
+
 
   color: #f27783;
 
+
+
 }
+
+
 
 /* MANUAL EDIT */
 
+
+
 .csr-manual {
+
+
 
   margin-top: 20px;
 
+
+
   padding: 16px;
 
+
+
   border: 1px solid #33445a;
+
+
 
   background: #151f2e;
 
+
+
   border-radius: 12px;
 
+
+
 }
+
+
 
 .csr-manual > label {
 
+
+
   display: flex;
+
+
 
   align-items: center;
 
+
+
   gap: 9px;
+
+
 
   font-size: 13px;
 
+
+
 }
+
+
 
 .csr-manual .csr-controls {
 
+
+
   grid-template-columns: repeat(3, minmax(0, 1fr));
 
+
+
 }
+
+
 
 .csr-wide {
 
+
+
   grid-column: 1 / -1;
 
+
+
 }
+
+
 
 /* SAVE BAR */
 
+
+
 .csr-footer {
+
+
 
   justify-content: space-between;
 
+
+
   border-top: 1px solid #304055;
+
+
 
   padding-top: 16px;
 
+
+
   font-size: 12px;
+
+
 
   color: #d8e2ef;
 
+
+
 }
+
+
 
 /* RESPONSIVE */
 
+
+
 @media (max-width: 900px) {
+
+
 
   .csr-controls {
 
+
+
     grid-template-columns: 1fr;
+
+
 
   }
 
+
+
 }
 
+
+
 @media (max-width: 600px) {
+
+
 
   .csr-root {
 
+
+
     padding: 14px;
 
+
+
   }
+
+
 
   .csr-table-head {
 
+
+
     flex-direction: column;
+
+
 
     align-items: stretch;
 
+
+
   }
+
+
 
 .csr-manual .csr-controls {
 
+
+
     grid-template-columns: 1fr;
+
+
 
   }
 
+
+
 }
 
+
+
 /* =========================================
+
+
 
    SERVICE BOX GROUPED VIEW
 
+
+
 \========================================= */
+
+
 
 .csr-box-toolbar {
 
+
+
   display: flex;
+
+
 
   align-items: center;
 
+
+
   justify-content: space-between;
+
+
 
   gap: 12px;
 
+
+
   flex-wrap: wrap;
+
+
 
   margin: 14px 0;
 
+
+
 }
+
+
 
 .csr-box-toolbar label {
 
+
+
   display: flex;
+
+
 
   align-items: center;
 
+
+
   gap: 9px;
 
+
+
   font-size: 12px;
+
+
 
   color: #c4d1e2;
 
+
+
   cursor: pointer;
 
+
+
 }
+
+
 
 .csr-box-toolbar-actions {
 
+
+
   display: flex;
+
+
 
   gap: 8px;
 
+
+
 }
+
+
 
 .csr-box-list {
 
+
+
   display: flex;
+
+
 
   flex-direction: column;
 
+
+
   gap: 9px;
 
+
+
 }
+
+
 
 .csr-box-item {
 
+
+
   border: 1px solid #304055;
+
+
 
   border-left: 4px solid #65758d;
 
+
+
   border-radius: 12px;
+
+
 
   background: #172232;
 
+
+
   overflow: hidden;
 
+
+
 }
+
+
 
 .csr-box-item.level-green {
 
+
+
   border-left-color: #36c78e;
 
+
+
 }
+
+
 
 .csr-box-item.level-yellow {
 
+
+
   border-left-color: #facc15;
 
+
+
 }
+
+
 
 .csr-box-item.level-orange {
 
+
+
   border-left-color: #fb923c;
 
+
+
 }
+
+
 
 .csr-box-item.level-red {
 
+
+
   border-left-color: #f06b79;
 
+
+
 }
+
+
 
 .csr-root .csr-box-toggle {
 
+
+
   width: 100%;
+
+
 
   display: flex;
 
+
+
   align-items: center;
+
+
 
   gap: 14px;
 
+
+
   padding: 15px 17px;
+
+
 
   text-align: left;
 
+
+
   border: none;
+
+
 
   border-radius: 0;
 
+
+
   background: transparent;
+
+
 
   color: #edf3fb;
 
+
+
 }
+
+
 
 .csr-root .csr-box-toggle:hover:not(:disabled) {
 
+
+
   background: #203047;
+
+
 
   border-color: transparent;
 
+
+
 }
+
+
 
 .csr-box-chevron {
 
+
+
   color: #8a9cb4;
+
+
 
   font-size: 23px;
 
+
+
   width: 20px;
+
+
 
   text-align: center;
 
+
+
   flex-shrink: 0;
 
+
+
 }
+
+
 
 .csr-box-info {
 
+
+
   flex: 1;
+
+
 
   min-width: 0;
 
+
+
   display: flex;
+
+
 
   flex-direction: column;
 
+
+
   gap: 5px;
 
+
+
 }
+
+
 
 .csr-box-info strong {
 
+
+
   color: #fff;
+
+
 
   font-size: 13px;
 
+
+
   line-height: 1.5;
+
+
 
   overflow-wrap: anywhere;
 
+
+
 }
+
+
 
 .csr-box-info small {
 
+
+
   color: #8599b4;
+
+
 
   font-size: 11px;
 
+
+
 }
+
+
 
 .csr-box-right {
 
+
+
   display: flex;
 
+
+
   flex-direction: column;
+
+
 
   align-items: flex-end;
 
+
+
   gap: 5px;
+
+
 
   flex-shrink: 0;
 
+
+
 }
+
+
 
 .csr-box-badge {
 
+
+
   padding: 5px 11px;
+
+
 
   border-radius: 7px;
 
+
+
   font-size: 11px;
+
+
 
   font-weight: 800;
 
+
+
 }
+
+
 
 .csr-box-badge.green {
 
+
+
   background: rgba(54, 199, 142, .12);
+
+
 
   color: #46d79a;
 
+
+
 }
+
+
 
 .csr-box-badge.yellow {
 
+
+
   background: rgba(250, 204, 21, .12);
+
+
 
   color: #facc15;
 
+
+
 }
+
+
 
 .csr-box-badge.orange {
 
+
+
   background: rgba(251, 146, 60, .12);
+
+
 
   color: #fb923c;
 
+
+
 }
+
+
 
 .csr-box-badge.red {
 
+
+
   background: rgba(240, 107, 121, .12);
+
+
 
   color: #fa8793;
 
+
+
 }
+
+
 
 .csr-box-badge.idle {
 
+
+
   background: rgba(120, 141, 169, .15);
+
+
 
   color: #9dadc2;
 
+
+
 }
+
+
 
 .csr-box-pending {
 
+
+
   color: #f2ac4c;
+
+
 
   font-size: 10px;
 
+
+
 }
+
+
 
 .csr-box-details {
 
+
+
   padding: 12px;
+
+
 
   border-top: 1px solid #304055;
 
+
+
   background: #101925;
 
+
+
 }
+
+
 
 .csr-box-details .csr-table-scroll {
 
+
+
   border-radius: 8px;
 
+
+
 }
+
+
 
 .csr-box-details .csr-table td {
 
+
+
   padding-top: 12px;
+
+
 
   padding-bottom: 12px;
 
+
+
 }
+
+
 
 .csr-box-empty {
 
+
+
   padding: 35px;
 
+
+
   text-align: center;
+
+
 
   border: 1px dashed #35445b;
 
+
+
   border-radius: 12px;
+
+
 
   color: #8d9fb8;
 
+
+
 }
+
+
 
 @media (max-width: 600px) {
 
+
+
   .csr-root .csr-box-toggle {
 
+
+
     padding: 12px;
+
+
 
     gap: 9px;
 
+
+
   }
+
+
 
   .csr-box-info strong {
 
+
+
     font-size: 12px;
 
+
+
   }
+
+
 
   .csr-box-badge {
 
+
+
     padding: 5px 7px;
+
+
 
     font-size: 10px;
 
+
+
   }
+
+
 
   .csr-box-details {
 
+
+
     padding: 7px;
+
+
 
   }
 
+
+
 }
 
+
+
 /* =========================================
+
+
 
    SERVICE BOX GRID - 2 BOXES PER ROW
 
+
+
 \========================================= */
+
+
 
 /* รายการตู้ แถวละ 2 ตู้ */
 
+
+
 .csr-root .csr-box-list {
+
+
 
   display: grid;
 
+
+
   grid-template-columns: repeat(2, minmax(0, 1fr));
 
+
+
   gap: 12px;
+
+
 
   align-items: start;
 
+
+
 }
+
+
 
 /* ตู้แต่ละใบ */
 
+
+
 .csr-root .csr-box-item {
+
+
 
   width: 100%;
 
+
+
   min-width: 0;
 
+
+
   box-sizing: border-box;
+
+
 
   grid-column: auto;
 
+
+
 }
+
+
 
 /* เมื่อเปิดตู้ ให้ขยายเต็มแถว
 
+
+
    เพื่อแสดงตารางกล้องแบบเดิม */
+
+
 
 .csr-root .csr-box-item:has(.csr-box-details) {
 
+
+
   grid-column: 1 / -1;
 
+
+
 }
+
+
 
 /* รายละเอียดกล้องใช้รูปแบบเดิม */
 
+
+
 .csr-root .csr-box-details {
+
+
 
   width: 100%;
 
+
+
   box-sizing: border-box;
 
+
+
 }
+
+
 
 /* จอเล็กแสดงแถวละ 1 ตู้ */
 
+
+
 @media (max-width: 900px) {
+
+
 
   .csr-root .csr-box-list {
 
+
+
     grid-template-columns: 1fr;
 
+
+
   }
+
+
 
   .csr-root .csr-box-item:has(.csr-box-details) {
 
+
+
     grid-column: auto;
+
+
 
   }
 
+
+
 }
 
+
+
 /* =========================================
+
+
 
    MESSAGE STATUS COLORS
 
+
+
 \========================================= */
+
+
 
 .csr-root .csr-message {
 
+
+
   display: flex;
+
+
 
   align-items: center;
 
+
+
   gap: 12px;
+
+
 
   padding: 13px 16px;
 
+
+
   border-radius: 10px;
 
+
+
   font-size: 13px;
+
+
 
   font-weight: 600;
 
+
+
   line-height: 1.6;
+
+
 
   transition: all 0.2s ease;
 
+
+
 }
+
+
 
 /* SUCCESS - GREEN */
 
+
+
 .csr-root .csr-message--success {
+
+
 
   background: rgba(34, 197, 94, 0.10);
 
+
+
   border: 1px solid rgba(34, 197, 94, 0.45);
+
+
 
   color: #4ade80;
 
+
+
 }
+
+
 
 /* ERROR - RED */
 
+
+
 .csr-root .csr-message--error {
+
+
 
   background: rgba(239, 68, 68, 0.10);
 
+
+
   border: 1px solid rgba(239, 68, 68, 0.45);
+
+
 
   color: #f87171;
 
+
+
 }
+
+
 
 /* WARNING - ORANGE */
 
+
+
 .csr-root .csr-message--warning {
+
+
 
   background: rgba(245, 158, 11, 0.10);
 
+
+
   border: 1px solid rgba(245, 158, 11, 0.45);
+
+
 
   color: #fbbf24;
 
+
+
 }
+
+
 
 /* INFO - BLUE */
 
+
+
 .csr-root .csr-message--info {
+
+
 
   background: rgba(59, 130, 246, 0.10);
 
+
+
   border: 1px solid rgba(59, 130, 246, 0.35);
+
+
 
   color: #93c5fd;
 
+
+
 }
+
+
 
 /* STATUS ICON */
 
+
+
 .csr-message-icon {
+
+
 
   display: flex;
 
+
+
   align-items: center;
 
+
+
   justify-content: center;
+
+
 
   width: 22px;
 
+
+
   height: 22px;
+
+
 
   min-width: 22px;
 
+
+
   border: 1px solid currentColor;
+
+
 
   border-radius: 50%;
 
+
+
   font-size: 13px;
+
+
 
   font-weight: 900;
 
+
+
 }
 
+
+
 /* =========================================
+
+
 
    AGENT PANEL - POLISHED UI
 
+
+
 \========================================= */
+
+
 
 .csr-agent {
 
+
+
   display: grid;
+
+
 
   grid-template-columns: minmax(260px, 1fr) auto auto;
 
+
+
   align-items: center;
 
+
+
   gap: 12px;
+
+
 
   padding: 14px 16px;
 
+
+
   border: 1px solid #2d3b50;
+
+
 
   border-radius: 14px;
 
+
+
   background: linear-gradient(
 
+
+
     145deg,
+
+
 
     #162233,
 
+
+
     #121c2a
+
+
 
   );
 
+
+
 }
+
+
 
 /* LEFT INFO BOX */
 
+
+
 .csr-agent-ready {
 
+
+
   min-width: 0;
+
+
 
   padding: 12px 14px;
 
+
+
   border: 1px solid #324157;
 
+
+
   border-radius: 12px;
+
+
 
   background: rgba(255, 255, 255, 0.02);
 
+
+
 }
+
+
 
 .csr-agent-ready.is-connected {
 
+
+
   border-color: rgba(34, 197, 94, 0.35);
+
+
 
   background: rgba(34, 197, 94, 0.06);
 
+
+
 }
+
+
 
 .csr-agent-ready.is-disconnected {
 
+
+
   border-color: rgba(120, 141, 169, 0.28);
+
+
 
   background: rgba(120, 141, 169, 0.05);
 
+
+
 }
+
+
 
 .csr-agent-ready-head {
 
+
+
   display: flex;
+
+
 
   align-items: center;
 
+
+
   justify-content: space-between;
 
+
+
   gap: 10px;
+
+
 
   margin-bottom: 5px;
 
+
+
 }
+
+
 
 .csr-agent-ready strong {
 
+
+
   color: #eef3fb;
+
+
 
   font-size: 15px;
 
+
+
   font-weight: 800;
+
+
 
   line-height: 1.2;
 
+
+
 }
+
+
 
 .csr-agent-ready small {
 
+
+
   display: block;
+
+
 
   color: #9eb0c6;
 
+
+
   font-size: 12px;
+
+
 
   line-height: 1.5;
 
+
+
 }
+
+
 
 /* STATUS BADGE */
 
+
+
 .csr-agent-ready-badge {
+
+
 
   display: inline-flex;
 
+
+
   align-items: center;
 
+
+
   justify-content: center;
+
+
 
   min-height: 28px;
 
+
+
   padding: 0 12px;
+
+
 
   border-radius: 999px;
 
+
+
   font-size: 11px;
+
+
 
   font-weight: 800;
 
+
+
   white-space: nowrap;
 
+
+
 }
+
+
 
 .csr-agent-ready-badge.connected {
 
+
+
   background: rgba(34, 197, 94, 0.14);
+
+
 
   border: 1px solid rgba(34, 197, 94, 0.35);
 
+
+
   color: #4ade80;
 
+
+
 }
+
+
 
 .csr-agent-ready-badge.disconnected {
 
+
+
   background: rgba(120, 141, 169, 0.12);
+
+
 
   border: 1px solid rgba(120, 141, 169, 0.28);
 
+
+
   color: #a7b7cb;
 
+
+
 }
+
+
 
 /* BUTTON GROUP */
 
+
+
 .csr-agent-actions {
+
+
 
   display: flex;
 
+
+
   align-items: center;
+
+
 
   gap: 10px;
 
+
+
   flex-wrap: wrap;
 
+
+
 }
+
+
 
 .csr-agent-actions button {
 
+
+
   min-width: 150px;
+
+
 
   height: 40px;
 
+
+
   display: inline-flex;
+
+
 
   align-items: center;
 
+
+
   justify-content: center;
+
+
 
   padding: 0 14px;
 
+
+
   box-sizing: border-box;
+
+
 
   white-space: nowrap;
 
+
+
 }
+
+
 
 /* PROGRESS BADGE */
 
+
+
 .csr-agent-progress {
 
+
+
   min-width: 110px;
+
+
 
   height: 40px;
 
+
+
   display: inline-flex;
+
+
 
   align-items: center;
 
+
+
   justify-content: center;
+
+
 
   padding: 0 14px;
 
+
+
   border: 1px solid #324157;
 
+
+
   border-radius: 10px;
+
+
 
   background: #182434;
 
+
+
   color: #eef3fb;
+
+
 
   font-size: 14px;
 
+
+
   font-weight: 800;
+
+
 
   white-space: nowrap;
 
+
+
 }
+
+
 
 /* RESPONSIVE */
 
+
+
 @media (max-width: 1200px) {
+
+
 
   .csr-agent {
 
+
+
     grid-template-columns: 1fr;
+
+
 
     align-items: stretch;
 
+
+
   }
+
+
 
   .csr-agent-actions {
 
+
+
     justify-content: flex-start;
 
+
+
   }
+
+
 
   .csr-agent-progress {
 
+
+
     justify-content: flex-start;
+
+
 
     width: fit-content;
 
+
+
   }
 
+
+
 }
+
+
 
 @media (max-width: 700px) {
 
+
+
   .csr-agent-actions {
+
+
 
     display: grid;
 
+
+
     grid-template-columns: 1fr 1fr;
+
+
 
     gap: 10px;
 
+
+
   }
+
+
 
   .csr-agent-actions button {
 
+
+
     min-width: 0;
+
+
 
     width: 100%;
 
+
+
   }
 
+
+
 }
+
+
 
 @media (max-width: 520px) {
 
+
+
   .csr-agent-actions {
+
+
 
     grid-template-columns: 1fr;
 
+
+
   }
+
+
 
   .csr-agent-ready-head {
 
+
+
     flex-direction: column;
+
+
 
     align-items: flex-start;
 
+
+
   }
+
+
 
 }
 
+
+
 /* =========================================
+
+
 
    LIVE CCTV PING PROGRESS
 
+
+
 \========================================= */
+
+
 
 .csr-root .csr-live-progress {
 
+
+
   padding: 17px 20px;
+
+
 
   margin: 14px 0;
 
+
+
   background: #102239;
+
+
 
   border: 1px solid #2472a3;
 
+
+
   border-radius: 12px;
+
+
 
   box-sizing: border-box;
 
+
+
 }
+
+
 
 .csr-live-progress-header {
 
+
+
   display: flex;
+
+
 
   align-items: center;
 
+
+
   gap: 14px;
 
+
+
 }
+
+
 
 .csr-live-progress-title {
 
+
+
   flex: 1;
+
+
 
   min-width: 0;
 
+
+
   display: flex;
 
+
+
   flex-direction: column;
+
+
 
   gap: 4px;
 
+
+
 }
+
+
 
 .csr-live-progress-title strong {
 
+
+
   color: #e4f5ff;
+
+
 
   font-size: 14px;
 
+
+
 }
+
+
 
 .csr-live-progress-title small {
 
+
+
   color: #8fb5ce;
+
+
 
   font-size: 11px;
 
+
+
 }
+
+
 
 .csr-live-progress-percent {
 
+
+
   color: #38bdf8;
+
+
 
   font-size: 25px;
 
+
+
   font-weight: 900;
+
+
 
   font-variant-numeric: tabular-nums;
 
+
+
 }
+
+
 
 /* วงกลมหมุน */
 
+
+
 .csr-live-spinner {
+
+
 
   width: 24px;
 
+
+
   height: 24px;
+
+
 
   flex-shrink: 0;
 
+
+
   border: 3px solid rgba(56, 189, 248, 0.2);
+
+
 
   border-top-color: #38bdf8;
 
+
+
   border-radius: 50%;
+
+
 
   animation: csr-live-spin .8s linear infinite;
 
+
+
 }
+
+
 
 @keyframes csr-live-spin {
 
+
+
   to {
+
+
 
     transform: rotate(360deg);
 
+
+
   }
 
+
+
 }
+
+
 
 /* ราง Progress */
 
+
+
 .csr-live-progress-track {
+
+
 
   height: 12px;
 
+
+
   margin-top: 16px;
+
+
 
   background: #071421;
 
+
+
   border: 1px solid #28506c;
+
+
 
   border-radius: 999px;
 
+
+
   overflow: hidden;
 
+
+
 }
+
+
 
 /* แถบสีฟ้า */
 
+
+
 .csr-live-progress-fill {
+
+
 
   position: relative;
 
+
+
   height: 100%;
+
+
 
   background: linear-gradient(
 
+
+
     90deg,
+
+
 
     #0284c7,
 
+
+
     #0ea5e9,
+
+
 
     #38bdf8
 
+
+
   );
 
+
+
   border-radius: 999px;
+
+
 
   overflow: hidden;
 
+
+
   transition: width .35s ease;
 
+
+
 }
+
+
 
 /* แสงเคลื่อนไหว */
 
+
+
 .csr-live-progress-fill::after {
+
+
 
   content: '';
 
+
+
   position: absolute;
+
+
 
   inset: 0;
 
+
+
   background: linear-gradient(
+
+
 
     90deg,
 
+
+
     transparent,
+
+
 
     rgba(255, 255, 255, .5),
 
+
+
     transparent
 
+
+
   );
+
+
 
   animation: csr-live-shine 1.3s linear infinite;
 
+
+
 }
+
+
 
 @keyframes csr-live-shine {
 
+
+
   from { transform: translateX(-100%); }
+
+
 
   to { transform: translateX(100%); }
 
+
+
 }
+
+
 
 /* ข้อความด้านล่าง */
 
+
+
 .csr-live-progress-footer {
+
+
 
   display: flex;
 
+
+
   justify-content: space-between;
 
+
+
   gap: 12px;
+
+
 
   margin-top: 10px;
 
+
+
   color: #a1c4db;
+
+
 
   font-size: 12px;
 
+
+
 }
+
+
 
 .csr-live-progress-working {
 
+
+
   color: #38bdf8;
 
+
+
   font-weight: 700;
+
+
 
   animation: csr-live-pulse 1.3s ease-in-out infinite;
 
+
+
 }
+
+
 
 @keyframes csr-live-pulse {
 
+
+
   50% { opacity: .35; }
+
+
 
 }
 
+
+
 @media (prefers-reduced-motion: reduce) {
+
+
 
   .csr-live-spinner,
 
+
+
   .csr-live-progress-fill::after,
+
+
 
   .csr-live-progress-working {
 
+
+
     animation: none;
+
+
 
   }
 
+
+
 }
 
+
+
 /* =========================================
+
+
 
    CCTV NETWORKS - NEW LAYOUT
 
+
+
 \========================================= */
+
+
 
 /* ตัวกรองหลักเหลือ ศูนย์ + วันที่ */
 
+
+
 .csr-controls.csr-main-filters {
+
+
 
   grid-template-columns: repeat(2, minmax(0, 1fr));
 
+
+
 }
 
+
+
 /* =========================================
+
+
 
    TWO NETWORK OVERVIEW CARDS
 
+
+
 \========================================= */
+
+
 
 .csr-network-overview {
 
+
+
   display: grid;
+
+
 
   grid-template-columns: repeat(2, minmax(0, 1fr));
 
+
+
   gap: 14px;
+
+
 
   margin: 20px 0 24px;
 
+
+
 }
+
+
 
 .csr-network-card {
 
+
+
   min-width: 0;
+
+
 
   padding: 17px;
 
+
+
   border: 1px solid #33445a;
+
+
 
   border-radius: 14px;
 
+
+
   background: linear-gradient(
+
+
 
     145deg,
 
+
+
     #192638,
+
+
 
     #141f2f
 
+
+
   );
 
+
+
 }
+
+
 
 .csr-network-card.is-active {
 
+
+
   border-color: #b6355d;
+
+
 
   box-shadow: inset 0 3px 0 #c52d59;
 
+
+
 }
+
+
 
 .csr-network-card-header {
 
+
+
   display: flex;
+
+
 
   align-items: flex-start;
 
+
+
   justify-content: space-between;
 
+
+
   flex-wrap: wrap;
+
+
 
   gap: 12px;
 
+
+
   margin-bottom: 16px;
 
+
+
 }
+
+
 
 .csr-network-card-header > div {
 
+
+
   display: flex;
+
+
 
   flex-direction: column;
 
+
+
   gap: 5px;
 
+
+
 }
+
+
 
 .csr-network-card-header strong {
 
+
+
   color: #fff;
+
+
 
   font-size: 17px;
 
+
+
   font-weight: 800;
 
+
+
 }
+
+
 
 .csr-network-card-header small {
 
+
+
   color: #92a6bf;
+
+
 
   font-size: 11px;
 
+
+
   line-height: 1.5;
 
+
+
 }
+
+
 
 .csr-network-total {
 
+
+
   padding: 7px 12px;
+
+
 
   border: 1px solid #42516a;
 
+
+
   border-radius: 9px;
+
+
 
   color: #eaf3ff;
 
+
+
   background: #223149;
+
+
 
   font-size: 12px;
 
+
+
   font-weight: 800;
+
+
 
   white-space: nowrap;
 
+
+
 }
+
+
 
 .csr-network-metrics {
 
+
+
   display: grid;
+
+
 
   grid-template-columns: repeat(3, minmax(0, 1fr));
 
+
+
   gap: 9px;
 
+
+
 }
+
+
 
 .csr-network-metric {
 
+
+
   min-width: 0;
+
+
 
   padding: 12px;
 
+
+
   border: 1px solid #324257;
+
+
 
   border-radius: 10px;
 
+
+
   background: #111b2b;
 
+
+
 }
+
+
 
 .csr-network-metric small {
 
+
+
   display: block;
+
+
 
   margin-bottom: 7px;
 
+
+
   color: #9bacc3;
 
+
+
   font-size: 11px;
+
+
 
   line-height: 1.4;
 
+
+
 }
+
+
 
 .csr-network-metric strong {
 
+
+
   color: #f3f7fc;
+
+
 
   font-size: 24px;
 
+
+
   font-weight: 900;
+
+
 
   font-variant-numeric: tabular-nums;
 
+
+
 }
+
+
 
 .csr-network-metric.green strong {
 
+
+
   color: #43d19a;
 
+
+
 }
+
+
 
 .csr-network-metric.red strong {
 
+
+
   color: #f27885;
 
+
+
 }
+
+
 
 .csr-network-metric.yellow strong {
 
+
+
   color: #facc15;
 
+
+
 }
+
+
 
 .csr-network-metric.orange strong {
 
+
+
   color: #fb923c;
 
+
+
 }
+
+
 
 .csr-network-metric.muted strong {
 
+
+
   color: #8fa5bf;
+
+
 
 }
 
+
+
 /* =========================================
+
+
 
    NETWORK TABS
 
+
+
 \========================================= */
+
+
 
 .csr-network-tabs {
 
+
+
   display: flex;
 
+
+
   align-items: center;
+
+
 
   gap: 8px;
 
+
+
   margin-top: 26px;
+
+
 
   padding: 6px;
 
+
+
   border: 1px solid #304259;
 
+
+
   border-radius: 12px;
+
+
 
   background: #111b29;
 
+
+
 }
+
+
 
 .csr-root .csr-network-tabs button {
 
+
+
   display: inline-flex;
+
+
 
   align-items: center;
 
+
+
   justify-content: center;
+
+
 
   gap: 13px;
 
+
+
   flex: 1;
 
+
+
   min-width: 0;
+
+
 
   padding: 13px 17px;
 
+
+
   border: 1px solid transparent;
+
+
 
   border-radius: 9px;
 
+
+
   background: transparent;
+
+
 
   color: #9eb1cb;
 
+
+
   font-size: 13px;
 
+
+
   font-weight: 800;
+
+
 
   transition:
 
+
+
     background .2s ease,
+
+
 
     border-color .2s ease,
 
+
+
     color .2s ease;
 
+
+
 }
+
+
 
 .csr-root .csr-network-tabs button.is-active {
 
+
+
   border-color: #a72e51;
+
+
 
   background: linear-gradient(
 
+
+
     135deg,
+
+
 
     #9d2147,
 
+
+
     #6f1b38
+
+
 
   );
 
+
+
   color: #fff;
 
+
+
 }
+
+
 
 .csr-network-tabs button strong {
 
+
+
   display: inline-flex;
 
+
+
   align-items: center;
+
+
 
   justify-content: center;
 
+
+
   min-width: 36px;
+
+
 
   padding: 4px 10px;
 
+
+
   border-radius: 999px;
+
+
 
   background: rgba(255, 255, 255, .1);
 
+
+
   font-size: 12px;
+
+
 
   font-weight: 900;
 
+
+
   font-variant-numeric: tabular-nums;
 
+
+
 }
+
+
 
 .csr-root .csr-network-tabs button.is-active strong {
 
+
+
   background: rgba(255, 255, 255, .18);
+
+
 
   color: #fff;
 
+
+
 }
 
+
+
 /* =========================================
+
+
 
    SELECTED NETWORK PING BAR
 
+
+
 \========================================= */
+
+
 
 .csr-network-runbar {
 
+
+
   display: flex;
+
+
 
   justify-content: space-between;
 
+
+
   align-items: center;
 
+
+
   flex-wrap: wrap;
+
+
 
   gap: 14px;
 
+
+
   margin: 12px 0 18px;
+
+
 
   padding: 15px 17px;
 
+
+
   border: 1px solid #304157;
+
+
 
   border-radius: 12px;
 
+
+
   background: #152233;
 
+
+
 }
+
+
 
 .csr-network-runinfo {
 
+
+
   display: flex;
+
+
 
   flex-direction: column;
 
+
+
   gap: 5px;
+
+
 
   min-width: 0;
 
+
+
 }
+
+
 
 .csr-network-runinfo strong {
 
+
+
   color: #f2f6fd;
 
+
+
   font-size: 14px;
+
+
 
   font-weight: 800;
 
+
+
 }
+
+
 
 .csr-network-runinfo small {
 
+
+
   color: #90a5bd;
+
+
 
   font-size: 11px;
 
+
+
 }
+
+
 
 .csr-network-runbuttons {
 
+
+
   display: flex;
+
+
 
   align-items: center;
 
+
+
   flex-wrap: wrap;
+
+
 
   gap: 9px;
 
+
+
 }
+
+
 
 .csr-root .csr-network-runbuttons .csr-primary {
 
+
+
   min-width: 175px;
+
+
 
   min-height: 42px;
 
+
+
   background: #b41f49;
+
+
 
   border-color: #d0315c;
 
+
+
   color: #fff;
 
+
+
 }
+
+
 
 .csr-root .csr-network-runbuttons .csr-primary:hover:not(:disabled) {
 
+
+
   background: #cc2856;
+
+
 
   border-color: #ee5078;
 
+
+
 }
+
+
 
 .csr-table-head {
 
+
+
   margin-top: 12px;
+
+
 
 }
 
+
+
 /* =========================================
+
+
 
    NETWORK RESPONSIVE
 
+
+
 \========================================= */
+
+
 
 @media (max-width: 950px) {
 
+
+
   .csr-network-overview {
+
+
 
     grid-template-columns: 1fr;
 
+
+
   }
 
+
+
 }
+
+
 
 @media (max-width: 650px) {
 
+
+
   .csr-controls.csr-main-filters {
+
+
 
     grid-template-columns: 1fr;
 
+
+
   }
+
+
 
   .csr-network-card {
 
+
+
     padding: 12px;
 
+
+
   }
+
+
 
   .csr-network-metrics {
 
+
+
     grid-template-columns: repeat(2, minmax(0, 1fr));
 
+
+
   }
+
+
 
   .csr-network-metric strong {
 
+
+
     font-size: 22px;
+
+
 
   }
 
+
+
   .csr-root .csr-network-tabs button {
+
+
 
     padding: 11px 8px;
 
+
+
     flex-direction: column;
+
+
 
     gap: 7px;
 
+
+
     font-size: 12px;
 
+
+
   }
+
+
 
   .csr-network-runbar {
 
+
+
     padding: 12px;
+
+
 
     align-items: stretch;
 
+
+
   }
+
+
 
   .csr-network-runbuttons {
 
+
+
     width: 100%;
 
+
+
   }
+
+
 
   .csr-root .csr-network-runbuttons button {
 
+
+
     flex: 1;
+
+
 
     min-width: 0;
 
+
+
   }
 
+
+
 }
+
+
 
 @media (prefers-reduced-motion: reduce) {
 
+
+
   .csr-root .csr-network-tabs button {
+
+
 
     transition: none;
 
+
+
   }
+
+
 
 }
 
+
+
 /* =========================================
+
+
 
    PER-CAMERA PING + FOUR PING STATUS COLORS
 
+
+
 \========================================= */
+
+
 
 .csr-root .csr-camera-reping {
 
+
+
   min-width: 110px;
+
+
 
   padding: 9px 12px;
 
+
+
   border: 1px solid #416888;
+
+
 
   background: #19344a;
 
+
+
   color: #b9e6ff;
+
+
 
   white-space: nowrap;
 
+
+
 }
+
+
 
 .csr-root .csr-camera-reping:hover:not(:disabled) {
 
+
+
   border-color: #38bdf8;
+
+
 
   background: #20516f;
 
+
+
 }
+
+
 
 .csr-review-hint {
 
+
+
   color: #facc15 !important;
+
+
 
   font-size: 10px;
 
+
+
   line-height: 1.5;
 
+
+
 }
+
+
 
 .csr-table th:last-child,
 
+
+
 .csr-table td:last-child {
+
+
 
   width: 135px;
 
+
+
   text-align: center;
 
+
+
 }
+
+
 
 .csr-network-card-header .csr-network-pending {
 
+
+
   color: #facc15;
+
+
 
   font-weight: 700;
 
+
+
 }
 
+
+
 /* =========================================
+
+
 
    SINGLE CAMERA PING - LOCK WITHOUT DIMMING
 
+
+
    Only the camera currently being re-pinged turns grey.
 
+
+
 \========================================= */
+
+
 
 /* Keep all other disabled controls in their normal colors
 
+
+
    while a single-camera Ping is in progress. */
+
+
 
 .csr-root.csr-ping-single-active button:disabled,
 
+
+
 .csr-root.csr-ping-single-active select:disabled {
+
+
 
   opacity: 1;
 
+
+
 }
+
+
 
 /* Some browsers desaturate native selects even with full opacity. */
 
+
+
 .csr-root.csr-ping-single-active select:disabled {
+
+
 
   color: #eef3fb;
 
+
+
   -webkit-text-fill-color: #eef3fb;
 
+
+
 }
+
+
 
 /* Gray only the Ping button for the camera currently running. */
 
+
+
 .csr-root.csr-ping-single-active
+
+
 
   .csr-camera-reping.csr-camera-reping--busy:disabled {
 
+
+
   opacity: 1;
+
+
 
   background: #505c6c;
 
+
+
   border-color: #788497;
+
+
 
   color: #f1f5f9;
 
+
+
   cursor: progress;
 
+
+
 }
+
+
 
 /* Calendar icon - White */
 
+
+
 .csr-root input[type="date"]::-webkit-calendar-picker-indicator {
+
+
 
   filter: invert(1);
 
+
+
   opacity: 1;
+
+
 
   cursor: pointer;
 
+
+
 }
+
+
 
 /* =========================================
 
+
+
    CAMERA LIST - LARGER TEXT
+
+
 
 \========================================= */
 
+
+
 /* ชื่อตู้ / ชื่อกลุ่มกล้อง */
+
+
 
 .csr-root .csr-box-info strong {
 
+
+
   font-size: 16px;
 
+
+
 }
+
+
 
 /* รายละเอียดตู้ / จำนวนกล้อง */
 
+
+
 .csr-root .csr-box-info small {
+
+
 
   font-size: 13px;
 
+
+
 }
+
+
 
 /* ป้ายสถานะของตู้ */
 
+
+
 .csr-root .csr-box-badge {
+
+
 
   font-size: 12px;
 
+
+
 }
+
+
 
 /* ข้อความรอยืนยัน */
 
+
+
 .csr-root .csr-box-pending {
+
+
 
   font-size: 12px;
 
+
+
 }
+
+
 
 /* ตารางรายละเอียดกล้อง */
 
+
+
 .csr-root .csr-box-details .csr-table {
+
+
 
   font-size: 14px;
 
+
+
 }
+
+
 
 /* หัวตาราง */
 
+
+
 .csr-root .csr-box-details .csr-table th {
+
+
 
   font-size: 13px;
 
+
+
 }
+
+
 
 /* IP / พิกัด / Loss */
 
+
+
 .csr-root .csr-box-details .csr-table td small {
+
+
 
   font-size: 12px;
 
+
+
 }
+
+
 
 /* ผล Ping */
 
+
+
 .csr-root .csr-box-details .csr-level {
+
+
 
   font-size: 14px;
 
+
+
 }
+
+
 
 /* ช่องเลือกสถานะ */
 
+
+
 .csr-root .csr-box-details select {
+
+
 
   font-size: 14px;
 
+
+
 }
+
+
 
 /* ปุ่ม Ping ใหม่ / ยืนยันผล */
 
+
+
 .csr-root .csr-box-details button {
+
+
 
   font-size: 13px;
 
+
+
 }
 
+
+
 /* =========================================================
+
    DAILY CCTV DASHBOARD • PREVIEW & EDIT BAR
+
    Component-scoped; does not affect Ping or inventory cards
+
 ========================================================= */
+
 .csr-dashboard-section { margin-top: 30px; display: grid; gap: 15px; }
+
 .csr-dashboard-tools { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: 15px; }
+
 .csr-dashboard-eyebrow { color: #fd6489; font-size: 11px; font-weight: 800; letter-spacing: .13em; }
+
 .csr-dashboard-tools h3 { margin: 4px 0 6px; font-size: 23px; color: #f6f9ff; }
+
 .csr-dashboard-tools p { margin: 0; color: #9eafc9; font-size: 12px; }
+
 .csr-dashboard-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
 .csr-dashboard-actions button { min-height: 38px; }
+
 .csr-dashboard-editor { border: 1px solid #395273; border-radius: 14px; background: #16253a; padding: 17px; display: grid; gap: 14px; }
+
 .csr-dashboard-editor-head, .csr-dashboard-editor-network-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+
 .csr-dashboard-editor-head strong { font-size: 15px; color: #f8fbff; }
+
 .csr-dashboard-editor-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+
 .csr-dashboard-editor-fields label { display: grid; gap: 6px; color: #b8c9df; font-size: 12px; }
+
 .csr-root .csr-dashboard-editor input { background: #0d192b; color: #fff; font-size: 14px; }
+
 .csr-dashboard-editor-networks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+
 .csr-dashboard-editor-network { border: 1px solid #324966; border-radius: 12px; padding: 13px; background: #111e30; }
+
 .csr-dashboard-editor-network-title strong { color: #f1f6fd; font-size: 14px; }
+
 .csr-dashboard-editor-counts { grid-template-columns: repeat(3,minmax(0,1fr)); margin: 12px 0 9px; }
+
 .csr-dashboard-editor-network small,.csr-dashboard-edit-note { display: block; font-size: 11px; line-height: 1.6; color: #9fb4d2; }
+
 .csr-dashboard-edit-error { color: #ffb9bf; background: #4b2231; border: 1px solid #bd465d; border-radius: 8px; padding: 10px 12px; margin: 0; font-size: 13px; }
+
 .csr-dashboard-edit-note { margin: 0; }
+
 .csr-dashboard-paper { background: #0d1728; color: #f6faff; border-radius: 15px; border: 1px solid #324660; padding: 23px; display: grid; gap: 16px; min-width: 0; }
+
 .csr-dashboard-paper-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+
 .csr-dashboard-paper-kicker { color: #9bbef9; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+
 .csr-dashboard-paper-head h2 { margin: 5px 0 7px; color: #fff; font-size: 26px; line-height: 1.3; }
+
 .csr-dashboard-paper-head p { margin: 0; color: #bfd0e5; font-size: 13px; }
+
 .csr-dashboard-paper-head p span { color: #4e6784; margin: 0 6px; }
+
 .csr-dashboard-report-date { background: #1c2d47; color: #dce9ff; border: 1px solid #425975; border-radius: 9px; font-size: 12px; font-weight: 800; white-space: nowrap; padding: 9px 11px; }
+
 .csr-dashboard-warning { margin: 0; padding: 9px 12px; background: #342a20; border-left: 3px solid #f3a84e; color: #ffdea6; font-size: 12px; line-height: 1.5; }
+
 .csr-dashboard-report-note { padding: 10px 12px; border-left: 3px solid #6297ee; margin: 0; background: #172942; font-size: 13px; color: #dce8f7; overflow-wrap: anywhere; }
+
 .csr-dashboard-network-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
+
 .csr-dashboard-network-panel { min-width: 0; display: grid; gap: 16px; padding: 17px; border-radius: 14px; background: #152338; border: 1px solid #344b66; }
+
 .csr-dashboard-panel-title { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+
 .csr-dashboard-panel-title span { color: #88a4c7; font-size: 9px; font-weight: 800; letter-spacing: .09em; }
+
 .csr-dashboard-panel-title h3 { font-size: 19px; margin: 4px 0 0; }
+
 .csr-dashboard-data-label { flex-shrink: 0; background: #20374f; color: #c7d8ee; border-radius: 7px; padding: 7px; font-weight: 700; font-size: 10px; }
+
 .csr-dashboard-donut-row { display: grid; grid-template-columns: minmax(150px,.9fr) minmax(130px,1fr); gap: 12px; align-items: center; }
+
 .csr-dashboard-donut { position: relative; width: 100%; max-width: 205px; aspect-ratio: 1; margin: auto; }
+
 .csr-dashboard-donut svg { width: 100%; height: 100%; display: block; }
+
 .csr-dashboard-donut-center { position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; flex-direction: column; pointer-events: none; }
+
 .csr-dashboard-donut-center strong { font-size: 26px; letter-spacing: -.03em; font-weight: 900; }
+
 .csr-dashboard-donut-center small { margin-top: 2px; font-size: 11px; color: #99b0cd; }
+
 .csr-dashboard-mini-stats { display: grid; gap: 7px; }
+
 .csr-dashboard-mini-stats>div { display: flex; align-items: center; gap: 5px; padding: 7px 9px; background: #0d1929; border: 1px solid #2b405a; border-radius: 8px; }
+
 .csr-dashboard-mini-stats small { flex: 1; color: #b1c2d8; font-size: 11px; }
+
 .csr-dashboard-mini-stats strong { font-size: 16px; color: #fff; font-variant-numeric: tabular-nums; }
+
 .csr-dot { display: inline-block; width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: #9fb0c7; }
+
 .csr-dot.is-green { background: #27c997; }.csr-dot.is-yellow { background: #f3cc4b; }.csr-dot.is-orange { background: #f5a550; }.csr-dot.is-red { background: #f56876; }
 
 
@@ -2236,17 +4460,42 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .csr-dashboard-outage-box { display: grid; gap: 11px; padding: 13px; background: #101b2c; border: 1px solid #33435a; border-radius: 10px; }
+
 .csr-dashboard-outage-box>strong { font-size: 13px; }
+
 .csr-dashboard-outage-three { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
+
 .csr-dashboard-outage-three>div { display: grid; gap: 5px; padding: 9px; background: #17283b; border-radius: 7px; }
+
 .csr-dashboard-outage-three b { font-size: 23px; color: #ff9a9e; font-weight: 900; }
+
 .csr-dashboard-outage-three small { font-size: 10px; line-height: 1.5; color: #b5c9df; }
+
 .csr-dashboard-outage-box p { color: #e8c089; margin: 0; font-size: 10px; }
 
 
+
+
+
 .csr-dashboard-section-heading { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 12px; }
+
 .csr-dashboard-section-heading h3 { margin: 0; font-size: 15px; color: #f8fbff; }
+
 .csr-dashboard-section-heading>span { color: #9fb9db; font-size: 12px; white-space: nowrap; }
 
 
@@ -2255,91 +4504,160 @@
 
 
 
-.csr-dashboard-nodata { margin: 4px 0; padding: 13px; font-size: 12px; text-align: center; color: #9fb2c9; }
 
 
 
+
+
+
+
+
+/* Repair follow-up section shares dashboard framing. */
 .csr-dashboard-repair-section { padding: 18px; }
-.csr-dashboard-table-scroll { overflow: hidden; border-radius: 8px; border: 1px solid #2c435d; }
-.csr-dashboard-repair-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
-.csr-dashboard-repair-table th { background: #20334a; color: #d2e2f5; font-size: 11px; text-align: left; padding: 10px 9px; }
-.csr-dashboard-repair-table td { border-top: 1px solid #293d56; color: #e6f1ff; overflow-wrap: anywhere; padding: 9px; vertical-align: top; }
-.csr-dashboard-repair-table th:nth-child(1) { width: 12%; }.csr-dashboard-repair-table th:nth-child(2) { width: 20%; }
-.csr-dashboard-repair-table th:nth-child(3) { width: 26%; }.csr-dashboard-repair-table th:nth-child(4) { width: 15%; }
-.csr-dashboard-repair-table th:nth-child(5) { width: 17%; }.csr-dashboard-repair-table th:nth-child(6) { width: 10%; }
-.csr-dashboard-ip { font-variant-numeric: tabular-nums; }
-.csr-dashboard-overflow-note,.csr-dashboard-footer-note { font-size: 10px; line-height: 1.5; color: #9eb4ce; margin: 10px 0 0; }
+.csr-dashboard-footer-note { font-size: 10px; line-height: 1.5; color: #9eb4ce; margin: 10px 0 0; }
+
 @media (max-width: 1050px) {
+
   .csr-dashboard-network-grid,.csr-dashboard-editor-networks { grid-template-columns: 1fr; }
+
 }
+
 @media (max-width: 700px) {
+
   .csr-dashboard-paper { padding: 12px; gap: 11px; }
+
   .csr-dashboard-network-panel { padding: 12px; }
+
   .csr-dashboard-donut-row { grid-template-columns: minmax(100px,.8fr) minmax(120px,1fr); }
+
   .csr-dashboard-donut-center strong { font-size: 20px; }
+
   .csr-dashboard-editor-fields { grid-template-columns: 1fr; }
+
   .csr-dashboard-editor-counts { grid-template-columns: repeat(3,minmax(0,1fr)); }
+
   .csr-dashboard-mini-stats>div { padding: 5px; }
+
   .csr-dashboard-mini-stats small { font-size: 10px; }
+
   .csr-dashboard-paper-head h2 { font-size: 20px; }
+
   .csr-dashboard-paper-head { flex-wrap: wrap; }
+
 }
+
+
 
 /* Saved status colors */
+
 .csr-dashboard-data-label.is-saved { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.4); }
+
 .csr-dashboard-data-label.is-unsaved { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.4); }
 
+
+
 /* Manual per-IP Supabase editor */
+
 .csr-manual-ip-summary { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+
 .csr-manual-ip-summary span { padding:7px 11px; background:#1a3043; border:1px solid #304b62; border-radius:7px; color:#dcecf6; font-size:12px; }
+
 .csr-manual-ip-summary b { color:#fff; }
+
 .csr-manual-ip-panel { padding:16px; border:1px solid #46627f; border-radius:12px; background:#101d30; display:grid; gap:12px; }
+
 .csr-manual-ip-header { display:flex; flex-direction:column; gap:4px; }
+
 .csr-manual-ip-header strong { font-size:16px; }
+
 .csr-manual-ip-header small { color:#afc3d9; }
+
 .csr-manual-ip-search { display:flex; gap:12px; align-items:end; flex-wrap:wrap; }
+
 .csr-manual-ip-search label { flex:1; min-width:200px; display:grid; gap:7px; color:#bbcee4; font-size:12px; }
+
 .csr-manual-ip-search button { min-height:40px; }
+
 .csr-manual-ip-notice { padding:10px; border-radius:7px; background:#283448; color:#ffe1a8; margin:0; }
+
 .csr-manual-ip-result { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; padding:12px; background:#182a3d; border:1px solid #30475c; border-radius:10px; }
+
 .csr-manual-ip-result.is-active { border-color:#5b9ce2; }
+
 .csr-manual-ip-result>div { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+
 .csr-manual-ip-result small { color:#aec7df; }
+
 .csr-manual-ip-red { color:#ff8b9b; font-weight:800; }
+
 .csr-manual-ip-green { color:#68dda9; font-weight:800; }
+
 .csr-manual-ip-action-panel { display:grid; gap:12px; border:1px solid #36526d; border-radius:9px; padding:13px; }
+
 .csr-manual-ip-action-panel p { margin:0; color:#aabfd8; font-size:12px; }
+
 .csr-manual-ip-action-panel label { display:grid; gap:7px; color:#bdcde0; font-size:12px; }
+
 .csr-manual-ip-actions { display:flex; gap:9px; flex-wrap:wrap; }
+
 .csr-root .csr-manual-ip-down { background:#9b233f; border-color:#c7435d; color:white; }
+
 .csr-root .csr-manual-ip-up { background:#125c43; border-color:#2b9e74; color:white; }
+
 .csr-manual-ip-history { display:grid; gap:8px; border-top:1px solid #33475b; padding-top:12px; }
+
 .csr-manual-ip-history>div { display:grid; gap:3px; border-bottom:1px solid #26394d; padding:7px 0; }
+
 .csr-manual-ip-history small { color:#9ebbd8; }
 
+
+
 .csr-dashboard-repair-section {
+
   background: #152338;
+
   border: 1px solid #344b66;
+
   border-radius: 14px;
+
   padding: 18px;
+
   min-width: 0;
+
 }
 
+
+
 /* =========================================
+
    RESET ALL MANUAL CAMERA STATUS
+
 ========================================= */
+
+
 
 .csr-root .csr-reset-all-btn {
+
   background: rgba(239, 68, 68, 0.12);
+
   border: 1px solid rgba(239, 68, 68, 0.55);
+
   color: #fca5a5;
+
   font-weight: 800;
+
 }
+
+
 
 .csr-root .csr-reset-all-btn:hover:not(:disabled) {
+
   background: rgba(239, 68, 68, 0.22);
+
   border-color: #f87171;
+
   color: #ffffff;
+
 }
 
 
@@ -2347,525 +4665,1080 @@
 
 
 
+
+
+
+
+
+
+
 /* =========================================
+
    CCTV ALL CENTERS - READ ONLY DASHBOARD
+
 ========================================= */
+
+
 
 .csr-multi-root {
+
   display: grid;
+
   gap: 18px;
+
 }
+
+
 
 .csr-multi-filters {
+
   display: flex;
+
   align-items: flex-end;
+
   gap: 10px;
+
   flex-wrap: wrap;
+
 }
+
+
 
 .csr-multi-filters label {
+
   display: grid;
+
   gap: 7px;
+
   color: #b6c9e2;
+
   font-size: 12px;
+
   font-weight: 700;
+
 }
+
+
 
 .csr-multi-filters input,
+
 .csr-multi-filters select {
+
   min-width: 160px;
+
   color: #ffffff;
+
   background: #18283c;
+
 }
+
+
 
 .csr-multi-filters select option {
+
   background: #ffffff;
+
   color: #172235;
+
 }
+
+
 
 .csr-multi-filters button {
+
   height: 40px;
+
 }
+
+
 
 .csr-multi-actions {
+
   justify-content: flex-end;
+
 }
+
+
 
 .csr-multi-scroll {
+
   width: 100%;
+
   overflow-x: auto;
+
 }
 
+
+
 .csr-multi-paper {
+
   min-width: 1080px;
+
   box-sizing: border-box;
+
 }
+
+
 
 .csr-multi-breakdown,
+
 .csr-multi-submissions {
+
   border: 1px solid #344b66;
+
   border-radius: 13px;
+
   background: #152338;
+
   padding: 16px;
+
 }
+
+
 
 .csr-multi-breakdown h3,
+
 .csr-multi-submissions h3 {
+
   margin: 0 0 14px;
+
   color: #ffffff;
+
   font-size: 18px;
+
 }
+
+
 
 .csr-multi-table {
+
   width: 100%;
+
   border-collapse: collapse;
+
   font-size: 12px;
+
 }
+
+
 
 .csr-multi-table th,
+
 .csr-multi-table td {
+
   border: 1px solid #34465e;
+
   padding: 11px 9px;
+
   text-align: center;
+
   vertical-align: middle;
+
 }
+
+
 
 .csr-multi-table th {
+
   background: #213550;
+
   color: #d5e5f9;
+
   font-weight: 800;
+
 }
+
+
 
 .csr-multi-table td {
+
   color: #eef5ff;
+
   background: #111e30;
+
   font-variant-numeric: tabular-nums;
+
 }
+
+
 
 .csr-multi-table td:first-child {
+
   text-align: left;
+
   font-weight: 800;
+
   white-space: nowrap;
+
 }
+
+
 
 .csr-multi-table tbody tr:nth-child(even) td {
+
   background: #18283d;
+
 }
+
+
 
 .csr-multi-breakdown p {
+
   margin: 12px 0 0;
+
   color: #9eb4ce;
+
   font-size: 12px;
+
 }
+
+
 
 .csr-multi-submissions .csr-multi-table {
+
   min-width: 780px;
+
 }
+
+
 
 .csr-multi-status {
+
   display: inline-block;
+
   padding: 7px 10px;
+
   border-radius: 8px;
+
   font-weight: 800;
+
   white-space: nowrap;
+
   font-size: 12px;
+
 }
+
+
 
 /* บันทึกครบแล้ว - เขียว */
+
 .csr-multi-status.complete {
+
   color: #4ade80;
+
   background: rgba(34, 197, 94, 0.15);
+
 }
+
+
 
 /* บันทึกชั่วคราว - เหลือง */
+
 .csr-multi-status.draft {
+
   color: #fbbf24;
+
   background: rgba(245, 158, 11, 0.14);
+
 }
+
+
 
 /* ยังไม่บันทึก - แดง */
+
 .csr-multi-status.missing {
+
   color: #f87171;
+
   background: rgba(239, 68, 68, 0.15);
+
 }
+
+
 
 .csr-multi-error {
+
   color: #fca5a5;
+
   background: rgba(239, 68, 68, 0.10);
+
   border: 1px solid rgba(239, 68, 68, 0.35);
+
   border-radius: 10px;
+
   padding: 14px;
+
 }
+
+
 
 @media (max-width: 900px) {
+
   .csr-multi-filters {
+
     width: 100%;
+
   }
+
 }
 
+
+
 /* =========================================
+
    CENTRAL CENTER SELECTOR
+
    Admin / Supervisor only
+
 ========================================= */
+
+
 
 .csr-central-center-picker {
+
   display: flex;
+
   justify-content: flex-end;
+
   align-items: center;
+
   margin-bottom: 12px;
+
   padding: 14px 20px;
+
 }
+
+
 
 .csr-central-center-picker label {
+
   display: flex;
+
   align-items: center;
+
   gap: 12px;
+
   color: #c6d6e9;
+
   font-size: 13px;
+
   font-weight: 800;
+
 }
+
+
 
 .csr-central-center-picker select {
+
   width: 280px;
+
   max-width: 100%;
+
   min-width: 0;
+
   color: #ffffff;
+
   background: #19283d;
+
   border: 1px solid #40536f;
+
   border-radius: 9px;
+
   padding: 10px 12px;
+
 }
+
+
 
 .csr-central-center-picker select option {
+
   color: #142235;
+
   background: #ffffff;
+
 }
+
+
 
 @media (max-width: 600px) {
+
   .csr-central-center-picker {
+
     justify-content: stretch;
+
   }
+
+
 
   .csr-central-center-picker label {
+
     width: 100%;
+
     flex-direction: column;
+
     align-items: stretch;
+
   }
+
+
 
   .csr-central-center-picker select {
+
     width: 100%;
+
   }
+
 }
 
+
+
 /* =========================================
+
    ALL CENTERS DASHBOARD - SUMMARY TABLE
+
 ========================================= */
+
+
 
 /* เพิ่มพื้นที่ให้ตาราง 15 คอลัมน์ */
+
 .csr-multi-paper {
+
   min-width: 1550px;
+
 }
+
+
 
 /* ตารางอยู่ภายในภาพ PNG ทั้งหมด */
+
 .csr-multi-breakdown > .csr-multi-scroll {
+
   overflow-x: visible;
+
 }
+
+
 
 /* หัวตาราง */
+
 .csr-multi-breakdown .csr-multi-table th {
+
   font-size: 11px;
+
   line-height: 1.5;
+
   padding: 10px 7px;
+
 }
+
+
 
 /* ข้อมูล */
+
 .csr-multi-breakdown .csr-multi-table td {
+
   font-size: 12px;
+
   padding: 11px 7px;
+
   white-space: nowrap;
+
 }
+
+
 
 /* แถวรวม */
+
 .csr-multi-breakdown .csr-multi-total-row td {
+
   background: #234066;
+
   color: #ffffff;
+
   font-weight: 900;
+
   border-top: 2px solid #58a6ef;
+
 }
+
+
 
 /* หัวข้อตารางรวมทั่วไป + ด่าน */
+
 .csr-multi-overall-title {
+
   margin-top: 24px !important;
+
   margin-bottom: 12px !important;
+
   color: #ffffff;
+
   font-size: 17px;
+
 }
+
+
 
 /* ตารางรวมสองประเภท */
+
 .csr-multi-overall-table {
+
   width: 100%;
+
 }
+
+
 
 .csr-multi-overall-table th,
+
 .csr-multi-overall-table td {
+
   white-space: normal;
+
   line-height: 1.45;
+
   vertical-align: middle;
+
 }
+
+
 
 .csr-multi-overall-table td:nth-child(3),
+
 .csr-multi-overall-table td:nth-child(5) {
+
   text-align: left;
+
 }
 
+
+
 /* =========================================
+
    ALL CENTERS - FIX TABLE WIDTH
+
 ========================================= */
+
+
 
 /* ยกเลิกความกว้างขั้นต่ำ 1550px */
+
 .csr-root .csr-multi-paper {
+
   width: 100%;
+
   min-width: 0;
+
   max-width: 100%;
+
   box-sizing: border-box;
+
 }
+
+
 
 /* ไม่ให้ตารางดันกรอบ Dashboard */
+
 .csr-multi-breakdown {
+
   min-width: 0;
+
   max-width: 100%;
+
 }
+
+
 
 .csr-multi-breakdown > .csr-multi-scroll {
+
   width: 100%;
+
   max-width: 100%;
+
   overflow-x: auto;
+
 }
+
+
 
 /* เฉพาะตารางสรุปรายศูนย์ */
+
 .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table) {
+
   width: 100%;
+
   table-layout: fixed;
+
   border-collapse: collapse;
+
 }
+
+
 
 /* คอลัมน์ศูนย์กว้าง 12% */
+
 /* อีก 14 คอลัมน์แบ่งพื้นที่ที่เหลือเท่ากัน */
+
 .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 thead tr:first-child th:first-child {
+
   width: 12%;
+
 }
+
+
 
 /* ทุกคอลัมน์ข้อมูลใช้ขนาดสม่ำเสมอ */
+
 .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table) th,
+
 .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table) td {
+
   min-width: 0;
+
   padding: 9px 4px;
+
   box-sizing: border-box;
+
   text-align: center;
+
   vertical-align: middle;
+
   white-space: normal;
+
   overflow-wrap: anywhere;
+
   word-break: normal;
+
   line-height: 1.4;
+
 }
+
+
 
 /* ขนาดข้อความหัวตาราง */
+
 .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table) th {
+
   font-size: 10.5px;
+
   font-weight: 800;
+
 }
+
+
 
 /* ตัวเลขภายในตาราง */
+
 .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table) td {
+
   font-size: 11px;
+
   font-variant-numeric: tabular-nums;
+
 }
+
+
 
 /* ชื่อศูนย์ชิดซ้าย */
+
 .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 tbody td:first-child,
+
 .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 tfoot td:first-child {
+
   text-align: left;
+
   padding-left: 9px;
+
 }
+
+
 
 /* จัดข้อความสรุปการดับให้อยู่กึ่งกลาง */
+
 .csr-root .csr-multi-overall-table tbody td:last-child {
+
   text-align: center;
+
 }
+
+
 
 /* จัดคอลัมน์ ศูนย์ และ ตู้/ด่าน ให้อยู่กึ่งกลาง */
+
 .csr-root .csr-multi-overall-table tbody td:first-child,
+
 .csr-root .csr-multi-overall-table tbody td:nth-child(3) {
+
   text-align: center;
+
 }
 
+
+
 /* =========================================
+
    ALL CENTERS - 4 COLOR COLUMN GROUPS
+
 ========================================= */
+
+
 
 /* กลุ่มที่ 1 : กล้องทั่วไป - สถานะ (เขียว) */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 tbody td:nth-child(n+2):nth-child(-n+5) {
+
   background: #15312f;
+
 }
+
+
 
 /* กลุ่มที่ 2 : กล้องทั่วไป - การดับ (ส้ม) */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 tbody td:nth-child(n+6):nth-child(-n+8) {
+
   background: #332a23;
+
 }
+
+
 
 /* กลุ่มที่ 3 : กล้องด่าน - สถานะ (ฟ้า) */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 tbody td:nth-child(n+9):nth-child(-n+12) {
+
   background: #183044;
+
 }
+
+
 
 /* กลุ่มที่ 4 : กล้องด่าน - การดับ (แดง) */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 tbody td:nth-child(n+13):nth-child(-n+15) {
+
   background: #352631;
+
 }
 
+
+
 /* =========================================
+
    HEADER COLORS
+
 ========================================= */
+
+
 
 /* หัวตารางชั้นบน */
-.csr-root .csr-multi-breakdown
-.csr-multi-table thead tr:first-child th:nth-child(2) {
-  background: #205047;
-  color: #a7f3d0;
-}
 
 .csr-root .csr-multi-breakdown
-.csr-multi-table thead tr:first-child th:nth-child(3) {
-  background: #215075;
-  color: #bae6fd;
+
+.csr-multi-table thead tr:first-child th:nth-child(2) {
+
+  background: #205047;
+
+  color: #a7f3d0;
+
 }
+
+
+
+.csr-root .csr-multi-breakdown
+
+.csr-multi-table thead tr:first-child th:nth-child(3) {
+
+  background: #215075;
+
+  color: #bae6fd;
+
+}
+
+
 
 /* หัวคอลัมน์ชั้นที่สอง */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table thead tr:nth-child(2)
+
 th:nth-child(-n+4) {
+
   background: #205047;
+
 }
 
+
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table thead tr:nth-child(2)
+
 th:nth-child(n+5):nth-child(-n+7) {
+
   background: #69452d;
+
 }
 
+
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table thead tr:nth-child(2)
+
 th:nth-child(n+8):nth-child(-n+11) {
+
   background: #215075;
+
 }
 
+
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table thead tr:nth-child(2)
+
 th:nth-child(n+12):nth-child(-n+14) {
+
   background: #703748;
+
 }
+
+
 
 /* =========================================
+
    SEPARATOR LINES
+
 ========================================= */
+
+
 
 /* เส้นแบ่งแต่ละกลุ่ม */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table tbody td:nth-child(2),
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table tbody td:nth-child(6),
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table tbody td:nth-child(9),
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table tbody td:nth-child(13) {
+
   border-left: 2px solid #607b98;
+
 }
+
+
 
 /* แถวรวมด้านล่างยังใช้สีเดิม */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table tfoot .csr-multi-total-row td {
+
   background: #234066;
+
   color: #ffffff;
+
   font-weight: 900;
+
 }
+
 /* =========================================
+
    CCTV DASHBOARD - OUTAGE COLOR HIGHLIGHT
+
 ========================================= */
 
+
+
 /* 1. กลุ่มกล้องทั่วไปที่มีการดับ - สีเหลือง */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 tbody td:nth-child(n+6):nth-child(-n+8) {
+
   background: #3d341f;
+
 }
+
+
 
 /* 2. กลุ่มกล้องด่านที่มีการดับ - สีเหลือง */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 tbody td:nth-child(n+13):nth-child(-n+15) {
+
   background: #3d341f;
+
 }
+
+
 
 /* 3. หัวตารางของกลุ่มกล้องทั่วไปที่ดับ */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 thead tr:nth-child(2)
+
 th:nth-child(n+5):nth-child(-n+7) {
+
   background: #786023;
+
   color: #fff2ba;
+
 }
 
+
+
 /* 4. หัวตารางของกลุ่มกล้องด่านที่ดับ */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 thead tr:nth-child(2)
+
 th:nth-child(n+12):nth-child(-n+14) {
+
   background: #786023;
+
   color: #fff2ba;
+
 }
+
+
+
 
 
 /* กล้องดับมากกว่า 0 ให้พื้นหลังแดงทั้งช่อง */
+
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table:not(.csr-multi-overall-table)
+
 tbody td.csr-outage-alert {
+
   background: #8b2635 !important;
+
   color: #ffffff !important;
+
   font-weight: 900;
+
   box-shadow: inset 0 0 0 1px #f87171;
+
 }
+
+
 
 /* =========================================
+
    RESTORE LOWER TABLE HEADER
+
 ========================================= */
 
+
+
 /* คืนสีหัวตารางล่างเป็นน้ำเงินปกติ */
-.csr-root .csr-multi-breakdown
-.csr-multi-table.csr-multi-overall-table
-thead tr:first-child th:nth-child(2),
 
 .csr-root .csr-multi-breakdown
+
 .csr-multi-table.csr-multi-overall-table
+
+thead tr:first-child th:nth-child(2),
+
+
+
+.csr-root .csr-multi-breakdown
+
+.csr-multi-table.csr-multi-overall-table
+
 thead tr:first-child th:nth-child(3) {
+
   background: #213550;
+
   color: #d5e5f9;
+
 }
+
+/* CCTV repair follow-up dashboard: replaces old unit cards */
+.csr-repair-followup { padding: 15px; background:#152338; border:1px solid #344b66; border-radius:12px; display:grid; gap:12px; min-width:0; }
+.csr-repair-followup .csr-dashboard-section-heading { display:flex; justify-content:space-between; gap:12px; align-items:center; }
+.csr-repair-followup .csr-dashboard-section-heading h3 { margin:0; font-size:15px; }
+.csr-repair-warning,.csr-repair-recovered { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:9px; padding:12px; border-radius:9px; background:#1c2a3b; border:1px solid #49586b; border-left:3px solid #efaa65; color:#eaf3ff; font-size:12px; }
+.csr-repair-warning strong,.csr-repair-recovered strong { display:block; }
+.csr-repair-warning span { color:#c2d1e2; }
+.csr-repair-recovered { border-left-color:#5bcc9b; }
+.csr-repair-recovered p { margin:4px 0 0; font-size:11px; color:#bfd1e2; }
+.csr-repair-action-row { display:flex; gap:8px; flex-wrap:wrap; }
+.csr-repair-action-row button,.csr-repair-pagination button,.csr-repair-hidden button,.csr-repair-error button { padding:7px 11px; border:1px solid #536e90; border-radius:7px; background:#213650; color:#fff; cursor:pointer; }
+.csr-repair-action-row button:disabled,.csr-repair-pagination button:disabled { opacity:.45; cursor:not-allowed; }
+.csr-repair-table-scroll { width:100%; overflow-x:auto; }
+.csr-repair-work-table { border-collapse:collapse; table-layout:auto; width:100%; min-width:1230px; font-size:10.5px; color:#e6f0fb; }
+.csr-repair-work-table th { padding:10px 7px; text-align:left; background:#20344e; color:#d0e2f3; white-space:nowrap; }
+.csr-repair-work-table td { padding:8px 7px; border-top:1px solid #31445d; line-height:1.4; vertical-align:top; }
+.csr-repair-work-table td.is-number { text-align:center; font-weight:800; }
+.csr-repair-work-table td strong { color:white; }
+.csr-repair-work-table td small { display:block; font-size:10px; font-weight:800; margin-top:3px; }
+.csr-repair-work-table td.csr-sla-soon { color:#f7c96f; }
+.csr-repair-work-table td.csr-sla-overdue { color:#ff7d92; }
+.csr-repair-pagination { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; color:#b6cbe5; font-size:11px; }
+.csr-repair-pagination span { margin-right:auto; }
+.csr-repair-hidden { display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:11px; color:#b2c4de; }
+.csr-repair-loading,.csr-repair-error { padding:14px; background:#24334a; color:#d7e4f4; border-radius:8px; }
+.csr-repair-error { color:#ffb6c0; display:flex; gap:12px; align-items:center; }

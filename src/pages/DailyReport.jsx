@@ -59,6 +59,8 @@ function DailyReport({ profile }) {
   const [activeReport, setActiveReport] =
     useState(null)
 
+  const [repairHandoff, setRepairHandoff] = useState(null)
+
   const [activeShift, setActiveShift] =
     useState(null)
 
@@ -366,7 +368,7 @@ function DailyReport({ profile }) {
             </div>
           </div>
 
-          <CctvRepairOrders profile={profile} />
+          <CctvRepairOrders profile={profile} initialSelection={repairHandoff} />
         </div>
       )
     }
@@ -401,6 +403,10 @@ function DailyReport({ profile }) {
         <CameraStatusReport
           profile={profile}
           shift={activeShift}
+          onOpenRepair={selection => {
+            setRepairHandoff(selection)
+            setActiveReport('repair-orders')
+          }}
         />
 
       </div>

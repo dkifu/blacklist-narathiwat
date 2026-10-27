@@ -3,880 +3,2579 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import './TechnicianRepair.css'
 
+// ขอบเขตการมองเห็นของช่าง (ตรวจสิทธิ์จริงซ้ำใน RLS)
+const TEAM_CENTERS = {
+  takbai: [1, 7, 8],
+  pattani: [2, 4, 9],
+}
+
+const CENTER_NAMES = {
+  1: 'ศูนย์นราธิวาส',
+  2: 'ศูนย์ปัตตานี',
+  4: 'ศูนย์หาดใหญ่',
+  7: 'ศูนย์ตากใบ',
+  8: 'ศูนย์สุไหง-โกลก',
+  9: 'ศูนย์เบตง',
+}
+
 const TEAMS = {
   takbai: 'ชุดช่างตากใบ',
   pattani: 'ชุดช่างปัตตานี',
 }
 
+const OPEN_STATUSES = [
+  'submitted',
+  'accepted',
+  'in_progress',
+  'completed',
+]
+
 const STATUS = {
-  submitted: 'รอรับงาน',
+  submitted: 'เปิดงานแล้ว',
   accepted: 'รับงานแล้ว',
   in_progress: 'กำลังซ่อม',
   completed: 'ซ่อมเสร็จ',
   closed: 'ปิดงานแล้ว',
+  cancelled: 'ยกเลิกแล้ว',
 }
 
-const formatDate = (value) =>
+const EQUIPMENT = [
+  'Camera',
+  'Switch 8 port',
+  'Power Supply 12 - 24V',
+  'Media Converter',
+  'Power supply 5 V',
+  'สาย LAN',
+  'ไฟฟ้า AC',
+  'Fiber optic',
+  'SFP',
+  'NVR',
+  'Computer',
+  'Service Box',
+  'มุมกล้อง',
+  'ใช้งานได้จริง',
+]
+
+const PAGE_SIZE = 20
+const EMPTY_CENTER_IDS = []
+
+const INITIAL_FILTERS = {
+  center: '',
+  ticket: '',
+  status: 'all',
+  period: 'all',
+  month: '',
+  from: '',
+  to: '',
+}
+
+const equipmentBlank = name => ({
+  name,
+  is_damaged: false,
+  is_stuck: false,
+  is_replaced: false,
+  failed_count: '1',
+  reset_count: '1',
+  old_sn: '',
+  new_sn: '',
+})
+
+const localNow = () => {
+  const iso = new Date(
+    Date.now() + 7 * 3600000
+  ).toISOString()
+
+  return {
+    date: iso.slice(0, 10),
+    time: iso.slice(11, 16),
+  }
+}
+
+const dateToInputs = value => {
+  if (!value) return localNow()
+
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return localNow()
+
+  const iso = new Date(
+    d.getTime() + 7 * 3600000
+  ).toISOString()
+
+  return {
+    date: iso.slice(0, 10),
+    time: iso.slice(11, 16),
+  }
+}
+
+const makeForm = (profile, count, order = null) => {
+  const done = order
+    ? dateToInputs(order.repair_completed_at)
+    : localNow()
+
+  const saved = Array.isArray(order?.equipment_items)
+    ? order.equipment_items
+    : []
+
+  const rows = EQUIPMENT.map(name => {
+  const item = saved.find(x => x.name === name)
+
+  if (!item) return equipmentBlank(name)
+
+  const serials = Array.isArray(item.serial_numbers)
+    ? item.serial_numbers
+    : null
+
+  return {
+    ...equipmentBlank(name),
+    ...item,
+    is_damaged: Boolean(item.is_damaged),
+    is_stuck: Boolean(item.is_stuck),
+    is_replaced: Boolean(item.is_replaced),
+
+    failed_count: String(
+      Number(item.failed_count) > 0
+        ? item.failed_count
+        : 1
+    ),
+    reset_count: String(
+      Number(item.reset_count) > 0
+        ? item.reset_count
+        : 1
+    ),
+
+    old_sn: serials
+      ? serials.map(s => s.old_sn || '').join('\n')
+      : String(item.old_sn || ''),
+
+    new_sn: serials
+      ? serials.map(s => s.new_sn || '').join('\n')
+      : String(item.new_sn || ''),
+  }
+})
+
+  return {
+    problem: order?.repair_problem_found || '',
+    method: order?.repair_fix_method || '',
+    down: String(order?.repair_down_count ?? count),
+    usable: String(order?.repair_usable_count ?? ''),
+    unusable: String(order?.repair_unusable_count ?? ''),
+    unusableReason: order?.repair_unusable_reason || '',
+    doneDate: done.date,
+    doneTime: done.time,
+    slaChoice: order?.repair_sla_exceeded
+      ? 'over'
+      : 'within',
+    slaReason: order?.repair_sla_reason || '',
+    technician:
+      order?.technician_names ||
+      profile?.full_name ||
+      profile?.username ||
+      '',
+    phone:
+      order?.technician_phone ||
+      profile?.repair_contact_phone ||
+      '',
+    equipment: rows,
+  }
+}
+
+const bangkokDate = (date, time) => {
+  const d = String(date || '').slice(0, 10)
+  const t = String(time || '').slice(0, 5)
+
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(d) ||
+    !/^([01]\d|2[0-3]):[0-5]\d$/.test(t)
+  ) {
+    return null
+  }
+
+  const out = new Date(`${d}T${t}:00+07:00`)
+  return Number.isNaN(out.getTime()) ? null : out
+}
+
+const formatDate = (value, withTime = true) => {
+  if (!value) return 'ยังไม่ระบุ'
+
+  const d = value instanceof Date
+    ? value
+    : new Date(value)
+
+  if (Number.isNaN(d.getTime())) {
+    return 'วันที่ไม่ถูกต้อง'
+  }
+
+  return new Intl.DateTimeFormat('th-TH', {
+    timeZone: 'Asia/Bangkok',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    ...(withTime
+      ? {
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23',
+        }
+      : {}),
+  }).format(d)
+}
+
+const formatDay = value =>
   value
-    ? new Date(`${String(value).slice(0, 10)}T12:00:00+07:00`)
-        .toLocaleDateString('th-TH', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        })
-    : '-'
+    ? formatDate(
+        new Date(
+          `${String(value).slice(0, 10)}T12:00:00+07:00`
+        ),
+        false
+      )
+    : 'ยังไม่ระบุ'
+
+const plusOneDay = value => {
+  const [y, m, d] = value.split('-').map(Number)
+
+  return new Date(
+    Date.UTC(y, m - 1, d + 1)
+  ).toISOString().slice(0, 10)
+}
+
+const validInteger = s =>
+  /^\d+$/.test(String(s).trim())
+
+const serialParts = value =>
+  String(value ?? '')
+    .replace(/\r/g, '')
+    .split('\n')
+
+const serialAt = (value, index) =>
+  serialParts(value)[index] ?? ''
+
+const ticketLabel = o =>
+  o?.ticket_no || `#${o?.id}`
 
 export default function TechnicianRepair({ profile }) {
-  
-    const role = String(profile?.role || '').toLowerCase()
+  const role = String(
+    profile?.role || ''
+  ).toLowerCase()
 
-    const isTechnician = role === 'technician'
-
-    const canViewAllTeams =
-    role === 'admin' ||
-    role === 'supervisor'
-
-    const teamCode = String(
+  const team = String(
     profile?.repair_team_code || ''
-    ).toLowerCase()
+  ).toLowerCase()
 
-    const authorized =
+  const isTechnician = role === 'technician'
+  const isAdmin = role === 'admin'
+  const isManager =
+    isAdmin || role === 'supervisor'
+
+  const isCentral =
+    role === 'center' &&
+    Number(profile?.center_id) === 10 &&
+    String(profile?.username || '').toLowerCase() ===
+      'centercctv'
+
+  const isCenter =
+    role === 'center' && !isCentral
+
+  const scopeIds =
+    TEAM_CENTERS[team] || EMPTY_CENTER_IDS
+
+  const authorized =
     profile?.active !== false &&
     (
-        canViewAllTeams ||
-        (
-        isTechnician &&
-        Boolean(TEAMS[teamCode])
-        )
+      isManager ||
+      isCentral ||
+      (isTechnician && scopeIds.length > 0) ||
+      (isCenter && Boolean(profile?.center_id))
     )
 
+  const canManage = o =>
+    Boolean(o) &&
+    (
+      isAdmin ||
+      (
+        isTechnician &&
+        team !== '' &&
+        String(o.team_code || '').toLowerCase() === team
+      )
+    )
+
+  const canClose = o =>
+    canManage(o) &&
+    OPEN_STATUSES.includes(o?.status)
+
+  const canEdit = o =>
+    canManage(o) &&
+    o?.status === 'closed'
+
+  const canCancel = o =>
+    OPEN_STATUSES.includes(o?.status) &&
+    (canManage(o) || isCentral)
+
+  const canHardDelete = o =>
+    isAdmin && o?.status === 'cancelled'
 
   const [orders, setOrders] = useState([])
+  const [centers, setCenters] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [units, setUnits] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [loadingUnits, setLoadingUnits] = useState(false)
-  const [error, setError] = useState('')
+  const [history, setHistory] = useState([])
+  const [historyError, setHistoryError] = useState('')
   const [unitError, setUnitError] = useState('')
+  const [busyUnits, setBusyUnits] = useState(false)
+  const [busyList, setBusyList] = useState(false)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [filters, setFilters] = useState(INITIAL_FILTERS)
+  const [page, setPage] = useState(0)
+  const [total, setTotal] = useState(0)
+
+  const [modalOrder, setModalOrder] = useState(null)
+  const [modalMode, setModalMode] = useState('close')
+  const [form, setForm] = useState(
+    () => makeForm(profile, 0)
+  )
+  const [modalCount, setModalCount] = useState(0)
+  const [modalBusy, setModalBusy] = useState(false)
+  const [modalSaving, setModalSaving] = useState(false)
+  const [modalError, setModalError] = useState('')
+  const [technicians, setTechnicians] = useState([])
+  const [techniciansError, setTechniciansError] = useState('')
+
+  const [cancelTarget, setCancelTarget] = useState(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelBusy, setCancelBusy] = useState(false)
+  const [cancelError, setCancelError] = useState('')
+
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteReason, setDeleteReason] = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+
+  const changeFilter = (key, value) => {
+    setFilters(old => ({
+      ...old,
+      [key]: value,
+    }))
+    setPage(0)
+  }
+
+  const fetchUnits = useCallback(async id => {
+    const { data, error: err } = await supabase
+      .from('cctv_repair_order_units')
+      .select(`
+        id,
+        unit_label,
+        down_camera_count,
+        latitude,
+        longitude,
+        camera_snapshot
+      `)
+      .eq('order_id', id)
+      .order('id')
+
+    if (err) throw err
+    return data || []
+  }, [])
 
   const loadOrders = useCallback(async () => {
     if (!authorized) {
       setOrders([])
-      setSelectedId(null)
-      setLoading(false)
+      setTotal(0)
       return
     }
 
-    setLoading(true)
+    setBusyList(true)
     setError('')
 
-    
-    let query = supabase
-    .from('cctv_repair_orders')
-    .select(`
-        id,
-        ticket_no,
-        center_name_snapshot,
-        team_code,
-        report_date,
-        status,
-        created_at,
-        repair_result,
-        repair_cause,
-        equipment_items,
-        technician_names,
-        repair_result_saved_at
+    try {
+      let query = supabase
+        .from('cctv_repair_orders')
+        .select(`
+          id,
+          ticket_no,
+          center_id,
+          center_name_snapshot,
+          team_code,
+          report_date,
+          submitted_at,
+          outage_date,
+          outage_time,
+          status,
+          created_at,
+          repair_problem_found,
+          repair_fix_method,
+          repair_down_count,
+          repair_usable_count,
+          repair_unusable_count,
+          repair_unusable_reason,
+          repair_completed_at,
+          repair_sla_exceeded,
+          repair_sla_reason,
+          technician_names,
+          technician_phone,
+          equipment_items
+        `, { count: 'exact' })
+        .neq('status', 'draft')
 
-    `)
-    .in('status', [
-        'submitted',
-        'accepted',
-        'in_progress',
-        'completed',
-        'closed',
-    ])
+      if (isTechnician) {
+        query = query.in('center_id', scopeIds)
+      }
 
-    // ช่างเห็นเฉพาะใบงานชุดตัวเอง
-    if (isTechnician) {
-    query = query.eq('team_code', teamCode)
-    }
+      if (isCenter) {
+        query = query.eq(
+          'center_id',
+          Number(profile.center_id)
+        )
+      } else if (filters.center) {
+        query = query.eq(
+          'center_id',
+          Number(filters.center)
+        )
+      }
 
-    // Admin / Supervisor เห็นทุกชุดช่าง
-    const { data, error: queryError } = await query
-    .order('created_at', { ascending: false })
-    .limit(100)
+      const keyword = filters.ticket
+        .trim()
+        .replace(/[%_\\]/g, '')
 
+      if (keyword) {
+        query = query.ilike(
+          'ticket_no',
+          `%${keyword}%`
+        )
+      }
 
-    if (queryError) {
-      setError(queryError.message)
-      setOrders([])
-      setSelectedId(null)
-    } else {
+      if (filters.status === 'open') {
+        query = query.in('status', OPEN_STATUSES)
+      }
+
+      if (
+        ['closed', 'cancelled'].includes(filters.status)
+      ) {
+        query = query.eq('status', filters.status)
+      }
+
+      if (
+        filters.period === 'month' &&
+        filters.month
+      ) {
+        const [y, m] = filters.month
+          .split('-')
+          .map(Number)
+
+        const next = new Date(
+          Date.UTC(y, m, 1)
+        ).toISOString().slice(0, 10)
+
+        query = query
+          .gte(
+            'submitted_at',
+            `${filters.month}-01T00:00:00+07:00`
+          )
+          .lt(
+            'submitted_at',
+            `${next}T00:00:00+07:00`
+          )
+      }
+
+      if (filters.period === 'custom') {
+        if (
+          filters.from &&
+          filters.to &&
+          filters.from > filters.to
+        ) {
+          throw new Error(
+            'วันที่แจ้งเริ่มต้นต้องไม่เกินวันที่สิ้นสุด'
+          )
+        }
+
+        if (filters.from) {
+          query = query.gte(
+            'submitted_at',
+            `${filters.from}T00:00:00+07:00`
+          )
+        }
+
+        if (filters.to) {
+          query = query.lt(
+            'submitted_at',
+            `${plusOneDay(filters.to)}T00:00:00+07:00`
+          )
+        }
+      }
+
+      const { data, error: err, count } = await query
+        .order('submitted_at', {
+          ascending: false,
+          nullsFirst: false,
+        })
+        .order('id', { ascending: false })
+        .range(
+          page * PAGE_SIZE,
+          page * PAGE_SIZE + PAGE_SIZE - 1
+        )
+
+      if (err) throw err
+
       const items = data || []
-      setOrders(items)
 
-      setSelectedId((old) =>
-        items.some((x) => String(x.id) === String(old))
+      setOrders(items)
+      setTotal(count || 0)
+
+      setSelectedId(old =>
+        items.some(
+          x => String(x.id) === String(old)
+        )
           ? old
           : (items[0]?.id ?? null)
       )
+    } catch (err) {
+      setOrders([])
+      setTotal(0)
+      setSelectedId(null)
+      setError(err.message || 'โหลดใบงานไม่สำเร็จ')
+    } finally {
+      setBusyList(false)
     }
-
-    setLoading(false)
-  
-    }, [authorized, teamCode, isTechnician])
-
+  }, [
+    authorized,
+    isTechnician,
+    isCenter,
+    scopeIds,
+    profile?.center_id,
+    filters,
+    page,
+  ])
 
   useEffect(() => {
     loadOrders()
   }, [loadOrders])
 
   useEffect(() => {
+    if (!authorized) return
+
     let cancelled = false
 
-    if (!authorized || !selectedId) {
-      setUnits([])
-      setUnitError('')
-      setLoadingUnits(false)
-      return
-    }
-
-    const loadUnits = async () => {
-      setLoadingUnits(true)
-      setUnits([])
-      setUnitError('')
-
-      const { data, error: queryError } = await supabase
-        .from('cctv_repair_order_units')
-        .select(`
-          id,
-          unit_label,
-          down_camera_count,
-          camera_snapshot
-        `)
-        .eq('order_id', selectedId)
-        .order('id')
-
-      if (cancelled) return
-
-      if (queryError) {
-        setUnitError(queryError.message)
-        setUnits([])
-      } else {
-        setUnits(data || [])
+    async function loadCenters() {
+      if (isTechnician) {
+        // ใช้ Mapping ที่ตรวจสอบแล้ว
+        setCenters(
+          scopeIds.map(id => ({
+            id,
+            name: CENTER_NAMES[id],
+          }))
+        )
+        return
       }
 
-      setLoadingUnits(false)
+      const { data, error: err } = await supabase
+        .from('centers')
+        .select('id,name')
+        .order('id')
+
+      if (!cancelled) {
+        if (err) {
+          setCenters([])
+        } else {
+          setCenters(
+            isCenter
+              ? (data || []).filter(
+                  c =>
+                    Number(c.id) ===
+                    Number(profile.center_id)
+                )
+              : (data || [])
+          )
+        }
+      }
     }
 
-    loadUnits()
+    loadCenters()
 
     return () => {
       cancelled = true
     }
-  }, [authorized, selectedId])
+  }, [
+    authorized,
+    isTechnician,
+    isCenter,
+    team,
+    profile?.center_id,
+    scopeIds,
+  ])
 
-  const selectedOrder = useMemo(
+  useEffect(() => {
+    if (!authorized || !selectedId) {
+      setUnits([])
+      setHistory([])
+      return
+    }
+
+    let live = true
+
+    setBusyUnits(true)
+    setUnitError('')
+    setHistoryError('')
+    setUnits([])
+    setHistory([])
+
+    fetchUnits(selectedId)
+      .then(rows => {
+        if (live) setUnits(rows)
+      })
+      .catch(err => {
+        if (live) {
+          setUnitError(
+            err.message || 'โหลดกล้องไม่สำเร็จ'
+          )
+        }
+      })
+      .finally(() => {
+        if (live) setBusyUnits(false)
+      })
+
+    supabase
+      .from('cctv_repair_history')
+      .select('*')
+      .eq('order_id', selectedId)
+      .order('created_at', { ascending: false })
+      .limit(100)
+      .then(({ data, error: err }) => {
+        if (!live) return
+
+        if (err) {
+          setHistoryError(err.message)
+        } else {
+          setHistory(data || [])
+        }
+      })
+
+    return () => {
+      live = false
+    }
+  }, [authorized, selectedId, fetchUnits])
+
+  const current = useMemo(
     () =>
       orders.find(
-        (x) => String(x.id) === String(selectedId)
+        x => String(x.id) === String(selectedId)
       ) || null,
     [orders, selectedId]
   )
 
-  
-    const [resultText, setResultText] = useState('')
-    const [causeText, setCauseText] = useState('')
-    const [technicianNames, setTechnicianNames] = useState('')
-    const [equipmentItems, setEquipmentItems] = useState([])
-    const [saving, setSaving] = useState(false)
-    const [actionError, setActionError] = useState('')
-    const [actionSuccess, setActionSuccess] = useState('')
+  const outageAt = bangkokDate(
+    current?.outage_date,
+    current?.outage_time
+  )
 
-    // โหลดข้อมูลผลซ่อมเดิม เมื่อเลือกใบงาน
-    useEffect(() => {
-    setResultText(selectedOrder?.repair_result || '')
-    setCauseText(selectedOrder?.repair_cause || '')
-    setTechnicianNames(selectedOrder?.technician_names || '')
+  const slaAt = outageAt
+    ? new Date(
+        outageAt.getTime() + 72 * 3600000
+      )
+    : null
 
-    setEquipmentItems(
-        Array.isArray(selectedOrder?.equipment_items)
-        ? selectedOrder.equipment_items.map((item) => ({
-            ...item,
-            name: String(item.name || ''),
-            failed_count:
-                item.failed_count ??
-                item.damaged_count ??
-                item.quantity ??
-                0,
-            reset_count: item.reset_count ?? 0,
-            old_sn: String(item.old_sn || ''),
-            new_sn: String(item.new_sn || ''),
-            }))
-        : []
+  const modalOutage = bangkokDate(
+    modalOrder?.outage_date,
+    modalOrder?.outage_time
+  )
+
+  const completionAt = bangkokDate(
+    form.doneDate,
+    form.doneTime
+  )
+
+  const modalSla = modalOutage
+    ? new Date(
+        modalOutage.getTime() + 72 * 3600000
+      )
+    : null
+
+  const calculatedOver = Boolean(
+    completionAt &&
+    modalSla &&
+    completionAt > modalSla
+  )
+
+  const selectedOver =
+    form.slaChoice === 'over'
+
+  const loadTechnicians = async () => {
+    setTechniciansError('')
+
+    const { data, error: err } = await supabase.rpc(
+      'cctv_repair_list_technicians'
     )
-    }, [selectedOrder])
 
-    useEffect(() => {
-    setActionError('')
-    setActionSuccess('')
-    }, [selectedId])
+    if (err) {
+      setTechniciansError(
+        'ยังไม่เชื่อมทะเบียนช่างกับฐานข้อมูล'
+      )
 
-    const updateEquipment = (index, field, value) => {
-    setEquipmentItems((prev) =>
-        prev.map((item, i) =>
-        i === index
-            ? { ...item, [field]: value }
-            : item
-        )
-    )
+      if (isTechnician) {
+        setTechnicians([
+          {
+            user_id: profile.id,
+            display_name:
+              profile.full_name || profile.username,
+            contact_phone:
+              profile.repair_contact_phone || '',
+          },
+        ])
+      } else {
+        setTechnicians([])
+      }
+    } else {
+      setTechnicians(data || [])
     }
+  }
 
-    // เปลี่ยนสถานะผ่าน RPC
-    const changeStatus = async (nextStatus) => {
-    if (!isTechnician || !selectedOrder || saving) return
-    
-    if (hasUnsavedChanges) {
-        setActionError(
-            'มีข้อมูลผลซ่อมที่ยังไม่ได้บันทึก กรุณากดบันทึกผลการซ่อมก่อนเปลี่ยนสถานะ'
-        )
-        return
-    }
-
-
+  const openModal = async (
+    order,
+    mode = 'close'
+  ) => {
     if (
-        nextStatus === 'closed' &&
-        !window.confirm(
-        'ยืนยันปิดใบงานนี้? เมื่อปิดแล้วจะไม่สามารถแก้ไขผลซ่อมได้'
-        )
+      !(
+        mode === 'edit'
+          ? canEdit(order)
+          : canClose(order)
+      )
     ) {
-        return
+      return
     }
 
-    setSaving(true)
-    setActionError('')
-    setActionSuccess('')
+    setModalMode(mode)
+    setModalOrder(order)
+    setModalBusy(true)
+    setModalError('')
+    setModalCount(0)
+    setSelectedId(order.id)
 
     try {
-        const { error: rpcError } = await supabase.rpc(
-        'cctv_repair_technician_set_status',
-        {
-            p_order_id: selectedOrder.id,
-            p_next_status: nextStatus,
-        }
-        )
+      const rows = await fetchUnits(order.id)
 
-        if (rpcError) throw rpcError
-
-        await loadOrders()
-
-        setActionSuccess(
-        `เปลี่ยนสถานะเป็น "${STATUS[nextStatus]}" สำเร็จ`
-        )
-    } catch (err) {
-        setActionError(
-        err.message || 'ไม่สามารถเปลี่ยนสถานะได้'
-        )
-    } finally {
-        setSaving(false)
-    }
-    }
-
-    // บันทึกผลซ่อมผ่าน RPC
-    const saveResult = async () => {
-    if (!isTechnician || !selectedOrder || saving) return
-
-    if (
-        !resultText.trim() ||
-        !causeText.trim() ||
-        !technicianNames.trim()
-    ) {
-        setActionError(
-        'กรุณากรอกผลการซ่อม สาเหตุ และผู้ดำเนินการให้ครบ'
-        )
-        return
-    }
-
-    if (
-        equipmentItems.some(
-        (item) => !String(item.name || '').trim()
-        )
-    ) {
-        setActionError(
-        'กรุณาระบุชื่ออุปกรณ์ให้ครบ หรือลบแถวที่ไม่ต้องการ'
-        )
-        return
-    }
-
-    const normalizedEquipment = equipmentItems.map(
-        (item) => ({
-        ...item,
-        name: String(item.name).trim(),
-        failed_count: Number(item.failed_count || 0),
-        reset_count: Number(item.reset_count || 0),
-        old_sn: String(item.old_sn || '').trim(),
-        new_sn: String(item.new_sn || '').trim(),
-        })
-    )
-
-    if (
-        normalizedEquipment.some(
-        (item) =>
-            !Number.isInteger(item.failed_count) ||
-            item.failed_count < 0 ||
-            !Number.isInteger(item.reset_count) ||
-            item.reset_count < 0
-        )
-    ) {
-        setActionError(
-        'จำนวนอุปกรณ์ต้องเป็นจำนวนเต็มตั้งแต่ 0 ขึ้นไป'
-        )
-        return
-    }
-
-    setSaving(true)
-    setActionError('')
-    setActionSuccess('')
-
-    try {
-        const { error: rpcError } = await supabase.rpc(
-        'cctv_repair_technician_save_result',
-        {
-            p_order_id: selectedOrder.id,
-            p_repair_result: resultText.trim(),
-            p_repair_cause: causeText.trim(),
-            p_equipment_items: normalizedEquipment,
-            p_technician_names: technicianNames.trim(),
-        }
-        )
-
-        if (rpcError) throw rpcError
-
-        await loadOrders()
-        setActionSuccess('บันทึกผลการซ่อมสำเร็จ')
-    } catch (err) {
-        setActionError(
-        err.message || 'บันทึกผลการซ่อมไม่สำเร็จ'
-        )
-    } finally {
-        setSaving(false)
-    }
-    }
-
-    const canEditResult =
-    isTechnician &&
-    ['accepted', 'in_progress', 'completed'].includes(
-        selectedOrder?.status
-    )
-
-    
-    const normalizeEquipmentForCompare = (items) =>
-    (Array.isArray(items) ? items : []).map((item) => ({
-        name: String(item?.name ?? ''),
-        failed_count: Number(
-        item?.failed_count ??
-        item?.damaged_count ??
-        item?.quantity ??
+      const count = rows.reduce(
+        (n, x) =>
+          n + Number(x.down_camera_count || 0),
         0
-        ),
-        reset_count: Number(item?.reset_count ?? 0),
-        old_sn: String(item?.old_sn ?? ''),
-        new_sn: String(item?.new_sn ?? ''),
+      )
+
+      const next = makeForm(
+        profile,
+        count,
+        mode === 'edit' ? order : null
+      )
+
+      if (mode === 'close') {
+        const outage = bangkokDate(
+          order.outage_date,
+          order.outage_time
+        )
+
+        next.slaChoice =
+          outage &&
+          Date.now() >
+            outage.getTime() + 72 * 3600000
+            ? 'over'
+            : 'within'
+      }
+
+      setForm(next)
+      setModalCount(count)
+
+      await loadTechnicians()
+    } catch (err) {
+      setModalError(
+        err.message || 'โหลดข้อมูลปิดงานไม่สำเร็จ'
+      )
+    } finally {
+      setModalBusy(false)
+    }
+  }
+
+  const changeForm = (key, value) =>
+    setForm(old => ({
+      ...old,
+      [key]: value,
     }))
 
-    const hasUnsavedChanges =
-    canEditResult &&
-    (
-        resultText !== (selectedOrder?.repair_result || '') ||
-        causeText !== (selectedOrder?.repair_cause || '') ||
-        technicianNames !== (selectedOrder?.technician_names || '') ||
-        JSON.stringify(
-        normalizeEquipmentForCompare(equipmentItems)
-        ) !== JSON.stringify(
-        normalizeEquipmentForCompare(selectedOrder?.equipment_items)
+  
+  const changeCameraCount = (field, value) => {
+    const input = String(value).replace(/\D/g, '')
+    const other =
+      field === 'usable' ? 'unusable' : 'usable'
+
+    setForm(old => {
+      if (input === '') {
+        return {
+          ...old,
+          [field]: '',
+        }
+      }
+
+      const total = Number(old.down)
+      const count = Number(input)
+
+      if (
+        !Number.isSafeInteger(count) ||
+        count > total
+      ) {
+        return {
+          ...old,
+          [field]: input,
+          [other]: '',
+        }
+      }
+
+      return {
+        ...old,
+        [field]: String(count),
+        [other]: String(total - count),
+      }
+    })
+  }
+
+  const completeCameraCount = field => {
+    const other =
+      field === 'usable' ? 'unusable' : 'usable'
+
+    setForm(old => {
+      if (old[field] !== '') return old
+
+      if (
+        !validInteger(old.down) ||
+        !validInteger(old[other])
+      ) {
+        return old
+      }
+
+      const remaining =
+        Number(old.down) - Number(old[other])
+
+      if (remaining < 0) return old
+
+      return {
+        ...old,
+        [field]: String(remaining),
+      }
+    })
+  }
+  
+
+  const changeEquipment = (index, patch) =>
+    setForm(old => ({
+      ...old,
+      equipment: old.equipment.map(
+        (item, i) =>
+          i === index
+            ? { ...item, ...patch }
+            : item
+      ),
+    }))
+
+  const changeSerial = (equipmentIndex, field, serialIndex, value) => {
+    setForm(old => ({
+      ...old,
+      equipment: old.equipment.map((item, index) => {
+        if (index !== equipmentIndex) return item
+
+        const parts = serialParts(item[field])
+
+        while (parts.length <= serialIndex) {
+          parts.push('')
+        }
+
+        parts[serialIndex] = value.replace(/[\r\n]/g, ' ')
+
+        const joined = parts.join('\n')
+
+        return {
+          ...item,
+          [field]: joined,
+          ...(field === 'new_sn'
+            ? {
+                is_replaced: parts.some(x => x.trim() !== ''),
+              }
+            : {}),
+        }
+      }),
+    }))
+  }  
+
+  const closeModal = () => {
+    if (!modalSaving) {
+      setModalOrder(null)
+      setModalError('')
+    }
+  }
+
+  const submitClose = async () => {
+    if (
+      !modalOrder ||
+      modalBusy ||
+      modalSaving ||
+      !canManage(modalOrder)
+    ) {
+      return
+    }
+
+    if (modalMode === 'edit') {
+      setModalError(
+        'ยังไม่มี RPC บันทึกการแก้ไขงานที่ปิดแล้ว: ' +
+        'เปิดตรวจและแก้ฟอร์มได้ แต่ยังไม่สามารถบันทึกจริง'
+      )
+      return
+    }
+
+    if (isAdmin) {
+      setModalError(
+        'RPC ปิดงานเดิมยังไม่รองรับ Admin ' +
+        'กรุณารอปรับสิทธิ์ฝั่งฐานข้อมูล'
+      )
+      return
+    }
+
+    const down = Number(form.down)
+    const good = Number(form.usable)
+    const bad = Number(form.unusable)
+
+    if (
+      !form.problem.trim() ||
+      !form.method.trim() ||
+      !form.technician.trim()
+    ) {
+      setModalError(
+        'กรุณากรอกปัญหา วิธีแก้ และเลือกผู้ปฏิบัติงาน'
+      )
+      return
+    }
+
+    if (
+      ![
+        form.down,
+        form.usable,
+        form.unusable,
+      ].every(validInteger) ||
+      down !== modalCount ||
+      good + bad !== down
+    ) {
+      setModalError(
+        'จำนวนกล้องดับต้องตรงกับใบงาน และใช้งานได้ + ' +
+        'ไม่ได้ต้องเท่ากับจำนวนกล้องดับ'
+      )
+      return
+    }
+
+    if (
+      bad > 0 &&
+      !form.unusableReason.trim()
+    ) {
+      setModalError(
+        'กรุณาระบุเหตุผลที่กล้องยังใช้งานไม่ได้'
+      )
+      return
+    }
+
+    if (
+      !completionAt ||
+      !modalOutage ||
+      completionAt < modalOutage ||
+      completionAt.getTime() > Date.now()
+    ) {
+      setModalError(
+        'วันเวลาซ่อมเสร็จต้องไม่ก่อนกล้องดับและไม่เกินปัจจุบัน'
+      )
+      return
+    }
+
+    if (
+      selectedOver &&
+      !form.slaReason.trim()
+    ) {
+      setModalError(
+        'กรุณาระบุเหตุผลที่เกิน SLA'
+      )
+      return
+    }
+
+    // RPC v2 ยังบันทึก SLA จากสูตร ไม่ใช่ค่าที่ช่างเลือก
+    // ป้องกันการบันทึกค่าไม่ตรงกับที่เลือก
+    if (selectedOver !== calculatedOver) {
+      setModalError(
+        'เลือก SLA ได้แล้ว แต่ RPC ปัจจุบันยังคำนวณเอง ' +
+        'จึงงดบันทึกเพื่อไม่ให้ได้ค่าไม่ตรงกับที่ช่างเลือก'
+      )
+      return
+    }
+
+    
+    const equipment = []
+
+    for (const x of form.equipment) {
+      if (!x.is_damaged && !x.is_stuck) continue
+
+      // ตรวจจำนวนอุปกรณ์เสียและค้าง
+      if (
+        (x.is_damaged && (
+          !validInteger(x.failed_count) ||
+          Number(x.failed_count) < 1 ||
+          !Number.isSafeInteger(Number(x.failed_count))
+        )) ||
+        (x.is_stuck && (
+          !validInteger(x.reset_count) ||
+          Number(x.reset_count) < 1 ||
+          !Number.isSafeInteger(Number(x.reset_count))
+        ))
+      ) {
+        setModalError(`จำนวนอุปกรณ์ไม่ถูกต้อง: ${x.name}`)
+        return
+      }
+
+      const failedTotal = x.is_damaged
+        ? Number(x.failed_count)
+        : 0
+
+      // S/N ของอุปกรณ์แต่ละตัว
+      const oldSerials = Array.from(
+        { length: failedTotal },
+        (_, i) => serialAt(x.old_sn, i).trim()
+      )
+
+      const newSerials = Array.from(
+        { length: failedTotal },
+        (_, i) => serialAt(x.new_sn, i).trim()
+      )
+
+      // อุปกรณ์เสียทุกตัวต้องมี S/N เดิม
+      if (x.is_damaged && oldSerials.some(sn => !sn)) {
+        setModalError(
+          `กรุณากรอก S/N อุปกรณ์เสียให้ครบ ${failedTotal} ตัว: ${x.name}`
         )
-    )
+        return
+      }
+
+      // สร้างข้อมูลส่งให้ RPC
+      equipment.push({
+        name: x.name,
+        is_damaged: x.is_damaged,
+        is_stuck: x.is_stuck,
+
+        // มี S/N ใหม่อย่างน้อยหนึ่งตัว ถือว่ามีการเปลี่ยน
+        is_replaced: newSerials.some(Boolean),
+
+        failed_count: failedTotal,
+
+        reset_count: x.is_stuck
+          ? Number(x.reset_count)
+          : 0,
+
+        // เก็บรูปแบบเดิมเพื่อรองรับ RPC ปัจจุบัน
+        old_sn: oldSerials.join('\n'),
+        new_sn: newSerials.join('\n'),
+
+        // ข้อมูล S/N แยกตามอุปกรณ์แต่ละตัว
+        serial_numbers: oldSerials.map((old_sn, i) => ({
+          old_sn,
+          new_sn: newSerials[i],
+        })),
+      })
+    }
 
 
-    const nextStatus = {
-    submitted: 'accepted',
-    accepted: 'in_progress',
-    in_progress: 'completed',
-    completed: 'closed',
-    }[selectedOrder?.status]
 
-    const nextStatusLabel = {
-    accepted: 'รับงาน',
-    in_progress: 'เริ่มซ่อม',
-    completed: 'ยืนยันซ่อมเสร็จ',
-    closed: 'ปิดใบงาน',
-    }[nextStatus]
+    if (
+      !window.confirm(
+        `ยืนยันบันทึกและปิดงาน ${ticketLabel(modalOrder)}?`
+      )
+    ) {
+      return
+    }
 
+    setModalSaving(true)
+    setModalError('')
+
+    try {
+      const { data, error: err } = await supabase.rpc(
+        'cctv_repair_technician_close_v2',
+        {
+          p_order_id: modalOrder.id,
+          p_problem_found: form.problem.trim(),
+          p_fix_method: form.method.trim(),
+          p_camera_down_count: down,
+          p_usable_count: good,
+          p_unusable_count: bad,
+          p_unusable_reason:
+            form.unusableReason.trim(),
+          p_completed_at:
+            completionAt.toISOString(),
+          p_sla_reason: selectedOver
+            ? form.slaReason.trim()
+            : '',
+          p_equipment_items: equipment,
+          p_technician_name:
+            form.technician.trim(),
+          p_technician_phone:
+            form.phone.trim(),
+        }
+      )
+
+      if (err) throw err
+
+      if (data !== true) {
+        throw new Error(
+          'ฐานข้อมูลไม่ยืนยันการปิดงาน'
+        )
+      }
+
+      const ticket = ticketLabel(modalOrder)
+
+      setModalOrder(null)
+      await loadOrders()
+
+      setNotice(
+        `บันทึกผลและปิดงาน ${ticket} แล้ว`
+      )
+    } catch (err) {
+      setModalError(
+        err.message || 'ปิดงานไม่สำเร็จ'
+      )
+    } finally {
+      setModalSaving(false)
+    }
+  }
+
+  const submitCancel = async () => {
+    if (
+      !canCancel(cancelTarget) ||
+      cancelBusy
+    ) {
+      return
+    }
+
+    if (cancelReason.trim().length < 5) {
+      setCancelError(
+        'กรุณาระบุเหตุผลอย่างน้อย 5 ตัวอักษร'
+      )
+      return
+    }
+
+    if (
+      !window.confirm(
+        `ยืนยันยกเลิก ${ticketLabel(cancelTarget)}?`
+      )
+    ) {
+      return
+    }
+
+    setCancelBusy(true)
+    setCancelError('')
+
+    try {
+      const { data, error: err } = await supabase.rpc(
+        'cctv_repair_cancel_v2',
+        {
+          p_order_id: cancelTarget.id,
+          p_reason: cancelReason.trim(),
+        }
+      )
+
+      if (err) throw err
+
+      if (data !== true) {
+        throw new Error(
+          'ฐานข้อมูลไม่ยืนยันการยกเลิก'
+        )
+      }
+
+      const ticket = ticketLabel(cancelTarget)
+
+      setCancelTarget(null)
+      await loadOrders()
+
+      setNotice(
+        `ยกเลิกใบงาน ${ticket} แล้ว`
+      )
+    } catch (err) {
+      setCancelError(
+        err.message || 'ยกเลิกไม่สำเร็จ'
+      )
+    } finally {
+      setCancelBusy(false)
+    }
+  }
+
+  const submitHardDelete = async () => {
+    if (
+      !canHardDelete(deleteTarget) ||
+      deleteBusy
+    ) {
+      return
+    }
+
+    const ticket = ticketLabel(deleteTarget)
+
+    if (
+      deleteConfirm.trim() !== ticket ||
+      deleteReason.trim().length < 10
+    ) {
+      setDeleteError(
+        'ระบุเหตุผลอย่างน้อย 10 ตัวอักษรและพิมพ์เลขใบงานให้ตรงกัน'
+      )
+      return
+    }
+
+    if (
+      !window.confirm(
+        `ยืนยันลบถาวร ${ticket}?\n` +
+        'ลบแล้วกู้คืนผ่านเว็บไม่ได้'
+      )
+    ) {
+      return
+    }
+
+    setDeleteBusy(true)
+    setDeleteError('')
+
+    try {
+      const { data, error: err } = await supabase.rpc(
+        'cctv_repair_admin_hard_delete_cancelled',
+        {
+          p_order_id: deleteTarget.id,
+          p_confirmation: deleteConfirm.trim(),
+          p_reason: deleteReason.trim(),
+        }
+      )
+
+      if (err) throw err
+
+      if (data !== true) {
+        throw new Error(
+          'ฐานข้อมูลไม่ยืนยันการลบ'
+        )
+      }
+
+      setDeleteTarget(null)
+      await loadOrders()
+
+      setNotice(`ลบถาวร ${ticket} แล้ว`)
+    } catch (err) {
+      setDeleteError(
+        err.message || 'ลบถาวรไม่สำเร็จ'
+      )
+    } finally {
+      setDeleteBusy(false)
+    }
+  }
 
   if (!authorized) {
     return (
       <div className="tech-panel">
         บัญชีนี้ไม่มีสิทธิ์เข้าถึงหน้างานซ่อม
-        หรือยังไม่ได้กำหนดชุดช่าง
       </div>
     )
   }
 
   return (
-    <div className="tech-page">
-      <div className="tech-head">
-        <div>
-          <div className="tech-kicker">
-            CCTV REPAIR WORKSPACE
+    <>
+      <main className="tech-page">
+        <div className="tech-head">
+          <div>
+            <div className="tech-kicker">
+              CCTV REPAIR WORKSPACE
+            </div>
+
+            <h2>งานซ่อม</h2>
+
+            <p>
+              {isTechnician
+                ? TEAMS[team]
+                : isCentral
+                  ? 'ศชต. · ภาพรวมทุกศูนย์'
+                  : isCenter
+                    ? 'ศูนย์ของฉัน · ดูอย่างเดียว'
+                    : 'มุมมองผู้ดูแล · ทุกศูนย์'}
+            </p>
           </div>
 
-          <h2>งานซ่อม</h2>
+          <button
+            type="button"
+            className="tech-refresh"
+            disabled={busyList}
+            onClick={loadOrders}
+          >
+            รีเฟรชใบงาน
+          </button>
+        </div>
 
-          
-            <p>
-                {canViewAllTeams ? (
-                    <>
-                    ผู้ดูแลระบบ: {profile.full_name || profile.username}
-                    {' · '}
-                    แสดงใบงานทุกชุดช่าง
-                    </>
-                ) : (
-                    <>
-                    ผู้ปฏิบัติงาน: {profile.full_name || profile.username}
-                    {' · '}
-                    {TEAMS[teamCode]}
-                    </>
+        <div className="tech-stats">
+          <div className="tech-panel">
+            <span>ใบงานที่ค้นพบ</span>
+            <strong>{total}</strong>
+          </div>
+
+          <div className="tech-panel">
+            <span>ยังไม่ปิด (หน้านี้)</span>
+            <strong>
+              {
+                orders.filter(x =>
+                  OPEN_STATUSES.includes(x.status)
+                ).length
+              }
+            </strong>
+          </div>
+
+          <div className="tech-panel">
+            <span>ปิดแล้ว (หน้านี้)</span>
+            <strong>
+              {
+                orders.filter(
+                  x => x.status === 'closed'
+                ).length
+              }
+            </strong>
+          </div>
+
+          <div className="tech-panel">
+            <span>ยกเลิก (หน้านี้)</span>
+            <strong>
+              {
+                orders.filter(
+                  x => x.status === 'cancelled'
+                ).length
+              }
+            </strong>
+          </div>
+        </div>
+
+        {error && (
+          <div className="tech-error" role="alert">
+            {error}
+          </div>
+        )}
+
+        {notice && (
+          <div className="tech-success" role="status">
+            {notice}
+          </div>
+        )}
+
+        <section className="tech-panel tech-filter-panel">
+          <h3>ค้นหาและกรองประวัติใบแจ้งซ่อม</h3>
+
+          <div className="tech-filter-grid">
+            {!isCenter && (
+              <label>
+                ศูนย์
+                <select
+                  value={filters.center}
+                  onChange={e =>
+                    changeFilter(
+                      'center',
+                      e.target.value
+                    )
+                  }
+                >
+                  <option value="">
+                    {isTechnician
+                      ? 'ทั้ง 3 ศูนย์ที่รับผิดชอบ'
+                      : 'ทุกศูนย์'}
+                  </option>
+
+                  {centers.map(c => (
+                    <option
+                      key={c.id}
+                      value={c.id}
+                    >
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            <label>
+              เลขใบงาน
+              <input
+                value={filters.ticket}
+                onChange={e =>
+                  changeFilter(
+                    'ticket',
+                    e.target.value
+                  )
+                }
+                placeholder="ค้นหาเลขใบงาน"
+              />
+            </label>
+
+            <label>
+              สถานะ
+              <select
+                value={filters.status}
+                onChange={e =>
+                  changeFilter(
+                    'status',
+                    e.target.value
+                  )
+                }
+              >
+                <option value="all">ทุกสถานะ</option>
+                <option value="open">ยังไม่ปิด</option>
+                <option value="closed">ปิดแล้ว</option>
+                <option value="cancelled">ยกเลิก</option>
+              </select>
+            </label>
+
+            <label>
+              รูปแบบวันที่แจ้ง
+              <select
+                value={filters.period}
+                onChange={e =>
+                  changeFilter(
+                    'period',
+                    e.target.value
+                  )
+                }
+              >
+                <option value="all">ทุกช่วงเวลา</option>
+                <option value="month">เลือกเดือน</option>
+                <option value="custom">
+                  กำหนดช่วงวันที่เอง
+                </option>
+              </select>
+            </label>
+
+            {filters.period === 'month' && (
+              <label>
+                เดือนที่แจ้ง
+                <input
+                  type="month"
+                  value={filters.month}
+                  onChange={e =>
+                    changeFilter(
+                      'month',
+                      e.target.value
+                    )
+                  }
+                />
+              </label>
+            )}
+
+            {filters.period === 'custom' && (
+              <>
+                <label>
+                  วันที่แจ้งเริ่มต้น
+                  <input
+                    type="date"
+                    value={filters.from}
+                    onChange={e =>
+                      changeFilter(
+                        'from',
+                        e.target.value
+                      )
+                    }
+                  />
+                </label>
+
+                <label>
+                  วันที่แจ้งสิ้นสุด
+                  <input
+                    type="date"
+                    value={filters.to}
+                    onChange={e =>
+                      changeFilter(
+                        'to',
+                        e.target.value
+                      )
+                    }
+                  />
+                </label>
+              </>
+            )}
+          </div>
+
+          <div className="tech-filter-bottom">
+            <span>
+              กรองด้วย <strong>วันที่ส่งแจ้งซ่อม</strong>
+              {' '}ไม่ใช่วันที่กล้องดับ
+            </span>
+
+            <button
+              type="button"
+              onClick={() => {
+                setFilters(INITIAL_FILTERS)
+                setPage(0)
+              }}
+            >
+              ล้างตัวกรอง
+            </button>
+          </div>
+        </section>
+
+        <div className="tech-grid">
+          <section className="tech-panel">
+            <h3>รายการใบแจ้งซ่อม</h3>
+
+            {busyList && (
+              <p className="tech-muted">
+                กำลังโหลดใบงาน...
+              </p>
+            )}
+
+            {!busyList && orders.length === 0 && (
+              <p className="tech-muted">
+                ไม่พบใบงานตามเงื่อนไข
+              </p>
+            )}
+
+            <div className="tech-order-list">
+              {orders.map(o => (
+                <article
+                  key={o.id}
+                  className={`tech-list-card ${
+                    String(selectedId) === String(o.id)
+                      ? 'is-selected'
+                      : ''
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="tech-list-select"
+                    onClick={() => setSelectedId(o.id)}
+                  >
+                    <strong>{ticketLabel(o)}</strong>
+
+                    <span>
+                      {o.center_name_snapshot ||
+                        CENTER_NAMES[o.center_id] ||
+                        '-'}
+                      {' · '}
+                      {TEAMS[o.team_code] ||
+                        'ไม่ระบุชุดช่าง'}
+                    </span>
+
+                    <small>
+                      {formatDate(o.submitted_at)}
+                      {' · '}
+                      {STATUS[o.status] || o.status}
+                    </small>
+                  </button>
+
+                  <div className="tech-list-actions">
+                    {canClose(o) && (
+                      <button
+                        className="tech-btn-close"
+                        type="button"
+                        onClick={() => openModal(o)}
+                      >
+                        ปิดงาน
+                      </button>
+                    )}
+
+                    {canEdit(o) && (
+                      <button
+                        className="tech-btn-edit"
+                        type="button"
+                        onClick={() =>
+                          openModal(o, 'edit')
+                        }
+                      >
+                        แก้ไขผลซ่อม
+                      </button>
+                    )}
+
+                    {canCancel(o) && (
+                      <button
+                        className="tech-btn-cancel"
+                        type="button"
+                        onClick={() => {
+                          setCancelTarget(o)
+                          setCancelReason('')
+                          setCancelError('')
+                        }}
+                      >
+                        ยกเลิก
+                      </button>
+                    )}
+
+                    {canHardDelete(o) && (
+                      <button
+                        className="tech-btn-delete"
+                        type="button"
+                        onClick={() => {
+                          setDeleteTarget(o)
+                          setDeleteReason('')
+                          setDeleteConfirm('')
+                          setDeleteError('')
+                        }}
+                      >
+                        ลบถาวร
+                      </button>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <nav
+              className="tech-pagination"
+              aria-label="แบ่งหน้าใบงาน"
+            >
+              <button
+                type="button"
+                disabled={page === 0 || busyList}
+                onClick={() =>
+                  setPage(n => Math.max(0, n - 1))
+                }
+              >
+                ก่อนหน้า
+              </button>
+
+              <span>
+                หน้า {page + 1} /{' '}
+                {Math.max(
+                  1,
+                  Math.ceil(total / PAGE_SIZE)
                 )}
-            </p>
+              </span>
 
+              <button
+                type="button"
+                disabled={
+                  busyList ||
+                  (page + 1) * PAGE_SIZE >= total
+                }
+                onClick={() =>
+                  setPage(n => n + 1)
+                }
+              >
+                ถัดไป
+              </button>
+            </nav>
+          </section>
+
+          <section className="tech-panel">
+            <h3>รายละเอียดใบงาน</h3>
+
+            {!current ? (
+              <p className="tech-muted">
+                เลือกใบงานจากรายการเพื่อดูรายละเอียด
+              </p>
+            ) : (
+              <>
+                <div className="tech-detail-head">
+                  <strong>
+                    {ticketLabel(current)}
+                  </strong>
+
+                  <span>
+                    {STATUS[current.status] ||
+                      current.status}
+                  </span>
+                </div>
+
+                <p className="tech-muted">
+                  ศูนย์ผู้แจ้ง:{' '}
+                  {current.center_name_snapshot || '-'}
+                </p>
+
+                <div className="tech-order-dates">
+                  <div>
+                    <small>วันที่ส่งแจ้งซ่อม</small>
+                    <strong>
+                      {formatDate(current.submitted_at)}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <small>วันที่รายงาน</small>
+                    <strong>
+                      {formatDay(current.report_date)}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <small>วันเวลาที่กล้องดับ</small>
+                    <strong>
+                      {formatDate(outageAt)}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <small>กำหนด SLA 72 ชม.</small>
+                    <strong>
+                      {formatDate(slaAt)}
+                    </strong>
+                  </div>
+                </div>
+
+                <h4>อุปกรณ์ / จุดที่แจ้งซ่อม</h4>
+
+                {unitError && (
+                  <div className="tech-error">
+                    {unitError}
+                  </div>
+                )}
+
+                {busyUnits ? (
+                  <p className="tech-muted">
+                    กำลังโหลดรายการกล้อง...
+                  </p>
+                ) : units.length === 0 ? (
+                  <p className="tech-muted">
+                    ไม่มีรายการกล้อง
+                  </p>
+                ) : (
+                  units.map(u => (
+                    <div
+                      className="tech-unit"
+                      key={u.id}
+                    >
+                      <div className="tech-unit-headline">
+                        <strong>
+                          {u.unit_label || '-'}
+                        </strong>
+
+                        <span>
+                          กล้องดับ{' '}
+                          {u.down_camera_count ?? 0} ตัว
+                        </span>
+                      </div>
+
+                      <small className="tech-unit-coordinates">
+                        Lat: {u.latitude ?? '-'}
+                        {' · '}
+                        Long: {u.longitude ?? '-'}
+                      </small>
+
+                      {Array.isArray(u.camera_snapshot) &&
+                        u.camera_snapshot.length > 0 && (
+                          <details className="tech-unit-camera-details">
+                            <summary>
+                              รายชื่อกล้องที่แจ้งซ่อม
+                              {' '}({u.camera_snapshot.length} ตัว)
+                            </summary>
+
+                            <div className="tech-unit-camera-list">
+                              {u.camera_snapshot.map(
+                                (cam, i) => (
+                                  <div
+                                    key={`${cam.ip || 'camera'}-${i}`}
+                                    className="tech-unit-camera-row"
+                                  >
+                                    <span>
+                                      {i + 1}.{' '}
+                                      {cam.name ||
+                                        'ไม่ระบุชื่อกล้อง'}
+                                    </span>
+
+                                    <small>
+                                      IP: {cam.ip || '-'}
+                                    </small>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </details>
+                        )}
+                    </div>
+                  ))
+                )}
+
+                {current.status === 'closed' && (
+                  <section className="tech-closed-summary">
+                    <h4>ผลการปิดงาน</h4>
+
+                    <p>
+                      <b>ปัญหาที่พบ:</b>{' '}
+                      {current.repair_problem_found || '-'}
+                    </p>
+
+                    <p>
+                      <b>วิธีแก้ไข:</b>{' '}
+                      {current.repair_fix_method || '-'}
+                    </p>
+
+                    <p>
+                      <b>กล้องดับ:</b>{' '}
+                      {current.repair_down_count ?? '-'} ตัว
+                      {' · '}
+                      <b>ใช้งานได้:</b>{' '}
+                      {current.repair_usable_count ?? '-'} ตัว
+                      {' · '}
+                      <b>ใช้งานไม่ได้:</b>{' '}
+                      {current.repair_unusable_count ?? '-'} ตัว
+                    </p>
+
+                    {current.repair_unusable_reason && (
+                      <p>
+                        สาเหตุที่ยังใช้ไม่ได้:{' '}
+                        {current.repair_unusable_reason}
+                      </p>
+                    )}
+
+                    <p>
+                      ซ่อมเสร็จ:{' '}
+                      {formatDate(
+                        current.repair_completed_at
+                      )}
+                      {' · '}
+                      SLA:{' '}
+                      {current.repair_sla_exceeded == null
+                        ? '-'
+                        : current.repair_sla_exceeded
+                          ? 'เกิน'
+                          : 'ไม่เกิน'}
+                    </p>
+
+                    {current.repair_sla_reason && (
+                      <p>
+                        เหตุผล SLA:{' '}
+                        {current.repair_sla_reason}
+                      </p>
+                    )}
+
+                    <p>
+                      ผู้ปฏิบัติงาน:{' '}
+                      {current.technician_names || '-'}
+                      {' · '}
+                      โทร. {current.technician_phone || '-'}
+                    </p>
+
+                    {Array.isArray(
+                      current.equipment_items
+                    ) &&
+                      current.equipment_items.length > 0 && (
+                        <details>
+                          <summary>
+                            รายละเอียดอุปกรณ์ที่บันทึก
+                            {' '}({current.equipment_items.length})
+                          </summary>
+
+                          <div className="tech-saved-equipment">
+                            {current.equipment_items.map(
+                              (e, i) => (
+                                <div key={i}>
+                                  <strong>{e.name}</strong>
+                                  {' · '}
+                                  {e.is_damaged ? 'เสีย' : ''}
+                                  {' '}
+                                  {e.is_stuck ? 'ค้าง' : ''}
+                                  {e.old_sn &&
+                                    ` · S/N เสีย: ${e.old_sn}`}
+                                  {e.new_sn &&
+                                    ` · S/N ใหม่: ${e.new_sn}`}
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </details>
+                      )}
+                  </section>
+                )}
+
+                <details className="tech-history">
+                  <summary>
+                    ประวัติการดำเนินการ
+                    {' '}({history.length})
+                  </summary>
+
+                  {historyError ? (
+                    <p className="tech-muted">
+                      ยังไม่สามารถโหลดประวัติ:{' '}
+                      {historyError}
+                    </p>
+                  ) : history.length === 0 ? (
+                    <p className="tech-muted">
+                      ยังไม่พบประวัติ
+                    </p>
+                  ) : (
+                    history.map((item, i) => (
+                      <div
+                        key={item.id ?? i}
+                        className="tech-history-row"
+                      >
+                        <strong>
+                          {item.action || '-'}
+                        </strong>
+                        {' · '}
+                        {formatDate(item.created_at)}
+
+                        <small>
+                          {item.previous_status || '-'}
+                          {' → '}
+                          {item.new_status || '-'}
+                        </small>
+                      </div>
+                    ))
+                  )}
+                </details>
+              </>
+            )}
+          </section>
         </div>
+      </main>
 
-        <button
-          type="button"
-          className="tech-refresh"
-          onClick={loadOrders}
-          disabled={loading}
+      {modalOrder && (
+        <div
+          className="tech-overlay"
+          onMouseDown={e => {
+            if (e.target === e.currentTarget) {
+              closeModal()
+            }
+          }}
         >
-          รีเฟรชใบงาน
-        </button>
-      </div>
+          <section
+            className="tech-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="บันทึกผลการซ่อม"
+          >
+            <header className="tech-dialog-head">
+              <div>
+                <small>CCTV REPAIR WORKSPACE</small>
 
-      <div className="tech-stats">
-        <div className="tech-panel">
-          <span>ใบงานทั้งหมด</span>
-          <strong>{orders.length}</strong>
-        </div>
+                <h3>
+                  {modalMode === 'edit'
+                    ? 'แก้ไขผลซ่อม'
+                    : 'บันทึกผลและปิดงาน'}
+                  {' '}
+                  {ticketLabel(modalOrder)}
+                </h3>
+              </div>
 
-        <div className="tech-panel">
-          <span>รอรับงาน / รับงานแล้ว</span>
-          <strong>
-            {orders.filter((x) =>
-              ['submitted', 'accepted'].includes(x.status)
-            ).length}
-          </strong>
-        </div>
+              <button
+                type="button"
+                disabled={modalSaving}
+                onClick={closeModal}
+              >
+                ปิดหน้าต่าง
+              </button>
+            </header>
 
-        <div className="tech-panel">
-          <span>กำลังซ่อม</span>
-          <strong>
-            {orders.filter((x) =>
-              x.status === 'in_progress'
-            ).length}
-          </strong>
-        </div>
+            <div className="tech-dialog-body">
+              {modalError && (
+                <div
+                  className="tech-error"
+                  role="alert"
+                >
+                  {modalError}
+                </div>
+              )}
 
-        <div className="tech-panel">
-          <span>เสร็จสิ้น / ปิดงาน</span>
-          <strong>
-            {orders.filter((x) =>
-              ['completed', 'closed'].includes(x.status)
-            ).length}
-          </strong>
-        </div>
-      </div>
+              {modalBusy ? (
+                <p>กำลังโหลดฟอร์ม...</p>
+              ) : (
+                <>
+                  <p className="tech-muted">
+                    {modalOrder.center_name_snapshot}
+                    {' · '}
+                    กล้องดับ {modalCount} ตัว
+                  </p>
 
-      {error && (
-        <div className="tech-error">
-          โหลดใบงานไม่สำเร็จ: {error}
+                  <label>
+                    1. ปัญหาที่พบ *
+                    <textarea
+                      rows={2}
+                      value={form.problem}
+                      onChange={e =>
+                        changeForm(
+                          'problem',
+                          e.target.value
+                        )
+                      }
+                    />
+                  </label>
+
+                  <label>
+                    2. วิธีการแก้ไข *
+                    <textarea
+                      rows={2}
+                      value={form.method}
+                      onChange={e =>
+                        changeForm(
+                          'method',
+                          e.target.value
+                        )
+                      }
+                    />
+                  </label>
+
+                  
+                  <div className="tech-form-grid three">
+                    <label>
+                      3. กล้องที่ดับ (ตัว)
+                      <input
+                        value={form.down}
+                        readOnly
+                      />
+                    </label>
+
+                    <label>
+                      4. ใช้งานได้ (ตัว) *
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={form.usable}
+                        onChange={e =>
+                          changeCameraCount('usable', e.target.value)
+                        }
+                        onBlur={() => completeCameraCount('usable')}
+                        placeholder="ระบุจำนวน"
+                      />
+                    </label>
+
+                    <label>
+                      5. ใช้งานไม่ได้ (ตัว) *
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={form.unusable}
+                        onChange={e =>
+                          changeCameraCount('unusable', e.target.value)
+                        }
+                        onBlur={() => completeCameraCount('unusable')}
+                        placeholder="คำนวณอัตโนมัติ"
+                      />
+                    </label>
+                  </div>
+
+                  {Number(form.unusable) > 0 && (
+                    <label>
+                      เนื่องจากอะไร *
+                      <input
+                        value={form.unusableReason}
+                        onChange={e =>
+                          changeForm(
+                            'unusableReason',
+                            e.target.value
+                          )
+                        }
+                      />
+                    </label>
+                  )}
+
+                  <div className="tech-form-grid two">
+                    <label>
+                      6. วันที่ดำเนินการเสร็จ *
+                      <input
+                        type="date"
+                        value={form.doneDate}
+                        onChange={e =>
+                          changeForm(
+                            'doneDate',
+                            e.target.value
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      7. เวลาดำเนินการเสร็จ *
+                      <input
+                        type="time"
+                        value={form.doneTime}
+                        onChange={e =>
+                          changeForm(
+                            'doneTime',
+                            e.target.value
+                          )
+                        }
+                      />
+                    </label>
+                  </div>
+
+                  <section className="tech-sla">
+                    <strong>
+                      8. SLA (ช่างเลือกเอง)
+                    </strong>
+
+                    <div className="tech-sla-options">
+                      <label>
+                        <input
+                          type="radio"
+                          name="sla-choice"
+                          checked={
+                            form.slaChoice === 'within'
+                          }
+                          onChange={() =>
+                            changeForm(
+                              'slaChoice',
+                              'within'
+                            )
+                          }
+                        />
+                        ไม่เกิน SLA
+                      </label>
+
+                      <label>
+                        <input
+                          type="radio"
+                          name="sla-choice"
+                          checked={
+                            form.slaChoice === 'over'
+                          }
+                          onChange={() =>
+                            changeForm(
+                              'slaChoice',
+                              'over'
+                            )
+                          }
+                        />
+                        เกิน SLA
+                      </label>
+                    </div>
+
+                    <small>
+                      ครบกำหนดตามใบงาน:{' '}
+                      {formatDate(modalSla)}
+                    </small>
+
+                    {selectedOver && (
+                      <label>
+                        เหตุผลที่เกิน SLA *
+                        <input
+                          value={form.slaReason}
+                          onChange={e =>
+                            changeForm(
+                              'slaReason',
+                              e.target.value
+                            )
+                          }
+                        />
+                      </label>
+                    )}
+                  </section>
+
+                  <h4>
+                    9. สาเหตุ / อุปกรณ์เสียหรือค้าง
+                  </h4>
+
+                  <p className="tech-muted">
+                    เลือกเสียและค้างพร้อมกันได้
+                    {' · '}
+                    S/N ใหม่กรอกเมื่อเปลี่ยนอุปกรณ์
+                  </p>
+
+                  <div className="tech-equipment-list">
+                    {form.equipment.map((e, index) => (
+                      <section
+                        key={e.name}
+                        className="tech-equipment-item"
+                      >
+                        <strong>{e.name}</strong>
+
+                        <div className="tech-equipment-checks">
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={e.is_damaged}
+                              onChange={ev =>
+                                changeEquipment(
+                                  index,
+                                  {
+                                    is_damaged:
+                                      ev.target.checked,
+                                    ...(
+                                      !ev.target.checked
+                                        ? {
+                                            is_replaced: false,
+                                            old_sn: '',
+                                            new_sn: '',
+                                          }
+                                        : {}
+                                    ),
+                                  }
+                                )
+                              }
+                            />
+                            เสีย
+                          </label>
+
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={e.is_stuck}
+                              onChange={ev =>
+                                changeEquipment(
+                                  index,
+                                  {
+                                    is_stuck:
+                                      ev.target.checked,
+                                  }
+                                )
+                              }
+                            />
+                            ค้าง
+                          </label>
+                        </div>
+
+                        {(e.is_damaged || e.is_stuck) && (
+                          <div className="tech-equipment-fields">
+                            {e.is_damaged && (
+                              <>
+                                <label>
+                                  จำนวนเสีย
+                                  <input
+                                    inputMode="numeric"
+                                    value={e.failed_count}
+                                    onChange={ev =>
+                                      changeEquipment(index, {
+                                        failed_count: ev.target.value,
+                                      })
+                                    }
+                                  />
+                                </label>
+
+                                {validInteger(e.failed_count) &&
+                                Number(e.failed_count) > 0 ? (
+                                  <div className="tech-serial-rows">
+                                    {Array.from(
+                                      { length: Number(e.failed_count) },
+                                      (_, serialIndex) => (
+                                        <div
+                                          className="tech-serial-pair"
+                                          key={serialIndex}
+                                        >
+                                          <strong>
+                                            อุปกรณ์ตัวที่ {serialIndex + 1}
+                                          </strong>
+
+                                          <label>
+                                            S/N ตัวที่เสีย *
+                                            <input
+                                              value={serialAt(
+                                                e.old_sn,
+                                                serialIndex
+                                              )}
+                                              onChange={ev =>
+                                                changeSerial(
+                                                  index,
+                                                  'old_sn',
+                                                  serialIndex,
+                                                  ev.target.value
+                                                )
+                                              }
+                                              placeholder={`S/N เสีย ตัวที่ ${serialIndex + 1}`}
+                                            />
+                                          </label>
+
+                                          <label>
+                                            S/N ตัวใหม่
+                                            <input
+                                              value={serialAt(
+                                                e.new_sn,
+                                                serialIndex
+                                              )}
+                                              onChange={ev =>
+                                                changeSerial(
+                                                  index,
+                                                  'new_sn',
+                                                  serialIndex,
+                                                  ev.target.value
+                                                )
+                                              }
+                                              placeholder={`S/N ใหม่ ตัวที่ ${serialIndex + 1}`}
+                                            />
+                                          </label>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="tech-muted">
+                                    ระบุจำนวนเสียอย่างน้อย 1 ตัว
+                                    เพื่อแสดงช่อง S/N
+                                  </p>
+                                )}
+                              </>
+                            )}
+
+                            {e.is_stuck && (
+                              <label>
+                                จำนวนค้าง / Reset
+                                <input
+                                  inputMode="numeric"
+                                  value={e.reset_count}
+                                  onChange={ev =>
+                                    changeEquipment(
+                                      index,
+                                      {
+                                        reset_count:
+                                          ev.target.value,
+                                      }
+                                    )
+                                  }
+                                />
+                              </label>
+                            )}
+                          </div>
+                        )}
+                      </section>
+                    ))}
+                  </div>
+
+                  <h4>10. ผู้ปฏิบัติงาน</h4>
+
+                  {techniciansError && (
+                    <p className="tech-muted">
+                      {techniciansError}
+                    </p>
+                  )}
+
+                  <div className="tech-form-grid two">
+                    <label>
+                      ชื่อช่าง *
+                      <select
+                        value={form.technician}
+                        onChange={ev => {
+                          const p = technicians.find(
+                            t =>
+                              t.display_name ===
+                              ev.target.value
+                          )
+
+                          setForm(old => ({
+                            ...old,
+                            technician: ev.target.value,
+                            phone:
+                              p?.contact_phone ||
+                              old.phone,
+                          }))
+                        }}
+                      >
+                        <option value="">
+                          เลือกชื่อช่าง
+                        </option>
+
+                        {form.technician &&
+                          !technicians.some(
+                            x =>
+                              x.display_name ===
+                              form.technician
+                          ) && (
+                            <option value={form.technician}>
+                              {form.technician}
+                            </option>
+                          )}
+
+                        {technicians.map(p => (
+                          <option
+                            key={p.user_id}
+                            value={p.display_name}
+                          >
+                            {p.display_name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label>
+                      เบอร์โทร
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={e =>
+                          changeForm(
+                            'phone',
+                            e.target.value
+                          )
+                        }
+                      />
+                    </label>
+                  </div>
+
+                  {modalMode === 'edit' && (
+                    <p className="tech-warning">
+                      โหมดแก้ไขเปิดดูและปรับฟอร์มได้
+                      แต่ยังไม่เปิดบันทึกจริงจนกว่าจะมี RPC
+                      แก้ไขงานปิดแล้ว
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            <footer className="tech-dialog-foot">
+              <button
+                type="button"
+                disabled={modalSaving}
+                onClick={closeModal}
+              >
+                ยกเลิก
+              </button>
+
+              <button
+                type="button"
+                className="tech-btn-close"
+                disabled={
+                  modalBusy ||
+                  modalSaving ||
+                  modalMode === 'edit'
+                }
+                onClick={submitClose}
+              >
+                {modalSaving
+                  ? 'กำลังบันทึก...'
+                  : modalMode === 'edit'
+                    ? 'รอเชื่อมการบันทึก'
+                    : 'บันทึกและปิดงาน'}
+              </button>
+            </footer>
+          </section>
         </div>
       )}
 
-      <div className="tech-grid">
-        <section className="tech-panel">
-          <h3>รายการใบแจ้งซ่อม</h3>
+      {cancelTarget && (
+        <div className="tech-overlay">
+          <section
+            className="tech-dialog tech-small-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="ยกเลิกใบงาน"
+          >
+            <header className="tech-dialog-head">
+              <h3>
+                ยกเลิกใบงาน{' '}
+                {ticketLabel(cancelTarget)}
+              </h3>
+            </header>
 
-          {loading ? (
-            <p>กำลังโหลดใบงาน...</p>
-          ) : orders.length === 0 ? (
-            <p className="tech-muted">
-              ยังไม่มีใบงานที่แสดงได้สำหรับชุดช่างนี้
-            </p>
-          ) : (
-            orders.map((order) => (
-              <button
-                key={order.id}
-                type="button"
-                className={`tech-order ${
-                  String(selectedId) === String(order.id)
-                    ? 'selected'
-                    : ''
-                }`}
-                onClick={() => setSelectedId(order.id)}
-              >
-                <strong>
-                  {order.ticket_no || `ใบงาน #${order.id}`}
-                </strong>
-
-                
-                <span>
-                    {order.center_name_snapshot || 'ไม่ระบุศูนย์'}
-
-                    {canViewAllTeams && (
-                        <>
-                        {' · '}
-                        {TEAMS[order.team_code] || 'ไม่ระบุชุดช่าง'}
-                        </>
-                    )}
-                </span>
-
-
-                <small>
-                  {formatDate(order.report_date)}
-                  {' · '}
-                  {STATUS[order.status] || order.status}
-                </small>
-              </button>
-            ))
-          )}
-        </section>
-
-        <section className="tech-panel">
-          <h3>รายละเอียดใบงาน</h3>
-
-          {!selectedOrder ? (
-            <p className="tech-muted">
-              เลือกใบงานทางซ้ายเพื่อดูรายละเอียด
-            </p>
-          ) : (
-            <>
-              <div className="tech-detail-head">
-                <strong>
-                  {selectedOrder.ticket_no ||
-                    `ใบงาน #${selectedOrder.id}`}
-                </strong>
-
-                <span>
-                  {STATUS[selectedOrder.status] ||
-                    selectedOrder.status}
-                </span>
-              </div>
-
-              <p className="tech-muted">
-                ศูนย์ผู้แจ้ง:{' '}
-                {selectedOrder.center_name_snapshot || '-'}
-              </p>
-
-              <p className="tech-muted">
-                วันที่รายงาน:{' '}
-                {formatDate(selectedOrder.report_date)}
-              </p>
-
-              <h4>อุปกรณ์ / จุดที่แจ้งซ่อม</h4>
-
-              {unitError && (
+            <div className="tech-dialog-body">
+              {cancelError && (
                 <div className="tech-error">
-                  {unitError}
+                  {cancelError}
                 </div>
               )}
 
-              {loadingUnits ? (
-                <p>กำลังโหลดอุปกรณ์...</p>
-              ) : units.length === 0 ? (
-                <p className="tech-muted">
-                  ไม่มีรายการอุปกรณ์ที่แสดงได้
-                </p>
-              ) : (
-                units.map((unit) => (
-                  <div className="tech-unit" key={unit.id}>
-                    <strong>
-                      {unit.unit_label || '-'}
-                    </strong>
+              <p className="tech-muted">
+                {cancelTarget.center_name_snapshot}
+                {' · '}
+                ใบงานจะอยู่ในประวัติต่อไป
+              </p>
 
-                    <span>
-                      กล้องที่แจ้งดับ{' '}
-                      {unit.down_camera_count ?? 0} ตัว
-                    </span>
+              <label>
+                เหตุผลการยกเลิก *
+                <textarea
+                  rows={4}
+                  value={cancelReason}
+                  onChange={e =>
+                    setCancelReason(e.target.value)
+                  }
+                  disabled={cancelBusy}
+                />
+              </label>
+            </div>
 
-                    {Array.isArray(unit.camera_snapshot) &&
-                      unit.camera_snapshot.map((camera, i) => (
-                        <small key={i}>
-                          {i + 1}.{' '}
-                          {camera.name || 'กล้อง'}
-                          {' · IP '}
-                          {camera.ip || '-'}
-                        </small>
-                      ))}
-                  </div>
-                ))
+            <footer className="tech-dialog-foot">
+              <button
+                disabled={cancelBusy}
+                type="button"
+                onClick={() =>
+                  setCancelTarget(null)
+                }
+              >
+                กลับ
+              </button>
+
+              <button
+                disabled={
+                  cancelBusy ||
+                  cancelReason.trim().length < 5
+                }
+                type="button"
+                className="tech-btn-cancel"
+                onClick={submitCancel}
+              >
+                ยืนยันยกเลิก
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
+
+      {deleteTarget && isAdmin && (
+        <div className="tech-overlay">
+          <section
+            className="tech-dialog tech-small-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="ลบถาวร"
+          >
+            <header className="tech-dialog-head">
+              <h3>
+                ลบใบงานถาวร{' '}
+                {ticketLabel(deleteTarget)}
+              </h3>
+            </header>
+
+            <div className="tech-dialog-body">
+              <p className="tech-warning">
+                ข้อมูลใบงานและรายการกล้องจะถูกลบจริง
+                และกู้คืนผ่านหน้าเว็บไม่ได้
+              </p>
+
+              {deleteError && (
+                <div className="tech-error">
+                  {deleteError}
+                </div>
               )}
 
-              
-                <div className="tech-workflow">
-                <h4>ผลการซ่อมและดำเนินงาน</h4>
+              <label>
+                1. เหตุผลการลบ (อย่างน้อย 10 ตัวอักษร)
+                <textarea
+                  rows={3}
+                  value={deleteReason}
+                  disabled={deleteBusy}
+                  onChange={e =>
+                    setDeleteReason(e.target.value)
+                  }
+                />
+              </label>
 
-                {selectedOrder.repair_result_saved_at && (
-                    <p className="tech-muted">
-                    มีผลซ่อมที่บันทึกไว้แล้ว
-                    </p>
-                )}
+              <label>
+                2. พิมพ์เลขใบงาน{' '}
+                {ticketLabel(deleteTarget)}
+                {' '}เพื่อยืนยัน
+                <input
+                  value={deleteConfirm}
+                  disabled={deleteBusy}
+                  onChange={e =>
+                    setDeleteConfirm(e.target.value)
+                  }
+                />
+              </label>
 
-                {actionError && (
-                    <div className="tech-error" role="alert">
-                    {actionError}
-                    </div>
-                )}
+              <p className="tech-muted">
+                3. ระบบจะถามยืนยันอีกครั้งก่อนลบจริง
+              </p>
+            </div>
 
-                {actionSuccess && (
-                    <p className="tech-success" role="status">
-                    {actionSuccess}
-                    </p>
-                )}
+            <footer className="tech-dialog-foot">
+              <button
+                disabled={deleteBusy}
+                type="button"
+                onClick={() =>
+                  setDeleteTarget(null)
+                }
+              >
+                กลับ
+              </button>
 
-                {(canEditResult ||
-                    canViewAllTeams ||
-                    (isTechnician &&
-                    selectedOrder.repair_result_saved_at)) && (
-                    <div className="tech-result-form">
-                    <label>
-                        ผลการซ่อม
-                        <textarea
-                        rows={3}
-                        value={resultText}
-                        onChange={(e) =>
-                            setResultText(e.target.value)
-                        }
-                        disabled={!canEditResult || saving}
-                        placeholder="ระบุผลการซ่อม"
-                        />
-                    </label>
-
-                    <label>
-                        สาเหตุที่ชำรุด
-                        <textarea
-                        rows={2}
-                        value={causeText}
-                        onChange={(e) =>
-                            setCauseText(e.target.value)
-                        }
-                        disabled={!canEditResult || saving}
-                        placeholder="ระบุสาเหตุ"
-                        />
-                    </label>
-
-                    <label>
-                        ชื่อผู้ดำเนินการ
-                        <input
-                        value={technicianNames}
-                        onChange={(e) =>
-                            setTechnicianNames(e.target.value)
-                        }
-                        disabled={!canEditResult || saving}
-                        placeholder="ชื่อช่างผู้ดำเนินการจริง"
-                        />
-                    </label>
-
-                    <h4>รายการอุปกรณ์</h4>
-                    <p className="tech-muted">
-                        หากตรวจแล้วไม่มีอุปกรณ์ชำรุด
-                        สามารถเว้นรายการเป็น 0 แถวได้
-                    </p>
-
-                    {equipmentItems.map((item, index) => (
-                        <div
-                        className="tech-equipment-row"
-                        key={index}
-                        >
-                        <label className="tech-equipment-name">
-                            ชื่ออุปกรณ์
-                            <input
-                            value={item.name}
-                            disabled={!canEditResult || saving}
-                            onChange={(e) =>
-                                updateEquipment(
-                                index,
-                                'name',
-                                e.target.value
-                                )
-                            }
-                            placeholder="เช่น PoE Switch"
-                            />
-                        </label>
-
-                        <label>
-                            เสีย (จำนวน)
-                            <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={item.failed_count}
-                            disabled={!canEditResult || saving}
-                            onChange={(e) =>
-                                updateEquipment(
-                                index,
-                                'failed_count',
-                                e.target.value
-                                )
-                            }
-                            />
-                        </label>
-
-                        <label>
-                            Reset (จำนวน)
-                            <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={item.reset_count}
-                            disabled={!canEditResult || saving}
-                            onChange={(e) =>
-                                updateEquipment(
-                                index,
-                                'reset_count',
-                                e.target.value
-                                )
-                            }
-                            />
-                        </label>
-
-                        <label>
-                            S/N เสีย
-                            <input
-                            value={item.old_sn}
-                            disabled={!canEditResult || saving}
-                            onChange={(e) =>
-                                updateEquipment(
-                                index,
-                                'old_sn',
-                                e.target.value
-                                )
-                            }
-                            />
-                        </label>
-
-                        <label>
-                            S/N ใหม่
-                            <input
-                            value={item.new_sn}
-                            disabled={!canEditResult || saving}
-                            onChange={(e) =>
-                                updateEquipment(
-                                index,
-                                'new_sn',
-                                e.target.value
-                                )
-                            }
-                            />
-                        </label>
-
-                        {canEditResult && (
-                            <button
-                            type="button"
-                            className="tech-remove-equipment"
-                            disabled={saving}
-                            onClick={() =>
-                                setEquipmentItems((prev) =>
-                                prev.filter(
-                                    (_, i) => i !== index
-                                )
-                                )
-                            }
-                            >
-                            ลบรายการ
-                            </button>
-                        )}
-                        </div>
-                    ))}
-
-                    {canEditResult && (
-                        <div className="tech-actions">
-                        <button
-                            type="button"
-                            className="tech-secondary-action"
-                            disabled={saving}
-                            onClick={() =>
-                            setEquipmentItems((prev) => [
-                                ...prev,
-                                {
-                                name: '',
-                                failed_count: 0,
-                                reset_count: 0,
-                                old_sn: '',
-                                new_sn: '',
-                                },
-                            ])
-                            }
-                        >
-                            + เพิ่มรายการอุปกรณ์
-                        </button>
-
-                        <button
-                            type="button"
-                            className="tech-primary-action"
-                            disabled={saving}
-                            onClick={saveResult}
-                        >
-                            {saving
-                            ? 'กำลังบันทึก...'
-                            : 'บันทึกผลการซ่อม'}
-                        </button>
-                        </div>
-                    )}
-                    </div>
-                )}
-
-                {isTechnician && nextStatus && (
-                    <div className="tech-actions">
-                    <button
-                        type="button"
-                        className="tech-primary-action"
-                        disabled={saving}
-                        onClick={() =>
-                        changeStatus(nextStatus)
-                        }
-                    >
-                        {saving
-                        ? 'กำลังดำเนินการ...'
-                        : nextStatusLabel}
-                    </button>
-
-                    {nextStatus === 'completed' && (
-                        <small className="tech-muted">
-                        ต้องบันทึกผลซ่อมให้ครบก่อน
-                        ยืนยันว่าซ่อมเสร็จ
-                        </small>
-                    )}
-                    </div>
-                )}
-
-                {selectedOrder.status === 'closed' && (
-                    <p className="tech-success">
-                    ใบงานนี้ปิดงานแล้ว
-                    </p>
-                )}
-
-                {canViewAllTeams && (
-                    <p className="tech-muted tech-note">
-                    Admin/Supervisor สามารถดูรายละเอียด
-                    และผลซ่อมของทุกชุดช่างได้
-                    แต่ไม่มีสิทธิ์แก้ไขผ่านหน้านี้
-                    </p>
-                )}
-                </div>
-
-            </>
-          )}
-        </section>
-      </div>
-    </div>
+              <button
+                disabled={
+                  deleteBusy ||
+                  deleteReason.trim().length < 10 ||
+                  deleteConfirm.trim() !==
+                    ticketLabel(deleteTarget)
+                }
+                type="button"
+                className="tech-btn-delete"
+                onClick={submitHardDelete}
+              >
+                ลบถาวร
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
+    </>
   )
 }

@@ -313,6 +313,7 @@ function buildOutageData(rows, networkType) {
   }
 }
 
+
 function buildDashboardNetwork(report, networkType, inventoryCount = 0) {
   const details = Array.isArray(report?.details) ? report.details : []
   const hasReport = Boolean(report) && details.length > 0
@@ -382,10 +383,7 @@ function previewTextReport(snapshot) {
       ''
     )
   }
-  parts.push(
-    `รายการกล้องดับรายตัวสำหรับเตรียมแจ้งซ่อม: ${snapshot.repairItems.length} กล้อง`,
-    'รายการแจ้งซ่อมเป็นเพียงข้อมูลเตรียมงาน ยังไม่ได้สร้างใบแจ้งซ่อม',
-  )
+  parts.push('ข้อมูลใบงานแจ้งซ่อมตรวจสอบได้จากตารางติดตามงานใต้กราฟ')
   if (snapshot.note) parts.push(`หมายเหตุ: ${snapshot.note}`)
   if (snapshot.edited) parts.push('หมายเหตุ: มีการปรับยอดเพื่อจัดทำพรีวิว ตัวเลขรายการซ่อมอ้างอิงสถานะรายกล้องจริง')
   if (snapshot.hasDraft) parts.push('ข้อมูลบางเครือข่ายยังไม่ได้บันทึกลงฐานข้อมูล')
@@ -416,11 +414,312 @@ const getMessageTone = (message) => {
   return 'info'
 }
 
+const CCTV_REPAIR_OPEN = ['submitted', 'accepted', 'in_progress', 'completed']
+const CCTV_REPAIR_STATUS = {
+  submitted: 'เปิดงานแล้ว',
+  accepted: 'เปิดงานแล้ว (ข้อมูลเก่า)',
+  in_progress: 'กำลังซ่อม (ข้อมูลเก่า)',
+  completed: 'ซ่อมเสร็จ รอปิด (ข้อมูลเก่า)',
+}
+const cameraUnitKey = (network, label) =>
+  `${network}:${String(label || '').trim().toLocaleUpperCase()}`
+
+function cctvDateTime(date, time) {
+  if (!/^\d{4}-\d\d-\d\d$/.test(String(date || ''))) return null
+  if (!/^\d\d:\d\d/.test(String(time || ''))) return null
+  const value = new Date(`${date}T${(String(time).length === 5 ? `${time}:00` : String(time).slice(0, 8))}+07:00`)
+  return Number.isNaN(value.getTime()) ? null : value
+}
+
+function cctvThaiTime(value) {
+  if (!value) return 'รอระบุข้อมูล'
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return 'รอระบุข้อมูล'
+  return date.toLocaleString('th-TH-u-ca-buddhist', {
+    timeZone: 'Asia/Bangkok', day: '2-digit', month: '2-digit',
+    year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  })
+}
+
+function CctvRepairFollowUp({ centerId, reportDate, shift, previewNetworks, revision, onOpenRepair }) {
+  const [state, setState] = useState(null)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(0)
+  const [revisionLocal, setRevisionLocal] = useState(0)
+  const [actionBusy, setActionBusy] = useState(false)
+  const [userId, setUserId] = useState('')
+
+  useEffect(() => {
+    const refresh = () => setRevisionLocal(x => x + 1)
+    window.addEventListener('focus', refresh)
+    return () => window.removeEventListener('focus', refresh)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    setState(null)
+    setError('')
+    setPage(0)
+    if (!centerId) return () => { cancelled = true }
+    setLoading(true)
+
+    async function run() {
+      try {
+        const auth = await supabase.auth.getUser()
+        if (auth.error || !auth.data?.user?.id) throw new Error('กรุณาเข้าสู่ระบบใหม่')
+        const uid = auth.data.user.id
+        const orders = []
+        for (let offset = 0; ; offset += 500) {
+          const result = await supabase.from('cctv_repair_orders')
+            .select('id,ticket_no,center_id,center_name_snapshot,report_date,status,submitted_at,outage_date,outage_time,reporter_rank,reporter_name,created_at')
+            .eq('center_id', Number(centerId))
+            .in('status', ['draft', ...CCTV_REPAIR_OPEN])
+            .order('created_at', { ascending: false })
+            .range(offset, offset + 499)
+          if (result.error) throw result.error
+          orders.push(...(result.data || []))
+          if ((result.data || []).length < 500) break
+        }
+        const units = []
+        for (let i = 0; i < orders.length; i += 50) {
+          const r = await supabase.from('cctv_repair_order_units')
+            .select('order_id,unit_label,network_type,full_outage,down_camera_count,camera_snapshot')
+            .in('order_id', orders.slice(i, i + 50).map(x => x.id))
+          if (r.error) throw r.error
+          units.push(...(r.data || []))
+        }
+        // Latest saved report by network, independent of the selected preview day.
+        // A report that is not final must NOT be used to conclude a repair completed.
+        const reports = await supabase.from('camera_status_daily')
+          .select('network_type,report_date,shift,updated_at,is_final,details')
+          .eq('center_id', Number(centerId))
+          .lte('report_date', todayTH())
+          .order('report_date', { ascending: false })
+          .order('updated_at', { ascending: false })
+          .limit(100)
+        if (reports.error) throw reports.error
+        const acks = await supabase.from('cctv_repair_alert_ack')
+          .select('order_id,evidence_key,is_hidden,is_acknowledged')
+          .eq('user_id', uid)
+        if (acks.error) throw acks.error
+        if (!cancelled) {
+          setUserId(uid)
+          setState({ orders, units, reports: reports.data || [], acks: acks.data || [] })
+        }
+      } catch (err) {
+        if (!cancelled) setError(err.message || 'อ่านข้อมูลติดตามงานซ่อมไม่สำเร็จ')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [centerId, reportDate, shift, revision, revisionLocal])
+
+  const derived = useMemo(() => {
+    if (!state) return null
+    const byOrder = new Map()
+    for (const unit of state.units) {
+      const key = String(unit.order_id)
+      if (!byOrder.has(key)) byOrder.set(key, [])
+      byOrder.get(key).push(unit)
+    }
+    const openOrders = state.orders.filter(o => CCTV_REPAIR_OPEN.includes(o.status))
+    const draftOrders = state.orders.filter(o => o.status === 'draft')
+    const activeKeys = new Set()
+    const draftKeys = new Set()
+    for (const o of state.orders) {
+      for (const u of byOrder.get(String(o.id)) || []) {
+        const key = cameraUnitKey(u.network_type, u.unit_label)
+        if (o.status === 'draft') draftKeys.add(key)
+        else activeKeys.add(key)
+      }
+    }
+    const down = new Map()
+    for (const type of ['general', 'checkpoint']) {
+      const source = previewNetworks?.[type]
+      if (!source?.isSaved || !source.isFinal) continue
+      for (const cam of source.repairItems || []) {
+        if (!cam.is_confirmed || cam.location_known === false) continue
+        const label = String(cam.unit_label || '').trim()
+        if (!label) continue
+        const key = cameraUnitKey(type, label)
+        if (!down.has(key)) down.set(key, { key, label, count: 0 })
+        down.get(key).count += 1
+      }
+    }
+    const notReported = [...down.values()].filter(x => !activeKeys.has(x.key) && !draftKeys.has(x.key))
+    const inDraft = [...down.values()].filter(x => !activeKeys.has(x.key) && draftKeys.has(x.key))
+    const latest = new Map()
+    const shiftRank = { morning: 0, afternoon: 1, night: 2 }
+    for (const r of state.reports) {
+      const previous = latest.get(r.network_type)
+      const priority = `${r.report_date}:${shiftRank[r.shift] ?? -1}`
+      const previousPriority = previous ? `${previous.report_date}:${shiftRank[previous.shift] ?? -1}` : ''
+      if (!previous || priority > previousPriority ||
+        (priority === previousPriority && String(r.updated_at) > String(previous.updated_at))) {
+        latest.set(r.network_type, r)
+      }
+    }
+    const ackMap = new Map(state.acks.map(a => [String(a.order_id), a]))
+    const rows = openOrders.map(order => {
+      const related = byOrder.get(String(order.id)) || []
+      const uniques = new Set(related.map(u => cameraUnitKey(u.network_type, u.unit_label)))
+      const full = related.some(u => u.full_outage === true)
+      const part = related.some(u => u.full_outage !== true)
+      const outageType = full && part ? 'ผสม' : full ? 'ทั้งตู้/ด่าน' : 'รายตัว'
+      const outageAt = cctvDateTime(order.outage_date, order.outage_time)
+      const dueAt = outageAt ? new Date(outageAt.getTime() + 72 * 3600000) : null
+      const remaining = dueAt ? dueAt.getTime() - Date.now() : null
+      const sla = remaining === null ? 'unknown' : remaining <= 0 ? 'overdue' : remaining <= 24 * 3600000 ? 'soon' : 'normal'
+      let evidenceKey = ''
+      if (related.length && order.submitted_at) {
+        const stamps = []
+        let allOnline = true
+        for (const unit of related) {
+          const report = latest.get(unit.network_type)
+          const cams = Array.isArray(unit.camera_snapshot) ? unit.camera_snapshot : []
+          if (!report?.is_final || !report.updated_at ||
+              new Date(report.updated_at) <= new Date(order.submitted_at) ||
+              !cams.length || cams.some(cam => !String(cam.ip || '').trim())) {
+            allOnline = false
+            break
+          }
+          const cameraMap = new Map(
+            (Array.isArray(report.details) ? report.details : [])
+              .map(cam => [String(cam.ip || '').trim(), cam])
+          )
+          if (!cams.every(cam => {
+            const found = cameraMap.get(String(cam.ip).trim())
+            return found?.status === 'online' && found.confirmed === true
+          })) {
+            allOnline = false
+            break
+          }
+          stamps.push(`${unit.network_type}:${report.report_date}:${report.shift}:${report.updated_at}`)
+        }
+        if (allOnline) evidenceKey = [...new Set(stamps)].sort().join('|')
+      }
+      const ack = ackMap.get(String(order.id))
+      return {
+        ...order, unitsCount: uniques.size,
+        camerasCount: related.reduce((sum, u) => sum + Number(u.down_camera_count || 0), 0),
+        outageType, dueAt, sla, evidenceKey,
+        isHidden: !!evidenceKey && ack?.evidence_key === evidenceKey && ack.is_hidden === true,
+        isAcknowledged: !!evidenceKey && ack?.evidence_key === evidenceKey && ack.is_acknowledged === true,
+      }
+    })
+    return { rows, notReported, inDraft, drafts: draftOrders }
+  }, [state, previewNetworks])
+
+  async function updateAlert(row, kind) {
+    if (!userId || !row.evidenceKey || actionBusy) return
+    setActionBusy(true)
+    try {
+      const currentConfirmed = row.isAcknowledged
+      const r = await supabase.from('cctv_repair_alert_ack').upsert({
+        order_id: row.id, user_id: userId, evidence_key: row.evidenceKey,
+        is_hidden: kind === 'hide',
+        is_acknowledged: kind === 'confirm' || currentConfirmed,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'order_id,user_id' })
+      if (r.error) throw r.error
+      setState(old => old && ({ ...old, acks: [
+        ...old.acks.filter(a => String(a.order_id) !== String(row.id)),
+        { order_id: row.id, evidence_key: row.evidenceKey,
+          is_hidden: kind === 'hide', is_acknowledged: kind === 'confirm' || currentConfirmed },
+      ] }))
+    } catch (err) {
+      setError(`บันทึกการแจ้งเตือนไม่สำเร็จ: ${err.message}`)
+    } finally { setActionBusy(false) }
+  }
+
+  if (loading && !state) return <div className="csr-repair-loading">กำลังตรวจสอบใบแจ้งซ่อม...</div>
+  if (error) return <div className="csr-repair-error" role="alert">{error}<button type="button" onClick={() => setRevisionLocal(x => x + 1)}>ลองใหม่</button></div>
+  if (!derived || (!derived.rows.length && !derived.notReported.length && !derived.inDraft.length)) return null
+
+  const pageSize = 12
+  const totalPages = Math.max(1, Math.ceil(derived.rows.length / pageSize))
+  const currentPage = Math.min(page, totalPages - 1)
+  const shown = derived.rows.slice(currentPage * pageSize, (currentPage + 1) * pageSize)
+  const recovered = derived.rows.filter(r => r.evidenceKey && !r.isHidden)
+  const hidden = derived.rows.filter(r => r.evidenceKey && r.isHidden)
+
+  return (
+    <section className="csr-dashboard-repair-section csr-repair-followup">
+      <div className="csr-dashboard-section-heading">
+        <h3>ติดตามใบแจ้งซ่อม CCTV</h3>
+        <span>{derived.rows.length} ใบงานค้าง · {derived.notReported.length} ตู้/ด่านยังไม่แจ้ง</span>
+      </div>
+      {(derived.notReported.length > 0 || derived.inDraft.length > 0) && (
+        <div className="csr-repair-warning">
+          <strong>พบกล้องดับที่ยังไม่ได้เปิดใบงาน</strong>
+          <span>ยังไม่แจ้ง {derived.notReported.length} ตู้/ด่าน · รอส่งฉบับร่าง {derived.inDraft.length} ตู้/ด่าน</span>
+          <div className="csr-repair-action-row" data-html2canvas-ignore="true">
+            <button type="button" disabled={!onOpenRepair} onClick={() => onOpenRepair?.({ centerId, reportDate, shift })}>ไปหน้าแจ้งซ่อม</button>
+          </div>
+        </div>
+      )}
+      {!!derived.rows.length && (
+        <>
+          <div className="csr-repair-table-scroll">
+            <table className="csr-repair-work-table">
+              <thead><tr>
+                <th>เลขที่ใบงาน</th><th>วันเวลาที่แจ้ง</th><th>วันเวลากล้องดับ</th>
+                <th>วันเวลาหมด SLA</th><th>ศูนย์</th><th>ประเภทการดับ</th>
+                <th>จำนวนตู้/ด่าน</th><th>จำนวนกล้องดับ</th><th>สถานะ</th><th>คนแจ้ง</th>
+              </tr></thead>
+              <tbody>{shown.map(row => (
+                <tr key={row.id}>
+                  <td><strong>{row.ticket_no || `#${row.id}`}</strong></td>
+                  <td>{cctvThaiTime(row.submitted_at)}</td>
+                  <td>{cctvThaiTime(cctvDateTime(row.outage_date, row.outage_time))}</td>
+                  <td className={row.sla === 'overdue' ? 'csr-sla-overdue' : row.sla === 'soon' ? 'csr-sla-soon' : ''}>
+                    {cctvThaiTime(row.dueAt)}
+                    {row.sla === 'overdue' && <small>เกิน SLA</small>}
+                    {row.sla === 'soon' && <small>เหลือไม่เกิน 24 ชม.</small>}
+                  </td>
+                  <td>{row.center_name_snapshot || '-'}</td>
+                  <td>{row.outageType}</td><td className="is-number">{row.unitsCount}</td>
+                  <td className="is-number">{row.camerasCount}</td>
+                  <td>{CCTV_REPAIR_STATUS[row.status] || row.status}</td>
+                  <td>{[row.reporter_rank, row.reporter_name].filter(Boolean).join(' ') || '-'}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+          {totalPages > 1 && <div className="csr-repair-pagination" data-html2canvas-ignore="true">
+            <span>แสดงใบงาน {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, derived.rows.length)} จาก {derived.rows.length} · ภาพ PNG แสดงเฉพาะหน้านี้</span>
+            <button type="button" disabled={!currentPage} onClick={() => setPage(p => p - 1)}>ก่อนหน้า</button>
+            <strong>{currentPage + 1}/{totalPages}</strong>
+            <button type="button" disabled={currentPage >= totalPages - 1} onClick={() => setPage(p => p + 1)}>ถัดไป</button>
+          </div>}
+        </>
+      )}
+      {recovered.map(row => <div className="csr-repair-recovered" key={`alert-${row.id}`}>
+        <div><strong>{row.ticket_no || `#${row.id}`}: กล้องในใบงานกลับมาติดปกติครบแล้ว</strong>
+          <p>{row.isAcknowledged ? 'รับทราบแล้ว แต่ใบงานยังเปิดอยู่' : 'อาจซ่อมเสร็จแล้วแต่ลืมปิดงาน กรุณาตรวจสอบกับช่าง'}</p></div>
+        <div className="csr-repair-action-row" data-html2canvas-ignore="true">
+          <button type="button" disabled={actionBusy} onClick={() => updateAlert(row, 'hide')}>ซ่อนแจ้งเตือน</button>
+          {!row.isAcknowledged && <button type="button" disabled={actionBusy} onClick={() => updateAlert(row, 'confirm')}>ยืนยันตรวจสอบแล้ว</button>}
+        </div>
+      </div>)}
+      {hidden.length > 0 && <div className="csr-repair-hidden" data-html2canvas-ignore="true">
+        การแจ้งเตือนที่ซ่อน {hidden.length} รายการ
+        {hidden.map(row => <button type="button" key={row.id} disabled={actionBusy} onClick={() => updateAlert(row, 'show')}>แสดง {row.ticket_no}</button>)}
+      </div>}
+      <p className="csr-dashboard-footer-note">ใบงานหนึ่งใบต่อหนึ่งแถว · SLA นับ 72 ชั่วโมงจากวันเวลากล้องดับ · ใบงานค้างไม่หายเมื่อเปลี่ยนวันรายงาน · กล้องกลับมาติดไม่ใช่การปิดงานอัตโนมัติ</p>
+    </section>
+  )
+}
+
 function CameraStatusReportCenter({
   profile,
   shift,
   initialCenterId,
   onCenterChange,
+  onOpenRepair,
 }) {
   const role = String(
     profile?.role || ''
@@ -538,6 +837,8 @@ function CameraStatusReportCenter({
   const [previewCache, setPreviewCache] = useState({ general: null, checkpoint: null })
   const [previewCacheScope, setPreviewCacheScope] = useState('')
   const [previewEditorOpen, setPreviewEditorOpen] = useState(false)
+  
+
   const [previewTitle, setPreviewTitle] = useState('สรุปรายงานสถานะกล้องประจำวัน')
   const [previewNote, setPreviewNote] = useState('')
   const [previewOverrides, setPreviewOverrides] = useState({ general: null, checkpoint: null })
@@ -2250,7 +2551,7 @@ const boxGroups = useMemo(() => {
       const checkpoint = Number(data?.checkpoint_count || 0)
 
       // คืนค่าการปรับพรีวิวด้วย
-      setPreviewTitle('สรุปรายงานสถานะกล้องประจำวัน')
+        setPreviewTitle('สรุปรายงานสถานะกล้องประจำวัน')
       setPreviewNote('')
       setPreviewOverrides({
         general: null,
@@ -2354,14 +2655,11 @@ const boxGroups = useMemo(() => {
     reportDate, shiftLabel: SHIFTS[shift] || '-',
     general: generalPreview,
     checkpoint: checkpointPreview,
-    repairItems: [
-      ...previewNetworks.general.repairItems.map(x => ({ ...x, network_label: 'กล้องทั่วไป' })),
-      ...previewNetworks.checkpoint.repairItems.map(x => ({ ...x, network_label: 'กล้องด่าน' })),
-    ],
     edited: Boolean(previewOverrides.general || previewOverrides.checkpoint),
     hasDraft: [generalPreview, checkpointPreview].some(x => x.hasReport && !x.isSaved),
   }
 
+  
   // Keep report selection stable before preparing export.
   async function renderDashboardCanvas() {
     if (!previewRef.current) throw new Error('ไม่พบพื้นที่พรีวิว')
@@ -3372,7 +3670,7 @@ const boxGroups = useMemo(() => {
           <div>
             <span className="csr-dashboard-eyebrow">DAILY CCTV REPORT</span>
             <h3>พรีวิว Dashboard สำหรับส่งงาน</h3>
-            <p>สรุปสองเครือข่ายจากผลรายกล้อง และเตรียมรายการกล้องดับไว้สำหรับหน้าการแจ้งซ่อม</p>
+            <p>สรุปผล Ping สองเครือข่าย พร้อมตารางใบงานค้างและการติดตาม SLA</p>
           </div>
           <div className="csr-dashboard-actions">
             <button type="button" onClick={() => setPreviewEditorOpen(x => !x)}>
@@ -3407,6 +3705,7 @@ const boxGroups = useMemo(() => {
           </div>
         </div>
 
+        
         {previewEditorOpen && (
           <div className="csr-dashboard-editor">
             <div className="csr-dashboard-editor-head">
@@ -3553,23 +3852,17 @@ const boxGroups = useMemo(() => {
             })}
           </div>
 
-          <section className="csr-dashboard-repair-section">
-            <div className="csr-dashboard-section-heading"><h3>รายการกล้องดับ — ข้อมูลเตรียมแจ้งซ่อม</h3><span>{previewSnapshot.repairItems.length} กล้อง</span></div>
-            <div className="csr-dashboard-table-scroll"><table className="csr-dashboard-repair-table">
-              <thead><tr><th>เครือข่าย</th><th>ตู้ / ด่าน</th><th>ชื่อกล้อง</th><th>IP</th><th>ประเภทการดับ</th><th>ยืนยัน</th></tr></thead>
-              <tbody>
-                {previewSnapshot.repairItems.slice(0, 12).map((item, i) => <tr key={`${item.network_type}-${item.ip}-${i}`}>
-                  <td>{item.network_label}</td><td>{item.unit_label}</td><td>{item.camera_name}</td>
-                  <td className="csr-dashboard-ip">{item.ip}</td>
-                  <td>{item.outage_scope === 'full_unit' ? `ดับทั้ง${item.network_type === 'general' ? 'ตู้' : 'ด่าน'}` : 'ดับรายตัว'}</td>
-                  <td>{item.is_confirmed ? 'ยืนยันแล้ว' : 'รอยืนยัน'}</td>
-                </tr>)}
-              </tbody>
-            </table></div>
-            {previewSnapshot.repairItems.length === 0 && <div className="csr-dashboard-nodata">ยังไม่พบกล้องดับในข้อมูลรายงาน</div>}
-            {previewSnapshot.repairItems.length > 12 && <p className="csr-dashboard-overflow-note">แสดงในภาพ 12 รายการแรกจาก {previewSnapshot.repairItems.length} รายการ • ระบบเก็บรายละเอียดครบทุกตัวไว้ในฐานข้อมูลเมื่อกดบันทึกรายงาน</p>}
-            <p className="csr-dashboard-footer-note">สรุปจากข้อมูลกล้องรายตัวตามวัน/กะที่เลือก • ยังไม่ได้สร้างใบแจ้งซ่อมหรือเปลี่ยนสถานะงานซ่อม</p>
-          </section>
+          
+          <CctvRepairFollowUp
+            centerId={centerId}
+            reportDate={reportDate}
+            shift={shift}
+            previewNetworks={previewNetworks}
+            revision={reloadIndex}
+            onOpenRepair={onOpenRepair}
+          />
+
+
         </div>
       </section>
 

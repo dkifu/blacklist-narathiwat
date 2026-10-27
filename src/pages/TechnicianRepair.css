@@ -1,8 +1,19 @@
 
+/* TechnicianRepair.css — Desktop + Mobile */
+
 .tech-page {
+  width: 100%;
   max-width: 1450px;
   margin: 0 auto;
   color: #e8edf5;
+  min-width: 0;
+}
+
+.tech-page *,
+.tech-dialog *,
+.tech-dialog *::before,
+.tech-dialog *::after {
+  box-sizing: border-box;
 }
 
 .tech-head {
@@ -10,355 +21,1031 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .tech-head h2 {
-  margin: 5px 0;
-  font-size: 26px;
+  margin: 4px 0;
+  font-size: 25px;
 }
 
 .tech-head p,
 .tech-muted {
-  color: #9da8b8;
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #9fb0c7;
 }
 
 .tech-kicker {
-  color: #ed5078;
-  font-size: 11px;
-  letter-spacing: 1.3px;
+  font-size: 10px;
   font-weight: 700;
+  color: #f05b83;
+  letter-spacing: 1.2px;
 }
 
 .tech-panel {
-  background: #171c26;
-  border: 1px solid #303847;
-  border-radius: 14px;
-  padding: 18px;
   min-width: 0;
+  background: #171c26;
+  border: 1px solid #303f53;
+  border-radius: 13px;
+  padding: 17px;
+}
+
+.tech-panel h3 {
+  font-size: 16px;
+  margin: 0 0 15px;
+}
+
+.tech-panel h4 {
+  font-size: 13px;
+  margin: 20px 0 10px;
 }
 
 .tech-refresh {
-  border: 1px solid #bc2b54;
-  background: #a61943;
+  min-height: 42px;
+  padding: 9px 15px;
+  border-radius: 8px;
   color: #fff;
-  border-radius: 10px;
-  padding: 12px 16px;
+  background: #a61943;
+  border: 1px solid #bc2b54;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.tech-refresh:disabled {
-  opacity: .55;
-  cursor: wait;
+.tech-refresh:disabled,
+.tech-page button:disabled,
+.tech-dialog button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
 }
 
 .tech-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tech-stats .tech-panel {
+  padding: 14px;
 }
 
 .tech-stats span {
-  display: block;
-  color: #9da8b8;
-  font-size: 12px;
+  font-size: 11px;
+  color: #a0b1c6;
 }
 
 .tech-stats strong {
   display: block;
-  margin-top: 6px;
-  font-size: 28px;
+  margin-top: 7px;
+  font-size: 23px;
+  color: #fff;
+}
+
+.tech-error,
+.tech-success,
+.tech-warning {
+  border-radius: 9px;
+  padding: 11px 13px;
+  margin: 10px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tech-error {
+  border: 1px solid #914052;
+  background: #331c2b;
+  color: #ffb9c9;
+}
+
+.tech-success {
+  border: 1px solid #2d7960;
+  background: #142d2b;
+  color: #aff2d7;
+}
+
+.tech-warning {
+  border: 1px solid #966b37;
+  background: #352a1b;
+  color: #ffe2a9;
+}
+
+.tech-filter-panel {
+  margin-bottom: 14px;
+}
+
+.tech-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.tech-filter-grid label,
+.tech-dialog-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #dce7f6;
+}
+
+.tech-filter-grid input,
+.tech-filter-grid select,
+.tech-dialog-body input:not([type='checkbox']):not([type='radio']),
+.tech-dialog-body textarea,
+.tech-dialog-body select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 9px 11px;
+  background: #1a2a3e;
+  border: 1px solid #3b5370;
+  border-radius: 7px;
+  color: #f2f6ff;
+  color-scheme: dark;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.tech-filter-grid :is(input, select):focus,
+.tech-dialog-body :is(input, textarea, select):focus {
+  border-color: #61a5f6 !important;
+  box-shadow: 0 0 0 3px rgba(97, 165, 246, .14) !important;
+  outline: none;
+}
+
+.tech-filter-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  font-size: 11px;
+  color: #a9bbd0;
+}
+
+.tech-filter-bottom button,
+.tech-pagination button {
+  cursor: pointer;
+  border: 1px solid #48627e;
+  background: #203147;
+  color: #eaf4ff;
+  border-radius: 8px;
+  min-height: 38px;
+  padding: 8px 12px;
 }
 
 .tech-grid {
   display: grid;
   grid-template-columns:
     minmax(280px, 1fr)
-    minmax(340px, 1.45fr);
-  gap: 18px;
+    minmax(370px, 1.45fr);
+  gap: 16px;
   align-items: start;
 }
 
-.tech-panel h3 {
-  margin: 0 0 18px;
-  font-size: 17px;
+.tech-order-list {
+  display: grid;
+  gap: 9px;
 }
 
-.tech-panel h4 {
-  margin: 22px 0 10px;
-}
-
-.tech-order {
+.tech-list-card {
   display: flex;
-  flex-direction: column;
-  width: 100%;
-  text-align: left;
-  gap: 5px;
-  margin-top: 10px;
-  padding: 14px;
-  border: 1px solid #333d50;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+  border: 1px solid #34455d;
   border-radius: 10px;
-  background: #111824;
-  color: inherit;
+  background: #142135;
+  padding: 11px;
+}
+
+.tech-list-card.is-selected {
+  border-color: #ed4774;
+  background: #281c2c;
+}
+
+.tech-list-select {
+  display: flex;
+  flex: 1 1 175px;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  color: #fff;
+  background: transparent;
+}
+
+.tech-list-select strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.tech-list-select span,
+.tech-list-select small {
+  font-size: 10px;
+  line-height: 1.5;
+  color: #adc2d9;
+  overflow-wrap: anywhere;
+}
+
+.tech-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tech-list-actions button,
+.tech-dialog-foot button {
+  border: 1px solid #50617a;
+  border-radius: 8px;
+  min-height: 38px;
+  padding: 8px 11px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
   cursor: pointer;
 }
 
-.tech-order.selected {
-  border-color: #e93b70;
-  background: #251822;
+.tech-btn-close {
+  background: #5a1e38;
+  border-color: #bf4977 !important;
+  color: #ffd4e2 !important;
 }
 
-.tech-order span,
-.tech-order small,
-.tech-unit span,
-.tech-unit small {
-  color: #a5b2c3;
+.tech-btn-edit {
+  background: #183d3b;
+  border-color: #397d72 !important;
+  color: #bbffdf !important;
+}
+
+.tech-btn-cancel {
+  background: #49301c;
+  border-color: #a8763d !important;
+  color: #ffe3ab !important;
+}
+
+.tech-btn-delete {
+  background: #701e2a;
+  border-color: #d94a65 !important;
+  color: #ffe4e8 !important;
+}
+
+.tech-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 15px;
+  color: #afc2d8;
   font-size: 12px;
 }
 
 .tech-detail-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tech-detail-head strong {
+  font-size: 15px;
+  color: #fff;
 }
 
 .tech-detail-head span {
-  color: #ffca7a;
-  font-size: 12px;
+  color: #ffd18b;
+  font-size: 11px;
+}
+
+.tech-order-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 15px 0 20px;
+}
+
+.tech-order-dates > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  border: 1px solid #344e6b;
+  border-radius: 8px;
+  background: #1a2b41;
+  padding: 10px;
+}
+
+.tech-order-dates small {
+  color: #afc5db;
+  font-size: 10px;
+}
+
+.tech-order-dates strong {
+  font-size: 11px;
+  color: #fff;
+  overflow-wrap: anywhere;
 }
 
 .tech-unit {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  margin-top: 10px;
-  padding: 14px;
-  border-radius: 10px;
-  background: #111824;
-  border: 1px solid #303847;
-}
-
-.tech-error {
+  gap: 6px;
   padding: 12px;
-  border: 1px solid #984256;
-  border-radius: 10px;
-  margin: 10px 0;
-  color: #ff9eb0;
+  margin-top: 9px;
+  border-radius: 9px;
+  background: #101927;
+  border: 1px solid #30415a;
 }
 
-.tech-note {
-  margin-top: 24px;
-  border-top: 1px solid #303847;
-  padding-top: 15px;
+.tech-unit-headline {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 10px;
 }
+
+.tech-unit-headline strong {
+  font-size: 12px;
+  color: #fff;
+}
+
+.tech-unit-headline span,
+.tech-unit-coordinates {
+  font-size: 10px;
+  color: #aac5e1;
+}
+
+.tech-unit-camera-details {
+  border: 1px solid #3b5675;
+  border-radius: 7px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.tech-unit-camera-details summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #1c3550;
+  color: #dfecff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tech-unit-camera-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.tech-unit-camera-details summary::after {
+  content: '▾';
+}
+
+.tech-unit-camera-details[open] summary::after {
+  content: '▴';
+}
+
+.tech-unit-camera-list {
+  max-height: 235px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 4px 12px;
+  background: #0e1927;
+  color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: #526d88 #0e1927;
+}
+
+.tech-unit-camera-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  padding: 7px 0;
+  border-top: 1px solid #304258;
+}
+
+.tech-unit-camera-row:first-child {
+  border-top: 0;
+}
+
+.tech-unit-camera-row span {
+  color: #e1ebff;
+  font-size: 11px;
+}
+
+.tech-unit-camera-row small {
+  color: #aec8e2;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.tech-closed-summary {
+  margin-top: 17px;
+  padding: 13px;
+  background: #172a29;
+  border: 1px solid #386958;
+  border-radius: 9px;
+}
+
+.tech-closed-summary h4 {
+  margin: 0 0 12px;
+}
+
+.tech-closed-summary p {
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.tech-closed-summary details,
+.tech-history {
+  margin-top: 12px;
+  border: 1px solid #38506c;
+  border-radius: 8px;
+  padding: 9px;
+}
+
+.tech-closed-summary summary,
+.tech-history summary {
+  cursor: pointer;
+  color: #c3ddf5;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tech-saved-equipment {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+  font-size: 11px;
+}
+
+.tech-history-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid #2c4059;
+  font-size: 11px;
+}
+
+.tech-history-row:last-child {
+  border: 0;
+}
+
+.tech-history-row small {
+  color: #9fb8d4;
+}
+
+/* ===== MODAL ===== */
+
+.tech-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(3, 8, 15, .82);
+}
+
+.tech-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(1080px, 100%);
+  max-height: min(93vh, 950px);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #435a75;
+  border-radius: 14px;
+  background: #111e2e;
+  color: #f1f6ff;
+  box-shadow: 0 24px 70px #0009;
+}
+
+.tech-small-dialog {
+  width: min(530px, 100%);
+}
+
+.tech-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px 18px;
+  border-bottom: 1px solid #334861;
+}
+
+.tech-dialog-head small {
+  color: #f18a9e;
+  font-size: 10px;
+}
+
+.tech-dialog-head h3 {
+  font-size: 17px;
+  line-height: 1.35;
+  margin: 3px 0;
+}
+
+.tech-dialog-head button,
+.tech-dialog-foot > button:first-child {
+  cursor: pointer;
+  border: 1px solid #516782;
+  background: #20344e;
+  color: #fff;
+  border-radius: 8px;
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.tech-dialog-body {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  padding: 18px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: #536e8a #111e2e;
+}
+
+.tech-dialog-body textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.tech-dialog-body input:read-only {
+  opacity: .8;
+}
+
+.tech-dialog-body :is(input, textarea, select):disabled {
+  opacity: .55;
+}
+
+.tech-form-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.tech-form-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tech-form-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tech-sla {
+  display: grid;
+  gap: 9px;
+  border: 1px solid #3d546e;
+  border-radius: 9px;
+  padding: 12px;
+}
+
+.tech-sla > strong {
+  font-size: 13px;
+}
+
+.tech-sla > small {
+  color: #adc5dd;
+  font-size: 11px;
+}
+
+.tech-sla-options {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.tech-dialog-body .tech-sla-options label,
+.tech-dialog-body .tech-equipment-checks label,
+.tech-dialog-body label.tech-check {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.tech-dialog-body input[type='checkbox'],
+.tech-dialog-body input[type='radio'] {
+  width: 17px;
+  height: 17px;
+  accent-color: #e95e83;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tech-dialog-body h4 {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.tech-equipment-list {
+  display: grid;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 9px;
+  border: 1px solid #39516b;
+  border-radius: 9px;
+  background: #0f1b2c;
+  scrollbar-width: thin;
+  scrollbar-color: #526f8e #0f1b2c;
+}
+
+.tech-equipment-item {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto;
+  gap: 8px 14px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #334b67;
+  background: #1a2a3c;
+}
+
+.tech-equipment-item > strong {
+  font-size: 12px;
+}
+
+.tech-equipment-checks {
+  display: flex;
+  gap: 13px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.tech-equipment-fields {
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.tech-dialog-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 18px;
+  border-top: 1px solid #334861;
+  background: #111e2e;
+}
+
+.tech-dialog-foot .tech-btn-close,
+.tech-dialog-foot .tech-btn-cancel,
+.tech-dialog-foot .tech-btn-delete {
+  min-height: 40px;
+}
+
+/* ===== TABLET ===== */
 
 @media (max-width: 1050px) {
+  .tech-grid {
+    grid-template-columns: 1fr;
+  }
+
   .tech-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .tech-grid {
-    grid-template-columns: 1fr;
+  .tech-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 600px) {
+/* ===== MOBILE ===== */
+
+@media (max-width: 640px) {
+  .tech-page {
+    width: 100%;
+    min-width: 0;
+    padding: 3px;
+  }
+
   .tech-head {
-    align-items: flex-start;
     flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .tech-head h2 {
+    font-size: 21px;
+  }
+
+  .tech-refresh {
+    width: 100%;
+    min-height: 45px;
+  }
+
+  .tech-panel {
+    padding: 12px;
   }
 
   .tech-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .tech-stats .tech-panel {
+    padding: 12px;
+  }
+
+  .tech-stats strong {
+    font-size: 20px;
+  }
+
+  .tech-filter-grid {
     grid-template-columns: 1fr;
   }
-}
 
-
-/* ===== Repair workflow ===== */
-
-.tech-workflow {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
-}
-
-.tech-workflow h4 {
-  margin: 16px 0 12px;
-  font-size: 16px;
-}
-
-.tech-result-form {
-  display: grid;
-  gap: 14px;
-  margin-top: 16px;
-}
-
-.tech-result-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.tech-result-form input,
-.tech-result-form textarea {
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
-  padding: 10px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 9px;
-  background: #fff;
-  color: #0f172a;
-  font: inherit;
-  font-weight: 400;
-}
-
-.tech-result-form textarea {
-  resize: vertical;
-}
-
-.tech-result-form input:disabled,
-.tech-result-form textarea:disabled {
-  opacity: 1;
-  background: #f8fafc;
-  color: #475569;
-}
-
-.tech-equipment-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #f8fafc;
-}
-
-.tech-equipment-name {
-  grid-column: 1 / -1;
-}
-
-.tech-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.tech-primary-action,
-.tech-secondary-action,
-.tech-remove-equipment {
-  padding: 10px 16px;
-  border: none;
-  border-radius: 9px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.tech-primary-action {
-  color: white;
-  background: #2563eb;
-}
-
-.tech-secondary-action {
-  color: #1d4ed8;
-  background: #dbeafe;
-}
-
-.tech-remove-equipment {
-  color: #b91c1c;
-  background: #fee2e2;
-}
-
-.tech-primary-action:disabled,
-.tech-secondary-action:disabled,
-.tech-remove-equipment:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.tech-success {
-  padding: 11px 14px;
-  border-radius: 9px;
-  background: #ecfdf5;
-  color: #047857;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-@media (max-width: 600px) {
-  .tech-equipment-row {
-    grid-template-columns: minmax(0, 1fr);
+  .tech-filter-grid input,
+  .tech-filter-grid select {
+    min-height: 46px;
+    font-size: 16px;
   }
 
-  .tech-equipment-name {
-    grid-column: auto;
+  .tech-filter-bottom {
+    align-items: stretch;
   }
 
-  .tech-actions > button {
+  .tech-filter-bottom button {
     width: 100%;
+    min-height: 44px;
+  }
+
+  .tech-list-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tech-list-select {
+    width: 100%;
+    min-height: 46px;
+    flex: auto;
+  }
+
+  .tech-list-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tech-list-actions button {
+    width: 100%;
+    min-height: 44px;
+    white-space: normal;
+  }
+
+  .tech-pagination button {
+    min-height: 44px;
+  }
+
+  .tech-order-dates {
+    grid-template-columns: 1fr;
+  }
+
+  .tech-unit-camera-details summary {
+    min-height: 45px;
+  }
+
+  .tech-overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .tech-dialog {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .tech-dialog-head {
+    flex: 0 0 auto;
+    padding: 12px;
+  }
+
+  .tech-dialog-head h3 {
+    font-size: 15px;
+  }
+
+  .tech-dialog-body {
+    flex: 1 1 auto;
+    padding: 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tech-dialog-body input:not([type='checkbox']):not([type='radio']),
+  .tech-dialog-body textarea,
+  .tech-dialog-body select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .tech-form-grid.two,
+  .tech-form-grid.three {
+    grid-template-columns: 1fr;
+  }
+
+  .tech-equipment-list {
+    max-height: none;
+  }
+
+  .tech-equipment-item {
+    grid-template-columns: 1fr;
+  }
+
+  .tech-equipment-checks {
+    justify-content: flex-start;
+  }
+
+  .tech-equipment-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tech-dialog-foot {
+    flex: 0 0 auto;
+    padding: 12px 12px calc(
+      12px + env(safe-area-inset-bottom)
+    );
+  }
+
+  .tech-dialog-foot button {
+    min-height: 46px !important;
+  }
+
+  .tech-dialog-foot button:last-child {
+    flex: 1;
   }
 }
 
+/* =========================================
+   FIX: EQUIPMENT LIST COLLAPSED
+   แก้รายการอุปกรณ์ถูกบีบจนมองไม่เห็น
+========================================= */
 
-/* ===== Dark theme refinements ===== */
+/* ให้ Modal เลื่อนทั้งเนื้อหา ไม่บีบ Grid ภายใน */
+.tech-dialog-body {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
 
-.tech-workflow {
-  border-top-color: #303847;
+  flex: 1 1 auto;
+  min-height: 0;
+
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  gap: 12px;
 }
 
-.tech-result-form input,
-.tech-result-form textarea {
-  background: #111824;
-  color: #e8edf5;
-  border-color: #3a4659;
+/* ห้ามแต่ละส่วนถูกบีบความสูง */
+.tech-dialog-body > * {
+  flex-shrink: 0;
 }
 
-.tech-result-form input:focus,
-.tech-result-form textarea:focus {
-  outline: 2px solid #e93b70;
-  outline-offset: 1px;
-  border-color: #e93b70;
+/* รายการอุปกรณ์ขยายตามจำนวนจริง 14 ประเภท */
+.tech-dialog-body .tech-equipment-list {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+
+  width: 100%;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 100px;
+
+  overflow: visible !important;
+
+  flex: 0 0 auto;
+  gap: 10px;
+  padding: 10px;
 }
 
-.tech-result-form input:disabled,
-.tech-result-form textarea:disabled {
-  background: #1c2431;
-  color: #a5b2c3;
+/* การ์ดอุปกรณ์แต่ละประเภท */
+.tech-dialog-body .tech-equipment-item {
+  display: grid !important;
+  grid-template-columns: minmax(120px, 1fr) auto;
+  align-items: center;
+
+  height: auto !important;
+  min-height: 55px;
+  overflow: visible;
+
+  padding: 12px;
+  gap: 10px;
 }
 
-.tech-equipment-row {
-  background: #111824;
-  border-color: #303847;
-}
-
-.tech-primary-action {
-  background: #a61943;
+/* แสดงชื่ออุปกรณ์ */
+.tech-equipment-item > strong {
+  display: block;
+  min-width: 0;
+  font-size: 13px;
   color: #ffffff;
 }
 
-.tech-secondary-action {
-  background: #35202d;
-  color: #ffb5cb;
-  border: 1px solid #81304b;
+/* ช่องเสีย / ค้าง */
+.tech-equipment-checks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
 }
 
-.tech-remove-equipment {
-  background: #3a2029;
-  color: #ff9eb0;
+/* ช่องรายละเอียดเมื่อเลือกอุปกรณ์ */
+.tech-equipment-fields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
 }
 
-.tech-success {
-  background: #12382f;
-  color: #9af2d0;
+/* MOBILE */
+@media (max-width: 640px) {
+  .tech-dialog-body .tech-equipment-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tech-equipment-checks {
+    justify-content: flex-start;
+  }
+
+  .tech-equipment-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 380px) {
+  .tech-equipment-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* S/N แยกตามจำนวนอุปกรณ์เสีย */
+
+.tech-serial-rows {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tech-serial-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #435c77;
+  border-radius: 9px;
+  background: #122137;
+  min-width: 0;
+}
+
+.tech-serial-pair > strong {
+  grid-column: 1 / -1;
+  color: #c0dcfb;
+  font-size: 12px;
+}
+
+.tech-serial-pair label {
+  min-width: 0;
+}
+
+.tech-serial-pair input {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .tech-serial-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tech-serial-pair > strong {
+    grid-column: 1;
+  }
 }

@@ -309,6 +309,44 @@
   line-height: 1.6;
 }
 
+/* =========================================
+   COMPACT OFFLINE UNIT CARD
+========================================= */
+
+.repair-page .repair-available-unit-card {
+  position: relative;
+  min-height: 88px;
+  padding: 10px 155px 10px 12px;
+  gap: 4px;
+  justify-content: center;
+}
+
+/* ปุ่มอยู่ด้านขวากึ่งกลางการ์ด */
+.repair-page .repair-available-unit-card > button {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-top: 0;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+/* หน้าจอมือถือ */
+@media (max-width: 520px) {
+  .repair-page .repair-available-unit-card {
+    min-height: 0;
+    padding: 10px 12px;
+  }
+
+  .repair-page .repair-available-unit-card > button {
+    position: static;
+    transform: none;
+    align-self: flex-start;
+    margin-top: 4px;
+  }
+}
+
 
 /* =========================================
    UNIT ACTION BUTTONS
@@ -473,6 +511,22 @@
 
   font-size: 12px;
   line-height: 1.7;
+}
+
+/* MESSAGE SUCCESS - GREEN */
+.repair-page .repair-message--success {
+  color: #4adea0;
+  background: rgba(34, 197, 94, 0.10);
+  border: 1px solid rgba(34, 197, 94, 0.40);
+  border-left: 4px solid #22c55e;
+}
+
+/* MESSAGE ERROR - RED */
+.repair-page .repair-message--error {
+  color: #fda4af;
+  background: rgba(239, 68, 68, 0.10);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  border-left: 4px solid #ef4444;
 }
 
 
@@ -684,6 +738,168 @@
   background: rgba(255, 65, 108, 0.13);
   border-color: #ff416c;
   color: #ffffff;
+}
+
+/* =========================================
+   COMPACT REPAIR ORDER UNIT CARD
+========================================= */
+
+/* ลดความสูงเฉพาะการ์ดฝั่งขวา */
+
+/* การ์ดฝั่งขวาแบบกระชับ */
+.repair-page .repair-order-unit-card {
+  padding: 9px 12px;
+  gap: 5px;
+}
+
+/* แถวบนของการ์ด */
+.repair-page .repair-order-unit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* รหัสตู้และจำนวนกล้อง */
+.repair-page .repair-order-unit-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  min-width: 0;
+}
+
+.repair-page .repair-order-unit-title strong {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #ffffff;
+}
+
+/* จำนวนกล้องดับ */
+.repair-page .repair-order-unit-title
+.repair-order-unit-count {
+  color: #c2d4e8;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* ปุ่มนำออก อยู่มุมขวาบน */
+.repair-page .repair-order-unit-head
+.repair-remove-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-top: 0;
+  padding: 6px 9px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* ลดช่องว่างก่อนปุ่มพับรายชื่อกล้อง */
+.repair-page .repair-order-unit-card
+details.repair-camera-snapshot {
+  margin-top: 2px;
+}
+
+@media (max-width: 480px) {
+  .repair-page .repair-order-unit-head {
+    flex-wrap: wrap;
+  }
+
+  .repair-page .repair-order-unit-head
+  .repair-remove-button {
+    margin-left: auto;
+  }
+}
+
+
+/* กล่องรายชื่อกล้องแบบพับได้ */
+.repair-page details.repair-camera-snapshot {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+/* แถบเปิด/ปิดรายชื่อกล้อง */
+.repair-page .repair-camera-snapshot-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding: 9px 12px;
+
+  color: #b8d5f5;
+  background: #1b3048;
+  border: 1px solid #385471;
+  border-radius: 8px;
+
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+
+  list-style: none;
+  user-select: none;
+}
+
+/* ซ่อนลูกศรค่าเริ่มต้นของเบราว์เซอร์ */
+.repair-page .repair-camera-snapshot-toggle::-webkit-details-marker {
+  display: none;
+}
+
+/* ลูกศรสถานะพับ */
+.repair-page .repair-camera-snapshot-toggle::after {
+  content: '▾';
+  color: #9ebcdd;
+  font-size: 15px;
+  transition: transform 0.2s ease;
+}
+
+/* ลูกศรเมื่อเปิด */
+.repair-page details.repair-camera-snapshot[open]
+  > .repair-camera-snapshot-toggle::after {
+  transform: rotate(180deg);
+}
+
+/* แถบเมื่อเปิด */
+.repair-page details.repair-camera-snapshot[open]
+  > .repair-camera-snapshot-toggle {
+  border-color: #5279a1;
+  border-radius: 8px 8px 0 0;
+}
+
+/* พื้นที่รายชื่อกล้อง */
+.repair-page .repair-camera-snapshot-content {
+  max-height: 220px;
+  overflow-y: auto;
+
+  padding: 6px 10px;
+
+  background: #101925;
+  border: 1px solid #385471;
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+/* ลดช่องว่างแต่ละกล้อง */
+.repair-page .repair-camera-snapshot-content
+  .repair-camera-snapshot-item {
+  padding: 7px 2px;
+}
+
+/* จอเล็ก */
+@media (max-width: 600px) {
+  .repair-page .repair-order-unit-card {
+    padding: 10px;
+  }
 }
 
 /* =========================================
