@@ -689,11 +689,7 @@ export default function TechnicianRepair({ profile }) {
       )
     : null
 
-  const calculatedOver = Boolean(
-    completionAt &&
-    modalSla &&
-    completionAt > modalSla
-  )
+
 
   const selectedOver =
     form.slaChoice === 'over'
@@ -797,7 +793,7 @@ export default function TechnicianRepair({ profile }) {
       [key]: value,
     }))
 
-  
+
   const changeCameraCount = (field, value) => {
     const input = String(value).replace(/\D/g, '')
     const other =
@@ -858,7 +854,7 @@ export default function TechnicianRepair({ profile }) {
       }
     })
   }
-  
+
 
   const changeEquipment = (index, patch) =>
     setForm(old => ({
@@ -898,7 +894,7 @@ export default function TechnicianRepair({ profile }) {
         }
       }),
     }))
-  }  
+  }
 
   const closeModal = () => {
     if (!modalSaving) {
@@ -910,26 +906,11 @@ export default function TechnicianRepair({ profile }) {
   const submitClose = async () => {
     if (
       !modalOrder ||
+      modalMode !== 'close' ||
       modalBusy ||
       modalSaving ||
-      !canManage(modalOrder)
+      !canClose(modalOrder)
     ) {
-      return
-    }
-
-    if (modalMode === 'edit') {
-      setModalError(
-        'ยังไม่มี RPC บันทึกการแก้ไขงานที่ปิดแล้ว: ' +
-        'เปิดตรวจและแก้ฟอร์มได้ แต่ยังไม่สามารถบันทึกจริง'
-      )
-      return
-    }
-
-    if (isAdmin) {
-      setModalError(
-        'RPC ปิดงานเดิมยังไม่รองรับ Admin ' +
-        'กรุณารอปรับสิทธิ์ฝั่งฐานข้อมูล'
-      )
       return
     }
 
@@ -998,15 +979,9 @@ export default function TechnicianRepair({ profile }) {
 
     // RPC v2 ยังบันทึก SLA จากสูตร ไม่ใช่ค่าที่ช่างเลือก
     // ป้องกันการบันทึกค่าไม่ตรงกับที่เลือก
-    if (selectedOver !== calculatedOver) {
-      setModalError(
-        'เลือก SLA ได้แล้ว แต่ RPC ปัจจุบันยังคำนวณเอง ' +
-        'จึงงดบันทึกเพื่อไม่ให้ได้ค่าไม่ตรงกับที่ช่างเลือก'
-      )
-      return
-    }
 
-    
+
+
     const equipment = []
 
     for (const x of form.equipment) {
@@ -1094,7 +1069,7 @@ export default function TechnicianRepair({ profile }) {
 
     try {
       const { data, error: err } = await supabase.rpc(
-        'cctv_repair_technician_close_v2',
+        'cctv_repair_technician_close_v3',
         {
           p_order_id: modalOrder.id,
           p_problem_found: form.problem.trim(),
@@ -1106,6 +1081,7 @@ export default function TechnicianRepair({ profile }) {
             form.unusableReason.trim(),
           p_completed_at:
             completionAt.toISOString(),
+          p_sla_exceeded: selectedOver,
           p_sla_reason: selectedOver
             ? form.slaReason.trim()
             : '',
@@ -1998,7 +1974,7 @@ export default function TechnicianRepair({ profile }) {
                     />
                   </label>
 
-                  
+
                   <div className="tech-form-grid three">
                     <label>
                       3. กล้องที่ดับ (ตัว)
