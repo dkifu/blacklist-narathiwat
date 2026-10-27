@@ -366,7 +366,7 @@ function App() {
             )}
 
             
-            {canUseAdminPages && (
+            {(canUseAdminPages || isCenter) && (
               <button
                 type="button"
                 className={`menu-item ${
@@ -514,7 +514,10 @@ function App() {
             
             {(
               isTechnician ||
-              (canUseAdminPages && currentPage === 'technicianRepair')
+              (
+                currentPage === 'technicianRepair' &&
+                (canUseAdminPages || isCenter)
+              )
             ) ? (
               <TechnicianRepair profile={profile} />
             ) : currentPage === 'addVehicle' ? (
