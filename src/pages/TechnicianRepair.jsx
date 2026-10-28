@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import './TechnicianRepair.css'
 import { formatMemberPhone } from './Users'
+import CctvRepairPrint from './daily/CctvRepairPrint'
 
 // ขอบเขตการมองเห็นของช่าง (ตรวจสิทธิ์จริงซ้ำใน RLS)
 const TEAM_CENTERS = {
@@ -343,6 +344,8 @@ export default function TechnicianRepair({ profile }) {
   const [modalError, setModalError] = useState('')
   const [technicians, setTechnicians] = useState([])
   const [techniciansError, setTechniciansError] = useState('')
+  const [printPreview, setPrintPreview] = useState(null)
+  const [printBusy, setPrintBusy] = useState(false)
 
   const [cancelTarget, setCancelTarget] = useState(null)
   const [cancelReason, setCancelReason] = useState('')
@@ -728,6 +731,57 @@ export default function TechnicianRepair({ profile }) {
   }
 
   
+const openSavedPrint = async (order) => {
+  if (
+    !order ||
+    !(
+      OPEN_STATUSES.includes(order.status) ||
+      order.status === 'closed'
+    ) ||
+    printBusy
+  ) return
+
+  setPrintBusy(true)
+  setError('')
+
+  try {
+    const [orderResult, unitsResult] = await Promise.all([
+      supabase
+        .from('cctv_repair_orders')
+        .select('*')
+        .eq('id', order.id)
+        .single(),
+
+      supabase
+        .from('cctv_repair_order_units')
+        .select('*')
+        .eq('order_id', order.id)
+        .order('id'),
+    ])
+
+    if (orderResult.error) throw orderResult.error
+    if (unitsResult.error) throw unitsResult.error
+
+    if (
+      !OPEN_STATUSES.includes(orderResult.data?.status) &&
+      orderResult.data?.status !== 'closed'
+    ) {
+      throw new Error('ใบงานนี้ไม่อยู่ในสถานะที่เปิดดูได้')
+    }
+
+    setPrintPreview({
+      order: orderResult.data,
+      units: unitsResult.data || [],
+    })
+  } catch (err) {
+    setError(
+      `เปิดใบงาน A4 ไม่สำเร็จ: ${err.message || 'เกิดข้อผิดพลาด'}`
+    )
+  } finally {
+    setPrintBusy(false)
+  }
+}
+
 
   const openModal = async (
     order,
@@ -1700,16 +1754,30 @@ export default function TechnicianRepair({ profile }) {
               </p>
             ) : (
               <>
-                <div className="tech-detail-head">
-                  <strong>
-                    {ticketLabel(current)}
-                  </strong>
+                
+              <div className="tech-detail-head">
+                <strong>
+                  {ticketLabel(current)}
+                </strong>
+
+                <div className="tech-detail-actions">
+                  {(OPEN_STATUSES.includes(current.status) || current.status === 'closed') && (
+                    <button
+                      type="button"
+                      className="tech-print-button"
+                      disabled={printBusy}
+                      onClick={() => openSavedPrint(current)}
+                    >
+                      {printBusy ? 'กำลังโหลด...' : 'ดูใบงาน A4'}
+                    </button>
+                  )}
 
                   <span>
-                    {STATUS[current.status] ||
-                      current.status}
+                    {STATUS[current.status] || current.status}
                   </span>
                 </div>
+              </div>
+
 
                 <p className="tech-muted">
                   ศูนย์ผู้แจ้ง:{' '}
@@ -1953,6 +2021,16 @@ export default function TechnicianRepair({ profile }) {
           </section>
         </div>
       </main>
+
+      
+      {printPreview && (
+        <CctvRepairPrint
+          order={printPreview.order}
+          units={printPreview.units}
+          onClose={() => setPrintPreview(null)}
+        />
+      )}
+
 
       {modalOrder && (
         <div

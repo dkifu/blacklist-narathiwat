@@ -707,60 +707,71 @@
    TECHNICIAN SIGNATURE
 ========================================= */
 
+
+/* =========================================
+   TECHNICIAN - SINGLE ROW
+========================================= */
+
+
 .rp-tech-inline {
-  display: flex;
-
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: center;
+  column-gap: 8mm;
 
-  gap: 4mm;
+  width: 160mm;
+  max-width: 100%;
+  margin: 1mm auto 0;
+  padding: 0;
 
-  width: 100%;
-
-  margin: auto 0 2mm;
-  padding-top: 3mm;
-
+  border: none;
   color: #172033;
-
-  font-size: 12px;
+  font-size: 11px;
 
   break-inside: avoid;
 }
 
-.rp-tech-inline span {
-  display: inline-flex;
+
+.rp-tech-name,
+.rp-tech-phone {
+  display: flex;
   align-items: baseline;
-
-  gap: 1.5mm;
-
+  gap: 4mm;
   min-width: 0;
-
   white-space: nowrap;
 }
 
-.rp-tech-inline i {
-  display: inline-block;
-
-  height: 1em;
-
-  border-bottom: 1px dotted #475569;
+.rp-tech-name span,
+.rp-tech-phone span {
+  color: #64748b;
+  font-size: 10px;
 }
 
-.rp-tech-name i {
-  width: 85mm;
-}
-
-.rp-tech-phone i {
-  width: 50mm;
-}
-
-.rp-tech-inline strong {
-  flex: 0 0 auto;
-
+.rp-tech-name b,
+.rp-tech-phone b {
+  font-size: 11px;
   font-weight: 800;
-
-  white-space: nowrap;
 }
+
+.rp-tech-name b {
+  word-spacing: 2mm;
+}
+
+.rp-tech-team {
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.rp-tech-name i,
+.rp-tech-phone i {
+  flex: 1;
+  min-width: 8mm;
+  height: 1em;
+  border-bottom: 1px dotted #64748b;
+}
+
 
 /* =========================================
    PRINT FALLBACK
@@ -810,15 +821,26 @@
     overflow: visible !important;
   }
 
+  
   .rp-paper {
     width: 210mm !important;
-    min-height: 297mm !important;
+    min-height: 0 !important;
+    height: auto !important;
 
     margin: 0 !important;
     padding: 10mm !important;
 
     box-shadow: none !important;
   }
+
+  
+  .rp-tech-inline {
+    margin: 1mm auto 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+
 
   .rp-section-title,
   .rp-equipment-table th,
@@ -925,4 +947,73 @@
 .rp-unit-collection.rp-units-tight .rp-mini-unit-down {
   font-size: 9px;
   line-height: 1.5;
+}
+
+
+/* =========================================
+   A4 TYPOGRAPHY ENHANCEMENT
+   เพิ่มขนาดตัวอักษร โดยไม่แก้ขนาดกล่อง
+   ยกเว้นตารางอุปกรณ์หัวข้อ 4
+========================================= */
+
+/* ตัวอักษรพื้นฐาน */
+.rp-paper {
+  font-size: 12px;
+}
+
+/* หัวเอกสาร */
+.rp-doc-title h1 {
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.rp-doc-title p {
+  font-size: 11px;
+  line-height: 13px;
+  letter-spacing: 0;
+}
+
+/* รายละเอียดเลขใบงาน / ศูนย์ */
+.rp-doc-meta b,
+.rp-info-grid b {
+  font-size: 9px;
+  line-height: 12px;
+}
+
+.rp-doc-meta span,
+.rp-info-grid span {
+  font-size: 11px;
+  line-height: 13px;
+}
+
+/* แถบหัวข้อ 1-4 */
+.rp-section-title {
+  font-size: 11px;
+  line-height: 15px;
+}
+
+/* สรุปจำนวนกล้อง */
+.rp-summary {
+  font-size: 11px;
+  line-height: 13px;
+}
+
+
+
+/* ข้อความผลการซ่อม หัวข้อ 3 */
+.rp-result-table,
+.rp-result-table strong {
+  font-size: 11px;
+}
+
+/* ข้อมูลผู้ปฏิบัติงานด้านล่าง */
+.rp-tech-name b,
+.rp-tech-phone b,
+.rp-tech-team {
+  font-size: 11.5px;
+}
+
+.rp-tech-name span,
+.rp-tech-phone span {
+  font-size: 10.5px;
 }

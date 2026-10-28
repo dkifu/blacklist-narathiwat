@@ -1,8 +1,12 @@
-import { useRef, useState } from 'react'
+
 import { createPortal } from 'react-dom'
 import { Printer, X } from 'lucide-react'
 import './CctvRepairPrint.css'
 import visionLogo from '../../assets/vision-logo.png'
+
+import { useEffect, useState } from 'react'
+import { supabase } from '../../lib/supabase'
+import { formatMemberPhone } from '../../pages/Users'
 
 const SHIFT_LABELS = {
   morning: 'กะเช้า',
@@ -24,7 +28,7 @@ const EQUIPMENT_NAMES = [
   'Camera',
   'Switch 8 port',
   'Power Supply 12 - 24V',
-  'Media Convertor',
+  'Media Converter',
   'Power supply 5 V',
   'สาย LAN',
   'ไฟฟ้า AC',
@@ -88,8 +92,16 @@ function formatCompletedAt(value) {
 ========================================= */
 
 function buildEquipmentRows(items) {
-  const normalize = value =>
-    String(value || '').trim().toLowerCase()
+  
+  const normalize = value => {
+    const name = String(value || '').trim().toLowerCase()
+
+    if (name === 'media convertor') return 'media converter'
+    if (name === 'ใช้งานได้จริง') return 'ใช้งานได้เอง'
+
+    return name
+  }
+
 
   const names = [...EQUIPMENT_NAMES]
 
@@ -141,16 +153,86 @@ function getUnitColumns(count) {
    MAIN COMPONENT
 ========================================= */
 
+
 export default function CctvRepairPrint({
-  order,
+  order: initialOrder,
   units = [],
   onClose,
 }) {
-  const paperRef = useRef(null)
+  const [savedOrder, setSavedOrder] = useState(null)
+  const [loadingSavedOrder, setLoadingSavedOrder] = useState(false)
+  const [savedOrderError, setSavedOrderError] = useState('')
 
-  const [exportingPdf, setExportingPdf] = useState(false)
+  useEffect(() => {
+    if (!initialOrder?.id || initialOrder.status !== 'closed') {
+      setSavedOrder(null)
+      setLoadingSavedOrder(false)
+      setSavedOrderError('')
+      return
+    }
+
+    let live = true
+
+    setSavedOrder(null)
+    setLoadingSavedOrder(true)
+    setSavedOrderError('')
+
+    const loadSaved = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('cctv_repair_orders')
+          .select(`
+            id, status,
+            repair_problem_found,
+            repair_fix_method,
+            repair_down_count,
+            repair_usable_count,
+            repair_unusable_count,
+            repair_unusable_reason,
+            repair_completed_at,
+            repair_sla_exceeded,
+            repair_sla_reason,
+            technician_names,
+            technician_phone,
+            equipment_items
+          `)
+          .eq('id', initialOrder.id)
+          .single()
+
+        if (!live) return
+
+        if (error) throw error
+        if (data?.status !== 'closed') {
+          throw new Error('ใบงานนี้ยังไม่ได้ปิดงาน')
+        }
+
+        setSavedOrder(data)
+      } catch (err) {
+        if (live) {
+          setSavedOrderError(err.message || 'โหลดผลซ่อมไม่สำเร็จ')
+        }
+      } finally {
+        if (live) setLoadingSavedOrder(false)
+      }
+    }
+
+    loadSaved()
+
+    return () => {
+      live = false
+    }
+  }, [initialOrder?.id, initialOrder?.status])
+
+  const order =
+    savedOrder &&
+    String(savedOrder.id) === String(initialOrder?.id)
+      ? { ...initialOrder, ...savedOrder }
+      : initialOrder
 
   if (!order) return null
+
+  const isClosed = order.status === 'closed'
+
 
   const safeUnits = Array.isArray(units) ? units : []
 
@@ -211,74 +293,11 @@ export default function CctvRepairPrint({
      EXPORT ONE-PAGE PDF
   ========================================= */
 
-  const exportOnePagePdf = async () => {
-    if (!paperRef.current || exportingPdf) return
-
-    setExportingPdf(true)
-
-    try {
-      const [canvasModule, pdfModule] = await Promise.all([
-        import('html2canvas'),
-        import('jspdf'),
-      ])
-
-      const canvas = await canvasModule.default(
-        paperRef.current,
-        {
-          scale: 2.5,
-          backgroundColor: '#ffffff',
-          useCORS: true,
-          logging: false,
-        }
-      )
-
-      const PDF = pdfModule.jsPDF
-
-      const pdf = new PDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        compress: true,
-      })
-
-      const width = 210
-      const height = 297
-
-      // รักษาสัดส่วนเอกสาร และย่อให้พอดี A4
-      const scale = Math.min(
-        width / canvas.width,
-        height / canvas.height
-      )
-
-      const imageWidth = canvas.width * scale
-      const imageHeight = canvas.height * scale
-
-      pdf.addImage(
-        canvas.toDataURL('image/jpeg', 0.95),
-        'JPEG',
-        (width - imageWidth) / 2,
-        (height - imageHeight) / 2,
-        imageWidth,
-        imageHeight
-      )
-
-      const ticket = String(
-        order.ticket_no || `draft-${order.id}`
-      ).replace(/[^\w-]/g, '_')
-
-      pdf.save(`CCTV_Repair_${ticket}.pdf`)
-
-    } catch (error) {
-      console.error('Export repair PDF failed:', error)
-
-      window.alert(
-        'ไม่สามารถสร้าง PDF ได้ กรุณาลองอีกครั้ง'
-      )
-
-    } finally {
-      setExportingPdf(false)
-    }
+  
+  const exportOnePagePdf = () => {
+    window.print()
   }
+
 
   return createPortal(
     <div
@@ -296,23 +315,26 @@ export default function CctvRepairPrint({
           <strong>พรีวิวใบแจ้งซ่อม A4</strong>
 
           <small>
-            ข้อมูลจากใบงานที่บันทึกไว้ใน Supabase
+            {savedOrderError
+              ? `โหลดผลซ่อมไม่สำเร็จ: ${savedOrderError}`
+              : loadingSavedOrder
+                ? 'กำลังโหลดผลซ่อมล่าสุด...'
+                : 'ข้อมูลจากใบงานที่บันทึกไว้ใน Supabase'}
           </small>
         </div>
 
         <div className="rp-toolbar-actions">
-          <button
-            type="button"
-            className="rp-print-button"
-            onClick={exportOnePagePdf}
-            disabled={exportingPdf}
-          >
-            <Printer size={17} />
+          
+        <button
+          type="button"
+          className="rp-print-button"
+          onClick={exportOnePagePdf}
+          disabled={loadingSavedOrder || (isClosed && (!savedOrder || !!savedOrderError))}
+        >
+          <Printer size={17} />
+          พิมพ์ / บันทึก PDF คมชัด
+        </button>
 
-            {exportingPdf
-              ? 'กำลังสร้าง PDF...'
-              : 'บันทึก PDF A4 (1 หน้า)'}
-          </button>
 
           <button
             type="button"
@@ -329,10 +351,7 @@ export default function CctvRepairPrint({
       ===================================== */}
 
       <div className="rp-scroll">
-        <article
-          ref={paperRef}
-          className="rp-paper"
-        >
+        <article className="rp-paper">
           {order.status === 'draft' && (
             <div
               className="rp-watermark"
@@ -440,7 +459,8 @@ export default function CctvRepairPrint({
               <b>เบอร์โทรศัพท์</b>
 
               <span>
-                {order.reporter_phone || '-'}
+                {formatMemberPhone(order.reporter_phone)
+                  || order.reporter_phone || '-'}
               </span>
             </div>
 
@@ -615,7 +635,9 @@ export default function CctvRepairPrint({
                 <td>
                   <strong>ปัญหาที่พบ :</strong>
                   {' '}
-                  {order.repair_cause || ''}
+                  {isClosed
+                    ? (order.repair_problem_found || order.repair_cause || '-')
+                    : (order.repair_cause || '')}
                 </td>
               </tr>
 
@@ -625,7 +647,9 @@ export default function CctvRepairPrint({
                 <td>
                   <strong>วิธีการแก้ไข :</strong>
                   {' '}
-                  {order.repair_result || ''}
+                  {isClosed
+                    ? (order.repair_fix_method || order.repair_result || '-')
+                    : (order.repair_result || '')}
                 </td>
               </tr>
 
@@ -633,23 +657,29 @@ export default function CctvRepairPrint({
 
               <tr>
                 <td>
+                  
                   <div className="rp-result-numbers">
                     <div>
-                      <strong>จำนวนกล้องดับ :</strong>
+                      <strong>จำนวนกล้องดับ :</strong>{' '}
+                      {isClosed ? (order.repair_down_count ?? '-') : ''}
                     </div>
 
                     <div>
-                      <strong>ใช้งานได้ :</strong>
+                      <strong>ใช้งานได้ :</strong>{' '}
+                      {isClosed ? (order.repair_usable_count ?? '-') : ''}
                     </div>
 
                     <div>
-                      <strong>ใช้งานไม่ได้ :</strong>
+                      <strong>ใช้งานไม่ได้ :</strong>{' '}
+                      {isClosed ? (order.repair_unusable_count ?? '-') : ''}
                     </div>
 
                     <div>
-                      <strong>เนื่องจาก :</strong>
+                      <strong>เนื่องจาก :</strong>{' '}
+                      {isClosed ? (order.repair_unusable_reason || '') : ''}
                     </div>
                   </div>
+
                 </td>
               </tr>
 
@@ -679,25 +709,46 @@ export default function CctvRepairPrint({
 
               <tr>
                 <td>
+                  
                   <div className="rp-result-sla">
                     <div className="rp-sla-options">
                       <strong>SLA :</strong>
 
                       <span>
-                        <i className="rp-checkbox" />
+                        <i
+                          className="rp-checkbox"
+                          style={{
+                            fontStyle: 'normal',
+                            textAlign: 'center',
+                            lineHeight: '3mm',
+                          }}
+                        >
+                          {isClosed && order.repair_sla_exceeded === false ? '✓' : ''}
+                        </i>
                         ไม่เกิน
                       </span>
 
                       <span>
-                        <i className="rp-checkbox" />
+                        <i
+                          className="rp-checkbox"
+                          style={{
+                            fontStyle: 'normal',
+                            textAlign: 'center',
+                            lineHeight: '3mm',
+                          }}
+                        >
+                          {isClosed && order.repair_sla_exceeded === true ? '✓' : ''}
+                        </i>
                         เกิน
                       </span>
                     </div>
 
                     <div>
-                      <strong>เนื่องจาก :</strong>
+                      <strong>เนื่องจาก :</strong>{' '}
+                      {isClosed ? (order.repair_sla_reason || '') : ''}
                     </div>
                   </div>
+
                 </td>
               </tr>
             </tbody>
@@ -748,19 +799,34 @@ export default function CctvRepairPrint({
               TECHNICIAN
           ===================================== */}
 
+          
+            
           <div className="rp-tech-inline">
-            <span className="rp-tech-name">
-              ชื่อผู้ปฏิบัติงาน <i />
-            </span>
+            <div className="rp-tech-name">
+              <span>ผู้ปฏิบัติงาน:</span>
+              {isClosed
+                ? <b>{order.technician_names || '-'}</b>
+                : <i />}
+            </div>
 
-            <span className="rp-tech-phone">
-              เบอร์โทร <i />
-            </span>
+            <div className="rp-tech-phone">
+              <span>โทร:</span>
+              {isClosed
+                ? (
+                  <b>
+                    {formatMemberPhone(order.technician_phone)
+                      || order.technician_phone || '-'}
+                  </b>
+                )
+                : <i />}
+            </div>
 
-            <strong>
+            <strong className="rp-tech-team">
               {technicianTeam}
             </strong>
           </div>
+
+
 
         </article>
       </div>

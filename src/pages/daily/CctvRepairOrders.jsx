@@ -688,11 +688,12 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
         `)
 
+        
         .neq('status', 'cancelled')
-
+        .neq('status', 'closed')
         .order('created_at', { ascending: false })
-
         .limit(100)
+
 
 
 
@@ -736,13 +737,16 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
 
 
-      setCurrentOrderId(previous => {
-
-        if (preferredId !== null) {
-
+      setCurrentOrderId(previous => { 
+        if (
+          preferredId !== null &&
+          items.some(
+            order => String(order.id) === String(preferredId)
+          )
+        ) {
           return String(preferredId)
-
         }
+
 
 
 

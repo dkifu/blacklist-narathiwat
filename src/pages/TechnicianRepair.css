@@ -1049,3 +1049,34 @@
     grid-column: 1;
   }
 }
+
+
+/* ปุ่มแสดงใบงาน A4 */
+.tech-detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tech-print-button {
+  min-height: 34px;
+  padding: 7px 13px;
+  border: 1px solid #4775aa;
+  border-radius: 8px;
+  background: #1d3553;
+  color: #dbeafe;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tech-print-button:hover:not(:disabled) {
+  background: #294c76;
+}
+
+.tech-print-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
