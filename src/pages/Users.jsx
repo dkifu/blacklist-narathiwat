@@ -51,6 +51,12 @@ function formatMemberPhone(value) {
 
 function Users({ profile }) {
   const [centers, setCenters] = useState([])
+  
+  const [centerContacts, setCenterContacts] = useState([])
+  const [editingCenterPhoneId, setEditingCenterPhoneId] = useState(null)
+  const [centerPhoneDraft, setCenterPhoneDraft] = useState('')
+  const [savingCenterPhone, setSavingCenterPhone] = useState(false)
+
   const [members, setMembers] = useState([])
   const [vehicles, setVehicles] = useState([])
   const [watchLevels, setWatchLevels] = useState([])
@@ -144,18 +150,108 @@ function Users({ profile }) {
     isAdmin ||
     isSupervisor
 
+  
+  // =========================================
+  // CENTER CENTRAL PHONE
+  // =========================================
+
+  const loadCenterContacts = async () => {
+    const { data, error } = await supabase.rpc(
+      'cctv_center_contact_list'
+    )
+
+    if (error) throw error
+
+    setCenterContacts(data || [])
+  }
+
+  const getCenterPhone = centerId => {
+    const item = centerContacts.find(
+      c => Number(c.center_id) === Number(centerId)
+    )
+
+    return item?.central_phone || ''
+  }
+
+  const openCenterPhoneEdit = centerId => {
+    if (!isAdmin) return
+
+    setEditingCenterPhoneId(Number(centerId))
+    setCenterPhoneDraft(getCenterPhone(centerId))
+  }
+
+  const saveCenterPhone = async centerId => {
+    if (!isAdmin || savingCenterPhone) return
+
+    const raw = centerPhoneDraft.trim()
+    const formatted = raw ? formatMemberPhone(raw) : ''
+
+    if (raw && !formatted) {
+      showMessage(
+        'error',
+        'เบอร์โทรกลางไม่ถูกต้อง กรุณาระบุเบอร์ไทย 9 หรือ 10 หลัก'
+      )
+      return
+    }
+
+    setSavingCenterPhone(true)
+
+    try {
+      const { data, error } = await supabase.rpc(
+        'cctv_center_contact_save',
+        {
+          p_center_id: Number(centerId),
+          p_phone: formatted
+            ? formatted.replace(/\D/g, '')
+            : null,
+        }
+      )
+
+      if (error) throw error
+
+      if (data !== true) {
+        throw new Error('ฐานข้อมูลไม่ยืนยันการบันทึกเบอร์กลาง')
+      }
+
+      await loadCenterContacts()
+      setEditingCenterPhoneId(null)
+      setCenterPhoneDraft('')
+
+      showMessage('success', 'บันทึกเบอร์โทรกลางประจำศูนย์เรียบร้อยแล้ว')
+    } catch (err) {
+      showMessage(
+        'error',
+        err.message || 'บันทึกเบอร์กลางไม่สำเร็จ'
+      )
+    } finally {
+      setSavingCenterPhone(false)
+    }
+  }
+  
+
   // =========================================
   // LOAD
   // =========================================
 
   useEffect(() => {
+    
     const start = async () => {
-        await loadData()
+      await loadData()
 
-        if (canManageCenterUsers) {
-          await loadCenterUsers()
-        }
+      if (canManageCenterUsers) {
+        await loadCenterUsers()
+      }
+
+      try {
+        await loadCenterContacts()
+      } catch (err) {
+        showMessage(
+          'error',
+          `โหลดเบอร์กลางไม่สำเร็จ: ${err.message}`
+        )
+      }
     }
+
 
     start()
     }, [profile?.id])
@@ -1158,13 +1254,24 @@ function Users({ profile }) {
 
         <button
           className="refresh-button"
-          onClick={async () => {
-            await loadData()
+          
+            onClick={async () => {
+              await loadData()
 
-            if (canManageCenterUsers) {
-              await loadCenterUsers()
-            }
+              if (canManageCenterUsers) {
+                await loadCenterUsers()
+              }
+
+              try {
+                await loadCenterContacts()
+              } catch (err) {
+                showMessage(
+                  'error',
+                  `โหลดเบอร์กลางไม่สำเร็จ: ${err.message}`
+                )
+              }
             }}
+
         >
           รีเฟรชข้อมูล
         </button>
@@ -1547,6 +1654,75 @@ function Users({ profile }) {
                 รหัสศูนย์: {center.center_code || '-'}
             </small>
 
+            
+            {/* เบอร์โทรกลางประจำศูนย์ */}
+            <small>
+              เบอร์โทรกลาง:{' '}
+              {getCenterPhone(center.center_id)
+                ? formatMemberPhone(getCenterPhone(center.center_id))
+                : 'ยังไม่ระบุ'}
+            </small>
+
+            {isAdmin && (
+              editingCenterPhoneId === Number(center.center_id) ? (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginTop: 10,
+                  }}
+                >
+                  <input
+                    type="tel"
+                    value={centerPhoneDraft}
+                    onChange={e => setCenterPhoneDraft(e.target.value)}
+                    placeholder="เบอร์โทรกลางของศูนย์"
+                    disabled={savingCenterPhone}
+                    style={{
+                      minWidth: 170,
+                      flex: '1 1 170px',
+                      padding: 10,
+                      borderRadius: 8,
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    className="primary-button"
+                    disabled={savingCenterPhone}
+                    onClick={() => saveCenterPhone(center.center_id)}
+                  >
+                    {savingCenterPhone ? 'กำลังบันทึก...' : 'บันทึก'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={savingCenterPhone}
+                    onClick={() => {
+                      setEditingCenterPhoneId(null)
+                      setCenterPhoneDraft('')
+                    }}
+                  >
+                    ยกเลิก
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="settings-edit-button"
+                  style={{ marginTop: 8 }}
+                  onClick={() => openCenterPhoneEdit(center.center_id)}
+                >
+                  {getCenterPhone(center.center_id)
+                    ? 'แก้ไขเบอร์กลาง'
+                    : '+ เพิ่มเบอร์กลาง'}
+                </button>
+              )
+            )}
+              
 
             {center.has_user ? (
                 <>
@@ -1734,6 +1910,25 @@ function Users({ profile }) {
 
       </div>
       
+      
+      {selectedCenterId && (
+        <div
+          className="users-member-card"
+          style={{
+            marginTop: 12,
+            marginBottom: 18,
+            padding: 16,
+          }}
+        >
+          <strong>เบอร์โทรกลางประจำศูนย์</strong>
+
+          <p style={{ margin: '8px 0 0' }}>
+            {getCenterPhone(selectedCenterId)
+              ? formatMemberPhone(getCenterPhone(selectedCenterId))
+              : 'ยังไม่ได้ระบุเบอร์โทรกลาง'}
+          </p>
+        </div>
+      )}
 
 
       {/* MEMBER FORM */}

@@ -22,6 +22,14 @@ function SystemUsers({ profile }) {
   const [centers, setCenters] =
     useState([])
 
+  
+  const [repairMembers, setRepairMembers] = useState([])
+  const [repairMemberForm, setRepairMemberForm] = useState(null)
+  const [repairTeamFilter, setRepairTeamFilter] = useState('all')
+  const [repairMemberBusy, setRepairMemberBusy] = useState(false)
+  const [repairMemberError, setRepairMemberError] = useState('')
+
+
   const [loading, setLoading] =
     useState(true)
 
@@ -97,6 +105,139 @@ function SystemUsers({ profile }) {
     setMessage(text)
 
   }
+
+  
+  // =========================================
+  // REPAIR TEAM MEMBER MANAGEMENT (ADMIN)
+  // =========================================
+
+  const loadRepairMembers = async () => {
+    const { data, error } = await supabase.rpc(
+      'cctv_repair_team_members_admin_list'
+    )
+
+    if (error) {
+      setRepairMemberError(error.message)
+      return
+    }
+
+    setRepairMemberError('')
+    setRepairMembers(data || [])
+  }
+
+  const openAddRepairMember = () => {
+    setRepairMemberError('')
+    setRepairMemberForm({
+      member_id: null,
+      team_code: repairTeamFilter === 'all'
+        ? 'takbai'
+        : repairTeamFilter,
+      full_name: '',
+      phone: '',
+    })
+  }
+
+  const openEditRepairMember = member => {
+    setRepairMemberError('')
+    setRepairMemberForm({
+      member_id: member.member_id,
+      team_code: member.team_code,
+      full_name: member.full_name || '',
+      phone: member.phone || '',
+    })
+  }
+
+  const saveRepairMember = async event => {
+    event.preventDefault()
+
+    if (!isAdmin || !repairMemberForm || repairMemberBusy) {
+      return
+    }
+
+    const name = repairMemberForm.full_name.trim()
+    const phone = repairMemberForm.phone
+      .replace(/[\s().-]/g, '')
+
+    if (name.length < 2) {
+      setRepairMemberError(
+        'กรุณาระบุชื่อสมาชิกอย่างน้อย 2 ตัวอักษร'
+      )
+      return
+    }
+
+    if (phone && !/^0\d{8,9}$/.test(phone)) {
+      setRepairMemberError(
+        'เบอร์โทรต้องมี 9 หรือ 10 หลัก เริ่มด้วย 0'
+      )
+      return
+    }
+
+    setRepairMemberBusy(true)
+    setRepairMemberError('')
+
+    try {
+      const { error } = await supabase.rpc(
+        'cctv_repair_team_member_save',
+        {
+          p_member_id: repairMemberForm.member_id,
+          p_team_code: repairMemberForm.team_code,
+          p_full_name: name,
+          p_phone: phone || null,
+        }
+      )
+
+      if (error) throw error
+
+      setRepairMemberForm(null)
+      await loadRepairMembers()
+      showMessage('success', 'บันทึกสมาชิกชุดช่างเรียบร้อยแล้ว')
+    } catch (err) {
+      setRepairMemberError(err.message || 'บันทึกสมาชิกไม่สำเร็จ')
+    } finally {
+      setRepairMemberBusy(false)
+    }
+  }
+
+  const toggleRepairMember = async member => {
+    if (!isAdmin || repairMemberBusy) return
+
+    const nextActive = !member.active
+
+    if (!window.confirm(
+      `${nextActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน'} ` +
+      `"${member.full_name}" ใช่หรือไม่?`
+    )) {
+      return
+    }
+
+    setRepairMemberBusy(true)
+    setRepairMemberError('')
+
+    try {
+      const { data, error } = await supabase.rpc(
+        'cctv_repair_team_member_set_active',
+        {
+          p_member_id: member.member_id,
+          p_active: nextActive,
+        }
+      )
+
+      if (error) throw error
+      if (data !== true) {
+        throw new Error('ฐานข้อมูลไม่ยืนยันการเปลี่ยนสถานะ')
+      }
+
+      await loadRepairMembers()
+      showMessage('success', 'อัปเดตสถานะสมาชิกเรียบร้อยแล้ว')
+    } catch (err) {
+      setRepairMemberError(
+        err.message || 'เปลี่ยนสถานะสมาชิกไม่สำเร็จ'
+      )
+    } finally {
+      setRepairMemberBusy(false)
+    }
+  }
+
 
 
   // =========================================
@@ -283,18 +424,19 @@ function SystemUsers({ profile }) {
     }
 
 
+  
   useEffect(() => {
-
     if (isAdmin) {
       loadData()
+      loadRepairMembers()
     } else {
       setLoading(false)
     }
-
   }, [
     profile?.id,
     profile?.role,
   ])
+
 
 
   // =========================================
@@ -910,7 +1052,10 @@ const technicianCount = useMemo(
         <button
           type="button"
           className="refresh-button"
-          onClick={loadData}
+          onClick={() => {
+            loadData()
+            loadRepairMembers()
+          }}
         >
           รีเฟรชข้อมูล
         </button>
@@ -1041,6 +1186,216 @@ const technicianCount = useMemo(
         </button>
 
       </div>
+
+
+      
+      {/* REPAIR TEAM MEMBERS */}
+      <section
+        className="users-member-card"
+        style={{ marginTop: 20, marginBottom: 20 }}
+      >
+        <div className="users-member-heading">
+          <div>
+            <h3>ทะเบียนสมาชิกชุดช่าง</h3>
+            <p>
+              จัดการช่างที่ลงพื้นที่จริง โดยไม่ต้องสร้างบัญชี Login
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="primary-button"
+            onClick={openAddRepairMember}
+          >
+            + เพิ่มสมาชิกช่าง
+          </button>
+        </div>
+
+        {repairMemberError && (
+          <div className="modern-alert error" role="alert">
+            {repairMemberError}
+          </div>
+        )}
+
+        <div className="users-toolbar">
+          <div className="users-center-info">
+            <span>เลือกชุดช่าง</span>
+
+            <select
+              value={repairTeamFilter}
+              onChange={e =>
+                setRepairTeamFilter(e.target.value)
+              }
+            >
+              <option value="all">ทุกชุดช่าง</option>
+              <option value="takbai">ชุดช่างตากใบ</option>
+              <option value="pattani">ชุดช่างปัตตานี</option>
+            </select>
+          </div>
+        </div>
+
+        {repairMemberForm && (
+          <form
+            className="users-form-card"
+            onSubmit={saveRepairMember}
+            style={{ marginBottom: 20 }}
+          >
+            <div className="section-title-row">
+              <h3>
+                {repairMemberForm.member_id
+                  ? 'แก้ไขสมาชิกชุดช่าง'
+                  : 'เพิ่มสมาชิกชุดช่าง'}
+              </h3>
+            </div>
+
+            <div className="modern-grid grid-3">
+              <div className="modern-field">
+                <label>ชุดช่าง *</label>
+
+                <select
+                  value={repairMemberForm.team_code}
+                  onChange={e =>
+                    setRepairMemberForm(old => ({
+                      ...old,
+                      team_code: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="takbai">ชุดช่างตากใบ</option>
+                  <option value="pattani">ชุดช่างปัตตานี</option>
+                </select>
+              </div>
+
+              <div className="modern-field">
+                <label>ชื่อ - นามสกุล *</label>
+
+                <input
+                  value={repairMemberForm.full_name}
+                  onChange={e =>
+                    setRepairMemberForm(old => ({
+                      ...old,
+                      full_name: e.target.value,
+                    }))
+                  }
+                  placeholder="ชื่อสมาชิกชุดช่าง"
+                  required
+                />
+              </div>
+
+              <div className="modern-field">
+                <label>เบอร์โทรศัพท์</label>
+
+                <input
+                  type="tel"
+                  value={repairMemberForm.phone}
+                  onChange={e =>
+                    setRepairMemberForm(old => ({
+                      ...old,
+                      phone: e.target.value,
+                    }))
+                  }
+                  placeholder="0xxxxxxxxx"
+                />
+              </div>
+            </div>
+
+            <div
+              className="member-actions"
+              style={{ marginTop: 16 }}
+            >
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={repairMemberBusy}
+              >
+                {repairMemberBusy
+                  ? 'กำลังบันทึก...'
+                  : 'บันทึกสมาชิก'}
+              </button>
+
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={repairMemberBusy}
+                onClick={() => setRepairMemberForm(null)}
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </form>
+        )}
+
+        <div className="member-grid">
+          {repairMembers
+            .filter(member =>
+              repairTeamFilter === 'all' ||
+              member.team_code === repairTeamFilter
+            )
+            .map(member => (
+              <div
+                className={`member-card ${
+                  !member.active ? 'inactive' : ''
+                }`}
+                key={member.member_id}
+              >
+                <div className="member-card-header">
+                  <div className="member-name">
+                    <strong>{member.full_name}</strong>
+                    <span>
+                      {REPAIR_TEAM_LABELS[member.team_code] ||
+                        member.team_code}
+                    </span>
+                  </div>
+
+                  <span
+                    className={`settings-status ${
+                      member.active ? 'active' : 'inactive'
+                    }`}
+                  >
+                    {member.active ? 'ใช้งาน' : 'ปิดใช้งาน'}
+                  </span>
+                </div>
+
+                <p>
+                  เบอร์โทร: {member.phone || 'ยังไม่ระบุ'}
+                </p>
+
+                <div className="member-actions">
+                  <button
+                    type="button"
+                    className="settings-edit-button"
+                    disabled={repairMemberBusy}
+                    onClick={() => openEditRepairMember(member)}
+                  >
+                    แก้ไข
+                  </button>
+
+                  <button
+                    type="button"
+                    className={
+                      member.active
+                        ? 'settings-disable-button'
+                        : 'settings-enable-button'
+                    }
+                    disabled={repairMemberBusy}
+                    onClick={() => toggleRepairMember(member)}
+                  >
+                    {member.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        {repairMembers.filter(member =>
+          repairTeamFilter === 'all' ||
+          member.team_code === repairTeamFilter
+        ).length === 0 && (
+          <div className="users-empty">
+            ยังไม่มีสมาชิกในชุดช่างที่เลือก
+          </div>
+        )}
+      </section>
 
 
       {showForm && (

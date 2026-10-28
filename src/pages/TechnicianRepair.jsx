@@ -166,16 +166,11 @@ const makeForm = (profile, count, order = null) => {
       ? 'over'
       : 'within',
     slaReason: order?.repair_sla_reason || '',
-    technician:
-      order?.technician_names ||
-      profile?.full_name ||
-      profile?.username ||
-      '',
-    phone:
-      order?.technician_phone ||
-      profile?.repair_contact_phone ||
-      '',
+  
+    technician: order?.technician_names || '',
+    phone: order?.technician_phone || '',
     equipment: rows,
+
   }
 }
 
@@ -287,16 +282,19 @@ export default function TechnicianRepair({ profile }) {
       (isCenter && Boolean(profile?.center_id))
     )
 
+  
   const canManage = o =>
     Boolean(o) &&
     (
       isAdmin ||
       (
         isTechnician &&
-        team !== '' &&
-        String(o.team_code || '').toLowerCase() === team
+        ['takbai', 'pattani'].includes(team) &&
+        String(o.team_code || '').toLowerCase() === team &&
+        scopeIds.includes(Number(o.center_id))
       )
     )
+
 
   const canClose = o =>
     canManage(o) &&
@@ -307,14 +305,17 @@ export default function TechnicianRepair({ profile }) {
     o?.status === 'closed'
 
   const canCancel = o =>
-    OPEN_STATUSES.includes(o?.status) &&
-    (canManage(o) || isCentral)
+    Boolean(o) &&
+    OPEN_STATUSES.includes(o.status) &&
+    (canManage(o) || isCentral || isManager)
 
   const canHardDelete = o =>
     isAdmin && o?.status === 'cancelled'
 
   const [orders, setOrders] = useState([])
   const [centers, setCenters] = useState([])
+  
+
   const [selectedId, setSelectedId] = useState(null)
   const [units, setUnits] = useState([])
   const [history, setHistory] = useState([])
@@ -330,6 +331,7 @@ export default function TechnicianRepair({ profile }) {
 
   const [modalOrder, setModalOrder] = useState(null)
   const [modalMode, setModalMode] = useState('close')
+  const [editReason, setEditReason] = useState('')
   const [form, setForm] = useState(
     () => makeForm(profile, 0)
   )
@@ -694,35 +696,36 @@ export default function TechnicianRepair({ profile }) {
   const selectedOver =
     form.slaChoice === 'over'
 
-  const loadTechnicians = async () => {
+  
+  const loadTechnicians = async orderId => {
     setTechniciansError('')
+    setTechnicians([])
 
     const { data, error: err } = await supabase.rpc(
-      'cctv_repair_list_technicians'
+      'cctv_repair_list_technicians',
+      {
+        p_order_id: Number(orderId),
+      }
     )
 
     if (err) {
       setTechniciansError(
-        'ยังไม่เชื่อมทะเบียนช่างกับฐานข้อมูล'
+        `โหลดทะเบียนสมาชิกชุดช่างไม่สำเร็จ: ${err.message}`
       )
+      return
+    }
 
-      if (isTechnician) {
-        setTechnicians([
-          {
-            user_id: profile.id,
-            display_name:
-              profile.full_name || profile.username,
-            contact_phone:
-              profile.repair_contact_phone || '',
-          },
-        ])
-      } else {
-        setTechnicians([])
-      }
-    } else {
-      setTechnicians(data || [])
+    const members = data || []
+    setTechnicians(members)
+
+    if (members.length === 0) {
+      setTechniciansError(
+        'ยังไม่มีสมาชิกชุดช่างที่เปิดใช้งาน กรุณาให้ Admin เพิ่มสมาชิกในหน้าผู้ใช้งานระบบ'
+      )
     }
   }
+
+  
 
   const openModal = async (
     order,
@@ -739,6 +742,7 @@ export default function TechnicianRepair({ profile }) {
     }
 
     setModalMode(mode)
+    setEditReason('')
     setModalOrder(order)
     setModalBusy(true)
     setModalError('')
@@ -777,7 +781,7 @@ export default function TechnicianRepair({ profile }) {
       setForm(next)
       setModalCount(count)
 
-      await loadTechnicians()
+      await loadTechnicians(order.id)
     } catch (err) {
       setModalError(
         err.message || 'โหลดข้อมูลปิดงานไม่สำเร็จ'
@@ -903,16 +907,31 @@ export default function TechnicianRepair({ profile }) {
     }
   }
 
+    
   const submitClose = async () => {
+    const isEditing = modalMode === 'edit'
+
     if (
       !modalOrder ||
-      modalMode !== 'close' ||
       modalBusy ||
       modalSaving ||
-      !canClose(modalOrder)
+      !(isEditing
+        ? canEdit(modalOrder)
+        : canClose(modalOrder))
     ) {
       return
     }
+
+    if (isEditing && editReason.trim().length < 10) {
+      setModalError(
+        'กรุณาระบุเหตุผลการแก้ไขอย่างน้อย 10 ตัวอักษร'
+      )
+      return
+    }
+
+    // ส่วนตรวจข้อมูลเดิม ตั้งแต่ const down ลงไป
+    // ให้คงไว้ทั้งหมด
+
 
     const down = Number(form.down)
     const good = Number(form.usable)
@@ -1028,90 +1047,133 @@ export default function TechnicianRepair({ profile }) {
       }
 
       // สร้างข้อมูลส่งให้ RPC
-      equipment.push({
-        name: x.name,
-        is_damaged: x.is_damaged,
-        is_stuck: x.is_stuck,
+        equipment.push({
+          name: x.name,
+          is_damaged: x.is_damaged,
+          is_stuck: x.is_stuck,
 
-        // มี S/N ใหม่อย่างน้อยหนึ่งตัว ถือว่ามีการเปลี่ยน
-        is_replaced: newSerials.some(Boolean),
+          // มี S/N ใหม่อย่างน้อยหนึ่งตัว ถือว่ามีการเปลี่ยน
+          is_replaced: newSerials.some(Boolean),
 
-        failed_count: failedTotal,
+          failed_count: failedTotal,
 
-        reset_count: x.is_stuck
-          ? Number(x.reset_count)
-          : 0,
+          reset_count: x.is_stuck
+            ? Number(x.reset_count)
+            : 0,
 
-        // เก็บรูปแบบเดิมเพื่อรองรับ RPC ปัจจุบัน
-        old_sn: oldSerials.join('\n'),
-        new_sn: newSerials.join('\n'),
+          // เก็บรูปแบบเดิมเพื่อรองรับ RPC ปัจจุบัน
+          old_sn: oldSerials.join('\n'),
+          new_sn: newSerials.join('\n'),
 
-        // ข้อมูล S/N แยกตามอุปกรณ์แต่ละตัว
-        serial_numbers: oldSerials.map((old_sn, i) => ({
-          old_sn,
-          new_sn: newSerials[i],
-        })),
-      })
-    }
+          // ข้อมูล S/N แยกตามอุปกรณ์แต่ละตัว
+          serial_numbers: oldSerials.map((old_sn, i) => ({
+            old_sn,
+            new_sn: newSerials[i],
+          })),
+        })
+      }
 
 
 
-    if (
-      !window.confirm(
-        `ยืนยันบันทึกและปิดงาน ${ticketLabel(modalOrder)}?`
-      )
-    ) {
-      return
-    }
+      if (
+        !window.confirm(
+          `${isEditing
+            ? 'ยืนยันแก้ไขผลซ่อม'
+            : 'ยืนยันบันทึกและปิดงาน'} ${ticketLabel(modalOrder)}?`
+        )
+      ) {
+        return
+      }
 
-    setModalSaving(true)
-    setModalError('')
+      setModalSaving(true)
+      setModalError('')
 
-    try {
-      const { data, error: err } = await supabase.rpc(
-        'cctv_repair_technician_close_v3',
-        {
-          p_order_id: modalOrder.id,
-          p_problem_found: form.problem.trim(),
-          p_fix_method: form.method.trim(),
-          p_camera_down_count: down,
-          p_usable_count: good,
-          p_unusable_count: bad,
-          p_unusable_reason:
-            form.unusableReason.trim(),
-          p_completed_at:
-            completionAt.toISOString(),
-          p_sla_exceeded: selectedOver,
-          p_sla_reason: selectedOver
-            ? form.slaReason.trim()
-            : '',
-          p_equipment_items: equipment,
-          p_technician_name:
-            form.technician.trim(),
-          p_technician_phone:
-            form.phone.trim(),
+      try {
+        
+  const rpcParams = {
+    p_order_id: modalOrder.id,
+    p_problem_found: form.problem.trim(),
+    p_fix_method: form.method.trim(),
+    p_camera_down_count: down,
+    p_usable_count: good,
+    p_unusable_count: bad,
+    p_unusable_reason: form.unusableReason.trim(),
+    p_completed_at: completionAt.toISOString(),
+    p_sla_exceeded: selectedOver,
+    p_sla_reason: selectedOver
+      ? form.slaReason.trim()
+      : '',
+    p_equipment_items: equipment,
+    p_technician_name: form.technician.trim(),
+    p_technician_phone: form.phone.trim(),
+  }
+
+  const { data, error: err } = await supabase.rpc(
+    isEditing
+      ? 'cctv_repair_technician_edit_closed'
+      : 'cctv_repair_technician_close_v3',
+    isEditing
+      ? {
+          ...rpcParams,
+          p_edit_reason: editReason.trim(),
         }
-      )
+      : rpcParams
+  )
+
 
       if (err) throw err
 
+      
       if (data !== true) {
         throw new Error(
-          'ฐานข้อมูลไม่ยืนยันการปิดงาน'
+          isEditing
+            ? 'ฐานข้อมูลไม่ยืนยันการแก้ไขผลซ่อม'
+            : 'ฐานข้อมูลไม่ยืนยันการปิดงาน'
         )
       }
 
+
+      
       const ticket = ticketLabel(modalOrder)
+      const updatedOrderId = modalOrder.id
 
       setModalOrder(null)
       await loadOrders()
 
+      // รีเฟรชประวัติหลังแก้ไขงานที่ปิดแล้ว
+      if (
+        isEditing &&
+        String(selectedId) === String(updatedOrderId)
+      ) {
+        const { data: updatedHistory, error: historyErr } =
+          await supabase
+            .from('cctv_repair_history')
+            .select('*')
+            .eq('order_id', updatedOrderId)
+            .order('created_at', { ascending: false })
+            .limit(100)
+
+        if (historyErr) {
+          setHistoryError(historyErr.message)
+        } else {
+          setHistory(updatedHistory || [])
+          setHistoryError('')
+        }
+      }
+
       setNotice(
-        `บันทึกผลและปิดงาน ${ticket} แล้ว`
+        isEditing
+          ? `แก้ไขผลซ่อม ${ticket} เรียบร้อยแล้ว`
+          : `บันทึกผลและปิดงาน ${ticket} แล้ว`
       )
+
     } catch (err) {
       setModalError(
-        err.message || 'ปิดงานไม่สำเร็จ'
+        err.message || (
+          isEditing
+            ? 'แก้ไขผลซ่อมไม่สำเร็จ'
+            : 'ปิดงานไม่สำเร็จ'
+        )
       )
     } finally {
       setModalSaving(false)
@@ -2311,9 +2373,11 @@ export default function TechnicianRepair({ profile }) {
                           setForm(old => ({
                             ...old,
                             technician: ev.target.value,
-                            phone:
-                              p?.contact_phone ||
-                              old.phone,
+                            
+                              phone: p
+                                ? (p.contact_phone || '')
+                                : '',
+
                           }))
                         }}
                       >
@@ -2358,13 +2422,27 @@ export default function TechnicianRepair({ profile }) {
                     </label>
                   </div>
 
+                  
                   {modalMode === 'edit' && (
-                    <p className="tech-warning">
-                      โหมดแก้ไขเปิดดูและปรับฟอร์มได้
-                      แต่ยังไม่เปิดบันทึกจริงจนกว่าจะมี RPC
-                      แก้ไขงานปิดแล้ว
-                    </p>
+                    <>
+                      <p className="tech-warning">
+                        การแก้ไขผลซ่อมหลังปิดงานจะถูกบันทึก
+                        ประวัติก่อนและหลังแก้ไข พร้อมเหตุผล
+                        และบัญชีผู้แก้ไข
+                      </p>
+
+                      <label>
+                        เหตุผลการแก้ไข *
+                        <textarea
+                          rows={3}
+                          value={editReason}
+                          onChange={e => setEditReason(e.target.value)}
+                          placeholder="ระบุเหตุผลอย่างน้อย 10 ตัวอักษร"
+                        />
+                      </label>
+                    </>
                   )}
+
                 </>
               )}
             </div>
@@ -2381,17 +2459,22 @@ export default function TechnicianRepair({ profile }) {
               <button
                 type="button"
                 className="tech-btn-close"
+                
                 disabled={
                   modalBusy ||
                   modalSaving ||
-                  modalMode === 'edit'
+                  (
+                    modalMode === 'edit' &&
+                    editReason.trim().length < 10
+                  )
                 }
+
                 onClick={submitClose}
               >
                 {modalSaving
                   ? 'กำลังบันทึก...'
                   : modalMode === 'edit'
-                    ? 'รอเชื่อมการบันทึก'
+                    ? 'บันทึกการแก้ไข'
                     : 'บันทึกและปิดงาน'}
               </button>
             </footer>
