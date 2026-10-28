@@ -312,8 +312,11 @@ export default function TechnicianRepair({ profile }) {
     OPEN_STATUSES.includes(o.status) &&
     (canManage(o) || isCentral || isManager)
 
+  
   const canHardDelete = o =>
-    isAdmin && o?.status === 'cancelled'
+    isAdmin &&
+    ['cancelled', 'closed'].includes(o?.status)
+
 
   const [orders, setOrders] = useState([])
   const [centers, setCenters] = useState([])
