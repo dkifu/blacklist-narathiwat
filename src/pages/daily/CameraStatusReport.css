@@ -1,4350 +1,2176 @@
 /* =========================================
 
-
-
    CAMERA STATUS REPORT
 
-
-
-\========================================= */
-
-
+========================================= */
 
 .csr-root {
 
-
-
   color: #eef3fb;
-
-
 
   background: #111822;
 
-
-
   border: 1px solid #293548;
-
-
 
   border-radius: 16px;
 
-
-
   padding: 24px;
 
-
-
 }
-
-
 
 .csr-title {
 
-
-
   display: flex;
 
-
-
   justify-content: space-between;
-
-
 
   margin-bottom: 20px;
 
-
-
 }
-
-
 
 .csr-title span {
 
-
-
   color: #ff416c;
 
-
-
   font-size: 11px;
-
-
 
   letter-spacing: .13em;
 
-
-
   font-weight: 800;
 
-
-
 }
-
-
 
 .csr-title h2 {
 
-
-
   margin: 7px 0;
-
-
 
   font-size: 23px;
 
-
-
 }
-
-
 
 .csr-title p,
 
-
-
 .csr-hint {
-
-
 
   color: #9aabc1;
 
-
-
   font-size: 12px;
-
-
 
   line-height: 1.7;
 
-
-
 }
-
-
 
 /* INPUTS */
 
-
-
 .csr-controls {
-
-
 
   display: grid;
 
-
-
   grid-template-columns: repeat(3, minmax(0, 1fr));
-
-
 
   gap: 12px;
 
-
-
   margin: 14px 0;
 
-
-
 }
-
-
 
 .csr-controls label,
 
-
-
 .csr-agent label {
-
-
 
   display: flex;
 
-
-
   flex-direction: column;
-
-
 
   gap: 7px;
 
-
-
   color: #a9b9d0;
-
-
 
   font-size: 12px;
 
-
-
   font-weight: 700;
 
-
-
 }
-
-
 
 .csr-root input:not([type=checkbox]),
 
-
-
 .csr-root select {
-
-
 
   min-width: 0;
 
-
-
   width: 100%;
 
-
-
   box-sizing: border-box;
-
-
 
   padding: 10px 11px;
 
-
-
   color: #eef3fb;
-
-
 
   background: #192332;
 
-
-
   border: 1px solid #35445b;
-
-
 
   border-radius: 9px;
 
-
-
   font: inherit;
 
-
-
 }
-
-
 
 .csr-root select option {
 
-
-
   color: #182335;
-
-
 
   background: #ffffff;
 
-
-
 }
-
-
 
 .csr-root button {
 
-
-
   border: 1px solid #455169;
-
-
 
   padding: 10px 13px;
 
-
-
   border-radius: 9px;
-
-
 
   background: #1b293b;
 
-
-
   color: #eef3fb;
 
-
-
   cursor: pointer;
-
-
 
   font: inherit;
 
-
-
   font-size: 12px;
-
-
 
   font-weight: 700;
 
-
-
 }
-
-
 
 .csr-root button:hover:not(:disabled) {
 
-
-
   border-color: #ff416c;
 
-
-
 }
-
-
 
 .csr-root button:disabled {
 
-
-
   opacity: .45;
-
-
 
   cursor: not-allowed;
 
-
-
 }
-
-
 
 .csr-root .csr-primary {
 
-
-
   background: #b41f49;
-
-
 
   color: #ffffff;
 
-
-
   border-color: #d0315c;
 
-
-
 }
-
-
 
 /* ACTIONS */
 
-
-
 .csr-actions,
-
-
 
 .csr-agent,
 
-
-
 .csr-footer {
-
-
 
   display: flex;
 
-
-
   flex-wrap: wrap;
-
-
 
   align-items: center;
 
-
-
   gap: 10px;
-
-
 
   margin: 16px 0;
 
-
-
 }
-
-
 
 .csr-actions small {
 
-
-
   color: #7f90a7;
-
-
 
 }
 
-
-
 .csr-agent {
-
-
 
   padding: 15px;
 
-
-
   background: #151f2d;
-
-
 
   border: 1px solid #2c3c53;
 
-
-
   border-radius: 12px;
 
-
-
 }
-
-
 
 .csr-agent label {
 
-
-
   flex: 1 1 260px;
 
-
-
 }
-
-
 
 .csr-message {
 
-
-
   border: 1px solid #455169;
-
-
 
   color: #d8e2f1;
 
-
-
   padding: 11px 13px;
-
-
 
   background: #1a2636;
 
-
-
   border-radius: 9px;
-
-
 
   margin: 12px 0;
 
-
-
 }
-
-
 
 /* CAMERA TABLE */
 
-
-
 .csr-table-head {
-
-
 
   display: flex;
 
-
-
   justify-content: space-between;
-
-
 
   align-items: center;
 
-
-
   gap: 14px;
-
-
 
   margin-top: 22px;
 
-
-
 }
-
-
 
 .csr-table-head h3 {
 
-
-
   font-size: 17px;
 
-
-
 }
-
-
 
 .csr-table-head input {
 
-
-
   max-width: 340px;
 
-
-
 }
-
-
 
 .csr-table-scroll {
 
-
-
   overflow: auto;
-
-
 
   border: 1px solid #304055;
 
-
-
   border-radius: 12px;
 
-
-
 }
-
-
 
 .csr-table {
 
-
-
   border-collapse: collapse;
 
-
-
   width: 100%;
-
-
 
   min-width: 860px;
 
-
-
   text-align: left;
-
-
 
   font-size: 12px;
 
-
-
 }
-
-
 
 .csr-table th {
 
-
-
   padding: 13px;
-
-
 
   background: #1c2a3a;
 
-
-
   color: #abbad0;
 
-
-
 }
-
-
 
 .csr-table td {
 
-
-
   padding: 10px 13px;
-
-
 
   border-top: 1px solid #2b3a4e;
 
-
-
   vertical-align: middle;
 
-
-
 }
-
-
 
 .csr-table td small {
 
-
-
   display: block;
-
-
 
   margin-top: 6px;
 
-
-
   color: #8798af;
 
-
-
 }
-
-
 
 .csr-table td select {
 
-
-
   min-width: 165px;
 
-
-
 }
-
-
 
 .csr-table td button {
 
-
-
   padding: 7px 9px;
 
-
-
 }
-
-
 
 .csr-level {
 
-
-
   font-weight: 800;
-
-
 
   color: #8da1b9;
 
-
-
 }
-
-
 
 .csr-level.green,
 
-
-
 .csr-yes {
-
-
 
   color: #44cd95;
 
-
-
 }
-
-
 
 .csr-level.yellow {
 
-
-
   color: #facc15;
 
-
-
 }
-
-
 
 .csr-level.orange {
 
-
-
   color: #fb923c;
 
-
-
 }
-
-
 
 .csr-level.red,
 
-
-
 .csr-level.unreachable {
-
-
 
   color: #f27783;
 
-
-
 }
-
-
 
 /* MANUAL EDIT */
 
-
-
 .csr-manual {
-
-
 
   margin-top: 20px;
 
-
-
   padding: 16px;
 
-
-
   border: 1px solid #33445a;
-
-
 
   background: #151f2e;
 
-
-
   border-radius: 12px;
 
-
-
 }
-
-
 
 .csr-manual > label {
 
-
-
   display: flex;
-
-
 
   align-items: center;
 
-
-
   gap: 9px;
-
-
 
   font-size: 13px;
 
-
-
 }
-
-
 
 .csr-manual .csr-controls {
 
-
-
   grid-template-columns: repeat(3, minmax(0, 1fr));
 
-
-
 }
-
-
 
 .csr-wide {
 
-
-
   grid-column: 1 / -1;
 
-
-
 }
-
-
 
 /* SAVE BAR */
 
-
-
 .csr-footer {
-
-
 
   justify-content: space-between;
 
-
-
   border-top: 1px solid #304055;
-
-
 
   padding-top: 16px;
 
-
-
   font-size: 12px;
-
-
 
   color: #d8e2ef;
 
-
-
 }
-
-
 
 /* RESPONSIVE */
 
-
-
 @media (max-width: 900px) {
-
-
 
   .csr-controls {
 
-
-
     grid-template-columns: 1fr;
-
-
 
   }
 
-
-
 }
 
-
-
 @media (max-width: 600px) {
-
-
 
   .csr-root {
 
-
-
     padding: 14px;
 
-
-
   }
-
-
 
   .csr-table-head {
 
-
-
     flex-direction: column;
-
-
 
     align-items: stretch;
 
-
-
   }
-
-
 
 .csr-manual .csr-controls {
 
-
-
     grid-template-columns: 1fr;
-
-
 
   }
 
-
-
 }
 
-
-
 /* =========================================
-
-
 
    SERVICE BOX GROUPED VIEW
 
-
-
-\========================================= */
-
-
+========================================= */
 
 .csr-box-toolbar {
 
-
-
   display: flex;
-
-
 
   align-items: center;
 
-
-
   justify-content: space-between;
-
-
 
   gap: 12px;
 
-
-
   flex-wrap: wrap;
-
-
 
   margin: 14px 0;
 
-
-
 }
-
-
 
 .csr-box-toolbar label {
 
-
-
   display: flex;
-
-
 
   align-items: center;
 
-
-
   gap: 9px;
 
-
-
   font-size: 12px;
-
-
 
   color: #c4d1e2;
 
-
-
   cursor: pointer;
 
-
-
 }
-
-
 
 .csr-box-toolbar-actions {
 
-
-
   display: flex;
-
-
 
   gap: 8px;
 
-
-
 }
-
-
 
 .csr-box-list {
 
-
-
   display: flex;
-
-
 
   flex-direction: column;
 
-
-
   gap: 9px;
 
-
-
 }
-
-
 
 .csr-box-item {
 
-
-
   border: 1px solid #304055;
-
-
 
   border-left: 4px solid #65758d;
 
-
-
   border-radius: 12px;
-
-
 
   background: #172232;
 
-
-
   overflow: hidden;
 
-
-
 }
-
-
 
 .csr-box-item.level-green {
 
-
-
   border-left-color: #36c78e;
 
-
-
 }
-
-
 
 .csr-box-item.level-yellow {
 
-
-
   border-left-color: #facc15;
 
-
-
 }
-
-
 
 .csr-box-item.level-orange {
 
-
-
   border-left-color: #fb923c;
 
-
-
 }
-
-
 
 .csr-box-item.level-red {
 
-
-
   border-left-color: #f06b79;
 
-
-
 }
-
-
 
 .csr-root .csr-box-toggle {
 
-
-
   width: 100%;
-
-
 
   display: flex;
 
-
-
   align-items: center;
-
-
 
   gap: 14px;
 
-
-
   padding: 15px 17px;
-
-
 
   text-align: left;
 
-
-
   border: none;
-
-
 
   border-radius: 0;
 
-
-
   background: transparent;
-
-
 
   color: #edf3fb;
 
-
-
 }
-
-
 
 .csr-root .csr-box-toggle:hover:not(:disabled) {
 
-
-
   background: #203047;
-
-
 
   border-color: transparent;
 
-
-
 }
-
-
 
 .csr-box-chevron {
 
-
-
   color: #8a9cb4;
-
-
 
   font-size: 23px;
 
-
-
   width: 20px;
-
-
 
   text-align: center;
 
-
-
   flex-shrink: 0;
 
-
-
 }
-
-
 
 .csr-box-info {
 
-
-
   flex: 1;
-
-
 
   min-width: 0;
 
-
-
   display: flex;
-
-
 
   flex-direction: column;
 
-
-
   gap: 5px;
 
-
-
 }
-
-
 
 .csr-box-info strong {
 
-
-
   color: #fff;
-
-
 
   font-size: 13px;
 
-
-
   line-height: 1.5;
-
-
 
   overflow-wrap: anywhere;
 
-
-
 }
-
-
 
 .csr-box-info small {
 
-
-
   color: #8599b4;
-
-
 
   font-size: 11px;
 
-
-
 }
-
-
 
 .csr-box-right {
 
-
-
   display: flex;
 
-
-
   flex-direction: column;
-
-
 
   align-items: flex-end;
 
-
-
   gap: 5px;
-
-
 
   flex-shrink: 0;
 
-
-
 }
-
-
 
 .csr-box-badge {
 
-
-
   padding: 5px 11px;
-
-
 
   border-radius: 7px;
 
-
-
   font-size: 11px;
-
-
 
   font-weight: 800;
 
-
-
 }
-
-
 
 .csr-box-badge.green {
 
-
-
   background: rgba(54, 199, 142, .12);
-
-
 
   color: #46d79a;
 
-
-
 }
-
-
 
 .csr-box-badge.yellow {
 
-
-
   background: rgba(250, 204, 21, .12);
-
-
 
   color: #facc15;
 
-
-
 }
-
-
 
 .csr-box-badge.orange {
 
-
-
   background: rgba(251, 146, 60, .12);
-
-
 
   color: #fb923c;
 
-
-
 }
-
-
 
 .csr-box-badge.red {
 
-
-
   background: rgba(240, 107, 121, .12);
-
-
 
   color: #fa8793;
 
-
-
 }
-
-
 
 .csr-box-badge.idle {
 
-
-
   background: rgba(120, 141, 169, .15);
-
-
 
   color: #9dadc2;
 
-
-
 }
-
-
 
 .csr-box-pending {
 
-
-
   color: #f2ac4c;
-
-
 
   font-size: 10px;
 
-
-
 }
-
-
 
 .csr-box-details {
 
-
-
   padding: 12px;
-
-
 
   border-top: 1px solid #304055;
 
-
-
   background: #101925;
 
-
-
 }
-
-
 
 .csr-box-details .csr-table-scroll {
 
-
-
   border-radius: 8px;
 
-
-
 }
-
-
 
 .csr-box-details .csr-table td {
 
-
-
   padding-top: 12px;
-
-
 
   padding-bottom: 12px;
 
-
-
 }
-
-
 
 .csr-box-empty {
 
-
-
   padding: 35px;
 
-
-
   text-align: center;
-
-
 
   border: 1px dashed #35445b;
 
-
-
   border-radius: 12px;
-
-
 
   color: #8d9fb8;
 
-
-
 }
-
-
 
 @media (max-width: 600px) {
 
-
-
   .csr-root .csr-box-toggle {
 
-
-
     padding: 12px;
-
-
 
     gap: 9px;
 
-
-
   }
-
-
 
   .csr-box-info strong {
 
-
-
     font-size: 12px;
 
-
-
   }
-
-
 
   .csr-box-badge {
 
-
-
     padding: 5px 7px;
-
-
 
     font-size: 10px;
 
-
-
   }
-
-
 
   .csr-box-details {
 
-
-
     padding: 7px;
-
-
 
   }
 
-
-
 }
 
-
-
 /* =========================================
-
-
 
    SERVICE BOX GRID - 2 BOXES PER ROW
 
-
-
-\========================================= */
-
-
+========================================= */
 
 /* รายการตู้ แถวละ 2 ตู้ */
 
-
-
 .csr-root .csr-box-list {
-
-
 
   display: grid;
 
-
-
   grid-template-columns: repeat(2, minmax(0, 1fr));
 
-
-
   gap: 12px;
-
-
 
   align-items: start;
 
-
-
 }
-
-
 
 /* ตู้แต่ละใบ */
 
-
-
 .csr-root .csr-box-item {
-
-
 
   width: 100%;
 
-
-
   min-width: 0;
 
-
-
   box-sizing: border-box;
-
-
 
   grid-column: auto;
 
-
-
 }
-
-
 
 /* เมื่อเปิดตู้ ให้ขยายเต็มแถว
 
-
-
    เพื่อแสดงตารางกล้องแบบเดิม */
-
-
 
 .csr-root .csr-box-item:has(.csr-box-details) {
 
-
-
   grid-column: 1 / -1;
 
-
-
 }
-
-
 
 /* รายละเอียดกล้องใช้รูปแบบเดิม */
 
-
-
 .csr-root .csr-box-details {
-
-
 
   width: 100%;
 
-
-
   box-sizing: border-box;
 
-
-
 }
-
-
 
 /* จอเล็กแสดงแถวละ 1 ตู้ */
 
-
-
 @media (max-width: 900px) {
-
-
 
   .csr-root .csr-box-list {
 
-
-
     grid-template-columns: 1fr;
 
-
-
   }
-
-
 
   .csr-root .csr-box-item:has(.csr-box-details) {
 
-
-
     grid-column: auto;
-
-
 
   }
 
-
-
 }
 
-
-
 /* =========================================
-
-
 
    MESSAGE STATUS COLORS
 
-
-
-\========================================= */
-
-
+========================================= */
 
 .csr-root .csr-message {
 
-
-
   display: flex;
-
-
 
   align-items: center;
 
-
-
   gap: 12px;
-
-
 
   padding: 13px 16px;
 
-
-
   border-radius: 10px;
 
-
-
   font-size: 13px;
-
-
 
   font-weight: 600;
 
-
-
   line-height: 1.6;
-
-
 
   transition: all 0.2s ease;
 
-
-
 }
-
-
 
 /* SUCCESS - GREEN */
 
-
-
 .csr-root .csr-message--success {
-
-
 
   background: rgba(34, 197, 94, 0.10);
 
-
-
   border: 1px solid rgba(34, 197, 94, 0.45);
-
-
 
   color: #4ade80;
 
-
-
 }
-
-
 
 /* ERROR - RED */
 
-
-
 .csr-root .csr-message--error {
-
-
 
   background: rgba(239, 68, 68, 0.10);
 
-
-
   border: 1px solid rgba(239, 68, 68, 0.45);
-
-
 
   color: #f87171;
 
-
-
 }
-
-
 
 /* WARNING - ORANGE */
 
-
-
 .csr-root .csr-message--warning {
-
-
 
   background: rgba(245, 158, 11, 0.10);
 
-
-
   border: 1px solid rgba(245, 158, 11, 0.45);
-
-
 
   color: #fbbf24;
 
-
-
 }
-
-
 
 /* INFO - BLUE */
 
-
-
 .csr-root .csr-message--info {
-
-
 
   background: rgba(59, 130, 246, 0.10);
 
-
-
   border: 1px solid rgba(59, 130, 246, 0.35);
-
-
 
   color: #93c5fd;
 
-
-
 }
-
-
 
 /* STATUS ICON */
 
-
-
 .csr-message-icon {
-
-
 
   display: flex;
 
-
-
   align-items: center;
 
-
-
   justify-content: center;
-
-
 
   width: 22px;
 
-
-
   height: 22px;
-
-
 
   min-width: 22px;
 
-
-
   border: 1px solid currentColor;
-
-
 
   border-radius: 50%;
 
-
-
   font-size: 13px;
-
-
 
   font-weight: 900;
 
-
-
 }
 
-
-
 /* =========================================
-
-
 
    AGENT PANEL - POLISHED UI
 
-
-
-\========================================= */
-
-
+========================================= */
 
 .csr-agent {
 
-
-
   display: grid;
-
-
 
   grid-template-columns: minmax(260px, 1fr) auto auto;
 
-
-
   align-items: center;
 
-
-
   gap: 12px;
-
-
 
   padding: 14px 16px;
 
-
-
   border: 1px solid #2d3b50;
-
-
 
   border-radius: 14px;
 
-
-
   background: linear-gradient(
 
-
-
     145deg,
-
-
 
     #162233,
 
-
-
     #121c2a
-
-
 
   );
 
-
-
 }
-
-
 
 /* LEFT INFO BOX */
 
-
-
 .csr-agent-ready {
 
-
-
   min-width: 0;
-
-
 
   padding: 12px 14px;
 
-
-
   border: 1px solid #324157;
 
-
-
   border-radius: 12px;
-
-
 
   background: rgba(255, 255, 255, 0.02);
 
-
-
 }
-
-
 
 .csr-agent-ready.is-connected {
 
-
-
   border-color: rgba(34, 197, 94, 0.35);
-
-
 
   background: rgba(34, 197, 94, 0.06);
 
-
-
 }
-
-
 
 .csr-agent-ready.is-disconnected {
 
-
-
   border-color: rgba(120, 141, 169, 0.28);
-
-
 
   background: rgba(120, 141, 169, 0.05);
 
-
-
 }
-
-
 
 .csr-agent-ready-head {
 
-
-
   display: flex;
-
-
 
   align-items: center;
 
-
-
   justify-content: space-between;
 
-
-
   gap: 10px;
-
-
 
   margin-bottom: 5px;
 
-
-
 }
-
-
 
 .csr-agent-ready strong {
 
-
-
   color: #eef3fb;
-
-
 
   font-size: 15px;
 
-
-
   font-weight: 800;
-
-
 
   line-height: 1.2;
 
-
-
 }
-
-
 
 .csr-agent-ready small {
 
-
-
   display: block;
-
-
 
   color: #9eb0c6;
 
-
-
   font-size: 12px;
-
-
 
   line-height: 1.5;
 
-
-
 }
-
-
 
 /* STATUS BADGE */
 
-
-
 .csr-agent-ready-badge {
-
-
 
   display: inline-flex;
 
-
-
   align-items: center;
 
-
-
   justify-content: center;
-
-
 
   min-height: 28px;
 
-
-
   padding: 0 12px;
-
-
 
   border-radius: 999px;
 
-
-
   font-size: 11px;
-
-
 
   font-weight: 800;
 
-
-
   white-space: nowrap;
 
-
-
 }
-
-
 
 .csr-agent-ready-badge.connected {
 
-
-
   background: rgba(34, 197, 94, 0.14);
-
-
 
   border: 1px solid rgba(34, 197, 94, 0.35);
 
-
-
   color: #4ade80;
 
-
-
 }
-
-
 
 .csr-agent-ready-badge.disconnected {
 
-
-
   background: rgba(120, 141, 169, 0.12);
-
-
 
   border: 1px solid rgba(120, 141, 169, 0.28);
 
-
-
   color: #a7b7cb;
 
-
-
 }
-
-
 
 /* BUTTON GROUP */
 
-
-
 .csr-agent-actions {
-
-
 
   display: flex;
 
-
-
   align-items: center;
-
-
 
   gap: 10px;
 
-
-
   flex-wrap: wrap;
 
-
-
 }
-
-
 
 .csr-agent-actions button {
 
-
-
   min-width: 150px;
-
-
 
   height: 40px;
 
-
-
   display: inline-flex;
-
-
 
   align-items: center;
 
-
-
   justify-content: center;
-
-
 
   padding: 0 14px;
 
-
-
   box-sizing: border-box;
-
-
 
   white-space: nowrap;
 
-
-
 }
-
-
 
 /* PROGRESS BADGE */
 
-
-
 .csr-agent-progress {
 
-
-
   min-width: 110px;
-
-
 
   height: 40px;
 
-
-
   display: inline-flex;
-
-
 
   align-items: center;
 
-
-
   justify-content: center;
-
-
 
   padding: 0 14px;
 
-
-
   border: 1px solid #324157;
 
-
-
   border-radius: 10px;
-
-
 
   background: #182434;
 
-
-
   color: #eef3fb;
-
-
 
   font-size: 14px;
 
-
-
   font-weight: 800;
-
-
 
   white-space: nowrap;
 
-
-
 }
-
-
 
 /* RESPONSIVE */
 
-
-
 @media (max-width: 1200px) {
-
-
 
   .csr-agent {
 
-
-
     grid-template-columns: 1fr;
-
-
 
     align-items: stretch;
 
-
-
   }
-
-
 
   .csr-agent-actions {
 
-
-
     justify-content: flex-start;
 
-
-
   }
-
-
 
   .csr-agent-progress {
 
-
-
     justify-content: flex-start;
-
-
 
     width: fit-content;
 
-
-
   }
 
-
-
 }
-
-
 
 @media (max-width: 700px) {
 
-
-
   .csr-agent-actions {
-
-
 
     display: grid;
 
-
-
     grid-template-columns: 1fr 1fr;
-
-
 
     gap: 10px;
 
-
-
   }
-
-
 
   .csr-agent-actions button {
 
-
-
     min-width: 0;
-
-
 
     width: 100%;
 
-
-
   }
 
-
-
 }
-
-
 
 @media (max-width: 520px) {
 
-
-
   .csr-agent-actions {
-
-
 
     grid-template-columns: 1fr;
 
-
-
   }
-
-
 
   .csr-agent-ready-head {
 
-
-
     flex-direction: column;
-
-
 
     align-items: flex-start;
 
-
-
   }
-
-
 
 }
 
-
-
 /* =========================================
-
-
 
    LIVE CCTV PING PROGRESS
 
-
-
-\========================================= */
-
-
+========================================= */
 
 .csr-root .csr-live-progress {
 
-
-
   padding: 17px 20px;
-
-
 
   margin: 14px 0;
 
-
-
   background: #102239;
-
-
 
   border: 1px solid #2472a3;
 
-
-
   border-radius: 12px;
-
-
 
   box-sizing: border-box;
 
-
-
 }
-
-
 
 .csr-live-progress-header {
 
-
-
   display: flex;
-
-
 
   align-items: center;
 
-
-
   gap: 14px;
 
-
-
 }
-
-
 
 .csr-live-progress-title {
 
-
-
   flex: 1;
-
-
 
   min-width: 0;
 
-
-
   display: flex;
 
-
-
   flex-direction: column;
-
-
 
   gap: 4px;
 
-
-
 }
-
-
 
 .csr-live-progress-title strong {
 
-
-
   color: #e4f5ff;
-
-
 
   font-size: 14px;
 
-
-
 }
-
-
 
 .csr-live-progress-title small {
 
-
-
   color: #8fb5ce;
-
-
 
   font-size: 11px;
 
-
-
 }
-
-
 
 .csr-live-progress-percent {
 
-
-
   color: #38bdf8;
-
-
 
   font-size: 25px;
 
-
-
   font-weight: 900;
-
-
 
   font-variant-numeric: tabular-nums;
 
-
-
 }
-
-
 
 /* วงกลมหมุน */
 
-
-
 .csr-live-spinner {
-
-
 
   width: 24px;
 
-
-
   height: 24px;
-
-
 
   flex-shrink: 0;
 
-
-
   border: 3px solid rgba(56, 189, 248, 0.2);
-
-
 
   border-top-color: #38bdf8;
 
-
-
   border-radius: 50%;
-
-
 
   animation: csr-live-spin .8s linear infinite;
 
-
-
 }
-
-
 
 @keyframes csr-live-spin {
 
-
-
   to {
-
-
 
     transform: rotate(360deg);
 
-
-
   }
 
-
-
 }
-
-
 
 /* ราง Progress */
 
-
-
 .csr-live-progress-track {
-
-
 
   height: 12px;
 
-
-
   margin-top: 16px;
-
-
 
   background: #071421;
 
-
-
   border: 1px solid #28506c;
-
-
 
   border-radius: 999px;
 
-
-
   overflow: hidden;
 
-
-
 }
-
-
 
 /* แถบสีฟ้า */
 
-
-
 .csr-live-progress-fill {
-
-
 
   position: relative;
 
-
-
   height: 100%;
-
-
 
   background: linear-gradient(
 
-
-
     90deg,
-
-
 
     #0284c7,
 
-
-
     #0ea5e9,
-
-
 
     #38bdf8
 
-
-
   );
 
-
-
   border-radius: 999px;
-
-
 
   overflow: hidden;
 
-
-
   transition: width .35s ease;
 
-
-
 }
-
-
 
 /* แสงเคลื่อนไหว */
 
-
-
 .csr-live-progress-fill::after {
-
-
 
   content: '';
 
-
-
   position: absolute;
-
-
 
   inset: 0;
 
-
-
   background: linear-gradient(
-
-
 
     90deg,
 
-
-
     transparent,
-
-
 
     rgba(255, 255, 255, .5),
 
-
-
     transparent
 
-
-
   );
-
-
 
   animation: csr-live-shine 1.3s linear infinite;
 
-
-
 }
-
-
 
 @keyframes csr-live-shine {
 
-
-
   from { transform: translateX(-100%); }
-
-
 
   to { transform: translateX(100%); }
 
-
-
 }
-
-
 
 /* ข้อความด้านล่าง */
 
-
-
 .csr-live-progress-footer {
-
-
 
   display: flex;
 
-
-
   justify-content: space-between;
 
-
-
   gap: 12px;
-
-
 
   margin-top: 10px;
 
-
-
   color: #a1c4db;
-
-
 
   font-size: 12px;
 
-
-
 }
-
-
 
 .csr-live-progress-working {
 
-
-
   color: #38bdf8;
 
-
-
   font-weight: 700;
-
-
 
   animation: csr-live-pulse 1.3s ease-in-out infinite;
 
-
-
 }
-
-
 
 @keyframes csr-live-pulse {
 
-
-
   50% { opacity: .35; }
-
-
 
 }
 
-
-
 @media (prefers-reduced-motion: reduce) {
-
-
 
   .csr-live-spinner,
 
-
-
   .csr-live-progress-fill::after,
-
-
 
   .csr-live-progress-working {
 
-
-
     animation: none;
-
-
 
   }
 
-
-
 }
 
-
-
 /* =========================================
-
-
 
    CCTV NETWORKS - NEW LAYOUT
 
-
-
-\========================================= */
-
-
+========================================= */
 
 /* ตัวกรองหลักเหลือ ศูนย์ + วันที่ */
 
-
-
 .csr-controls.csr-main-filters {
-
-
 
   grid-template-columns: repeat(2, minmax(0, 1fr));
 
-
-
 }
 
-
-
 /* =========================================
-
-
 
    TWO NETWORK OVERVIEW CARDS
 
-
-
-\========================================= */
-
-
+========================================= */
 
 .csr-network-overview {
 
-
-
   display: grid;
-
-
 
   grid-template-columns: repeat(2, minmax(0, 1fr));
 
-
-
   gap: 14px;
-
-
 
   margin: 20px 0 24px;
 
-
-
 }
-
-
 
 .csr-network-card {
 
-
-
   min-width: 0;
-
-
 
   padding: 17px;
 
-
-
   border: 1px solid #33445a;
-
-
 
   border-radius: 14px;
 
-
-
   background: linear-gradient(
-
-
 
     145deg,
 
-
-
     #192638,
-
-
 
     #141f2f
 
-
-
   );
 
-
-
 }
-
-
 
 .csr-network-card.is-active {
 
-
-
   border-color: #b6355d;
-
-
 
   box-shadow: inset 0 3px 0 #c52d59;
 
-
-
 }
-
-
 
 .csr-network-card-header {
 
-
-
   display: flex;
-
-
 
   align-items: flex-start;
 
-
-
   justify-content: space-between;
 
-
-
   flex-wrap: wrap;
-
-
 
   gap: 12px;
 
-
-
   margin-bottom: 16px;
 
-
-
 }
-
-
 
 .csr-network-card-header > div {
 
-
-
   display: flex;
-
-
 
   flex-direction: column;
 
-
-
   gap: 5px;
 
-
-
 }
-
-
 
 .csr-network-card-header strong {
 
-
-
   color: #fff;
-
-
 
   font-size: 17px;
 
-
-
   font-weight: 800;
 
-
-
 }
-
-
 
 .csr-network-card-header small {
 
-
-
   color: #92a6bf;
-
-
 
   font-size: 11px;
 
-
-
   line-height: 1.5;
 
-
-
 }
-
-
 
 .csr-network-total {
 
-
-
   padding: 7px 12px;
-
-
 
   border: 1px solid #42516a;
 
-
-
   border-radius: 9px;
-
-
 
   color: #eaf3ff;
 
-
-
   background: #223149;
-
-
 
   font-size: 12px;
 
-
-
   font-weight: 800;
-
-
 
   white-space: nowrap;
 
-
-
 }
-
-
 
 .csr-network-metrics {
 
-
-
   display: grid;
-
-
 
   grid-template-columns: repeat(3, minmax(0, 1fr));
 
-
-
   gap: 9px;
 
-
-
 }
-
-
 
 .csr-network-metric {
 
-
-
   min-width: 0;
-
-
 
   padding: 12px;
 
-
-
   border: 1px solid #324257;
-
-
 
   border-radius: 10px;
 
-
-
   background: #111b2b;
 
-
-
 }
-
-
 
 .csr-network-metric small {
 
-
-
   display: block;
-
-
 
   margin-bottom: 7px;
 
-
-
   color: #9bacc3;
 
-
-
   font-size: 11px;
-
-
 
   line-height: 1.4;
 
-
-
 }
-
-
 
 .csr-network-metric strong {
 
-
-
   color: #f3f7fc;
-
-
 
   font-size: 24px;
 
-
-
   font-weight: 900;
-
-
 
   font-variant-numeric: tabular-nums;
 
-
-
 }
-
-
 
 .csr-network-metric.green strong {
 
-
-
   color: #43d19a;
 
-
-
 }
-
-
 
 .csr-network-metric.red strong {
 
-
-
   color: #f27885;
 
-
-
 }
-
-
 
 .csr-network-metric.yellow strong {
 
-
-
   color: #facc15;
 
-
-
 }
-
-
 
 .csr-network-metric.orange strong {
 
-
-
   color: #fb923c;
 
-
-
 }
-
-
 
 .csr-network-metric.muted strong {
 
-
-
   color: #8fa5bf;
-
-
 
 }
 
-
-
 /* =========================================
-
-
 
    NETWORK TABS
 
-
-
-\========================================= */
-
-
+========================================= */
 
 .csr-network-tabs {
 
-
-
   display: flex;
 
-
-
   align-items: center;
-
-
 
   gap: 8px;
 
-
-
   margin-top: 26px;
-
-
 
   padding: 6px;
 
-
-
   border: 1px solid #304259;
 
-
-
   border-radius: 12px;
-
-
 
   background: #111b29;
 
-
-
 }
-
-
 
 .csr-root .csr-network-tabs button {
 
-
-
   display: inline-flex;
-
-
 
   align-items: center;
 
-
-
   justify-content: center;
-
-
 
   gap: 13px;
 
-
-
   flex: 1;
 
-
-
   min-width: 0;
-
-
 
   padding: 13px 17px;
 
-
-
   border: 1px solid transparent;
-
-
 
   border-radius: 9px;
 
-
-
   background: transparent;
-
-
 
   color: #9eb1cb;
 
-
-
   font-size: 13px;
 
-
-
   font-weight: 800;
-
-
 
   transition:
 
-
-
     background .2s ease,
-
-
 
     border-color .2s ease,
 
-
-
     color .2s ease;
 
-
-
 }
-
-
 
 .csr-root .csr-network-tabs button.is-active {
 
-
-
   border-color: #a72e51;
-
-
 
   background: linear-gradient(
 
-
-
     135deg,
-
-
 
     #9d2147,
 
-
-
     #6f1b38
-
-
 
   );
 
-
-
   color: #fff;
 
-
-
 }
-
-
 
 .csr-network-tabs button strong {
 
-
-
   display: inline-flex;
 
-
-
   align-items: center;
-
-
 
   justify-content: center;
 
-
-
   min-width: 36px;
-
-
 
   padding: 4px 10px;
 
-
-
   border-radius: 999px;
-
-
 
   background: rgba(255, 255, 255, .1);
 
-
-
   font-size: 12px;
-
-
 
   font-weight: 900;
 
-
-
   font-variant-numeric: tabular-nums;
 
-
-
 }
-
-
 
 .csr-root .csr-network-tabs button.is-active strong {
 
-
-
   background: rgba(255, 255, 255, .18);
-
-
 
   color: #fff;
 
-
-
 }
 
-
-
 /* =========================================
-
-
 
    SELECTED NETWORK PING BAR
 
-
-
-\========================================= */
-
-
+========================================= */
 
 .csr-network-runbar {
 
-
-
   display: flex;
-
-
 
   justify-content: space-between;
 
-
-
   align-items: center;
 
-
-
   flex-wrap: wrap;
-
-
 
   gap: 14px;
 
-
-
   margin: 12px 0 18px;
-
-
 
   padding: 15px 17px;
 
-
-
   border: 1px solid #304157;
-
-
 
   border-radius: 12px;
 
-
-
   background: #152233;
 
-
-
 }
-
-
 
 .csr-network-runinfo {
 
-
-
   display: flex;
-
-
 
   flex-direction: column;
 
-
-
   gap: 5px;
-
-
 
   min-width: 0;
 
-
-
 }
-
-
 
 .csr-network-runinfo strong {
 
-
-
   color: #f2f6fd;
 
-
-
   font-size: 14px;
-
-
 
   font-weight: 800;
 
-
-
 }
-
-
 
 .csr-network-runinfo small {
 
-
-
   color: #90a5bd;
-
-
 
   font-size: 11px;
 
-
-
 }
-
-
 
 .csr-network-runbuttons {
 
-
-
   display: flex;
-
-
 
   align-items: center;
 
-
-
   flex-wrap: wrap;
-
-
 
   gap: 9px;
 
-
-
 }
-
-
 
 .csr-root .csr-network-runbuttons .csr-primary {
 
-
-
   min-width: 175px;
-
-
 
   min-height: 42px;
 
-
-
   background: #b41f49;
-
-
 
   border-color: #d0315c;
 
-
-
   color: #fff;
 
-
-
 }
-
-
 
 .csr-root .csr-network-runbuttons .csr-primary:hover:not(:disabled) {
 
-
-
   background: #cc2856;
-
-
 
   border-color: #ee5078;
 
-
-
 }
-
-
 
 .csr-table-head {
 
-
-
   margin-top: 12px;
-
-
 
 }
 
-
-
 /* =========================================
-
-
 
    NETWORK RESPONSIVE
 
-
-
-\========================================= */
-
-
+========================================= */
 
 @media (max-width: 950px) {
 
-
-
   .csr-network-overview {
-
-
 
     grid-template-columns: 1fr;
 
-
-
   }
 
-
-
 }
-
-
 
 @media (max-width: 650px) {
 
-
-
   .csr-controls.csr-main-filters {
-
-
 
     grid-template-columns: 1fr;
 
-
-
   }
-
-
 
   .csr-network-card {
 
-
-
     padding: 12px;
 
-
-
   }
-
-
 
   .csr-network-metrics {
 
-
-
     grid-template-columns: repeat(2, minmax(0, 1fr));
 
-
-
   }
-
-
 
   .csr-network-metric strong {
 
-
-
     font-size: 22px;
-
-
 
   }
 
-
-
   .csr-root .csr-network-tabs button {
-
-
 
     padding: 11px 8px;
 
-
-
     flex-direction: column;
-
-
 
     gap: 7px;
 
-
-
     font-size: 12px;
 
-
-
   }
-
-
 
   .csr-network-runbar {
 
-
-
     padding: 12px;
-
-
 
     align-items: stretch;
 
-
-
   }
-
-
 
   .csr-network-runbuttons {
 
-
-
     width: 100%;
 
-
-
   }
-
-
 
   .csr-root .csr-network-runbuttons button {
 
-
-
     flex: 1;
-
-
 
     min-width: 0;
 
-
-
   }
 
-
-
 }
-
-
 
 @media (prefers-reduced-motion: reduce) {
 
-
-
   .csr-root .csr-network-tabs button {
-
-
 
     transition: none;
 
-
-
   }
-
-
 
 }
 
-
-
 /* =========================================
-
-
 
    PER-CAMERA PING + FOUR PING STATUS COLORS
 
-
-
-\========================================= */
-
-
+========================================= */
 
 .csr-root .csr-camera-reping {
 
-
-
   min-width: 110px;
-
-
 
   padding: 9px 12px;
 
-
-
   border: 1px solid #416888;
-
-
 
   background: #19344a;
 
-
-
   color: #b9e6ff;
-
-
 
   white-space: nowrap;
 
-
-
 }
-
-
 
 .csr-root .csr-camera-reping:hover:not(:disabled) {
 
-
-
   border-color: #38bdf8;
-
-
 
   background: #20516f;
 
-
-
 }
-
-
 
 .csr-review-hint {
 
-
-
   color: #facc15 !important;
-
-
 
   font-size: 10px;
 
-
-
   line-height: 1.5;
 
-
-
 }
-
-
 
 .csr-table th:last-child,
 
-
-
 .csr-table td:last-child {
-
-
 
   width: 135px;
 
-
-
   text-align: center;
 
-
-
 }
-
-
 
 .csr-network-card-header .csr-network-pending {
 
-
-
   color: #facc15;
-
-
 
   font-weight: 700;
 
-
-
 }
 
-
-
 /* =========================================
-
-
 
    SINGLE CAMERA PING - LOCK WITHOUT DIMMING
 
-
-
    Only the camera currently being re-pinged turns grey.
 
-
-
-\========================================= */
-
-
+========================================= */
 
 /* Keep all other disabled controls in their normal colors
 
-
-
    while a single-camera Ping is in progress. */
-
-
 
 .csr-root.csr-ping-single-active button:disabled,
 
-
-
 .csr-root.csr-ping-single-active select:disabled {
-
-
 
   opacity: 1;
 
-
-
 }
-
-
 
 /* Some browsers desaturate native selects even with full opacity. */
 
-
-
 .csr-root.csr-ping-single-active select:disabled {
-
-
 
   color: #eef3fb;
 
-
-
   -webkit-text-fill-color: #eef3fb;
 
-
-
 }
-
-
 
 /* Gray only the Ping button for the camera currently running. */
 
-
-
 .csr-root.csr-ping-single-active
-
-
 
   .csr-camera-reping.csr-camera-reping--busy:disabled {
 
-
-
   opacity: 1;
-
-
 
   background: #505c6c;
 
-
-
   border-color: #788497;
-
-
 
   color: #f1f5f9;
 
-
-
   cursor: progress;
 
-
-
 }
-
-
 
 /* Calendar icon - White */
 
-
-
 .csr-root input[type="date"]::-webkit-calendar-picker-indicator {
-
-
 
   filter: invert(1);
 
-
-
   opacity: 1;
-
-
 
   cursor: pointer;
 
-
-
 }
-
-
 
 /* =========================================
 
-
-
    CAMERA LIST - LARGER TEXT
 
-
-
-\========================================= */
-
-
+========================================= */
 
 /* ชื่อตู้ / ชื่อกลุ่มกล้อง */
 
-
-
 .csr-root .csr-box-info strong {
-
-
 
   font-size: 16px;
 
-
-
 }
-
-
 
 /* รายละเอียดตู้ / จำนวนกล้อง */
 
-
-
 .csr-root .csr-box-info small {
-
-
 
   font-size: 13px;
 
-
-
 }
-
-
 
 /* ป้ายสถานะของตู้ */
 
-
-
 .csr-root .csr-box-badge {
-
-
 
   font-size: 12px;
 
-
-
 }
-
-
 
 /* ข้อความรอยืนยัน */
 
-
-
 .csr-root .csr-box-pending {
-
-
 
   font-size: 12px;
 
-
-
 }
-
-
 
 /* ตารางรายละเอียดกล้อง */
 
-
-
 .csr-root .csr-box-details .csr-table {
-
-
 
   font-size: 14px;
 
-
-
 }
-
-
 
 /* หัวตาราง */
 
-
-
 .csr-root .csr-box-details .csr-table th {
-
-
 
   font-size: 13px;
 
-
-
 }
-
-
 
 /* IP / พิกัด / Loss */
 
-
-
 .csr-root .csr-box-details .csr-table td small {
-
-
 
   font-size: 12px;
 
-
-
 }
-
-
 
 /* ผล Ping */
 
-
-
 .csr-root .csr-box-details .csr-level {
-
-
 
   font-size: 14px;
 
-
-
 }
-
-
 
 /* ช่องเลือกสถานะ */
 
-
-
 .csr-root .csr-box-details select {
-
-
 
   font-size: 14px;
 
-
-
 }
-
-
 
 /* ปุ่ม Ping ใหม่ / ยืนยันผล */
 
-
-
 .csr-root .csr-box-details button {
-
-
 
   font-size: 13px;
 
-
-
 }
-
-
 
 /* =========================================================
 
@@ -4448,32 +2274,6 @@
 
 .csr-dot.is-green { background: #27c997; }.csr-dot.is-yellow { background: #f3cc4b; }.csr-dot.is-orange { background: #f5a550; }.csr-dot.is-red { background: #f56876; }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .csr-dashboard-outage-box { display: grid; gap: 11px; padding: 13px; background: #101b2c; border: 1px solid #33435a; border-radius: 10px; }
 
 .csr-dashboard-outage-box>strong { font-size: 13px; }
@@ -4488,32 +2288,16 @@
 
 .csr-dashboard-outage-box p { color: #e8c089; margin: 0; font-size: 10px; }
 
-
-
-
-
 .csr-dashboard-section-heading { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 12px; }
 
 .csr-dashboard-section-heading h3 { margin: 0; font-size: 15px; color: #f8fbff; }
 
 .csr-dashboard-section-heading>span { color: #9fb9db; font-size: 12px; white-space: nowrap; }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* Repair follow-up section shares dashboard framing. */
+
 .csr-dashboard-repair-section { padding: 18px; }
+
 .csr-dashboard-footer-note { font-size: 10px; line-height: 1.5; color: #9eb4ce; margin: 10px 0 0; }
 
 @media (max-width: 1050px) {
@@ -4546,15 +2330,11 @@
 
 }
 
-
-
 /* Saved status colors */
 
 .csr-dashboard-data-label.is-saved { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.4); }
 
 .csr-dashboard-data-label.is-unsaved { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.4); }
-
-
 
 /* Manual per-IP Supabase editor */
 
@@ -4610,8 +2390,6 @@
 
 .csr-manual-ip-history small { color:#9ebbd8; }
 
-
-
 .csr-dashboard-repair-section {
 
   background: #152338;
@@ -4626,15 +2404,11 @@
 
 }
 
-
-
 /* =========================================
 
    RESET ALL MANUAL CAMERA STATUS
 
 ========================================= */
-
-
 
 .csr-root .csr-reset-all-btn {
 
@@ -4648,8 +2422,6 @@
 
 }
 
-
-
 .csr-root .csr-reset-all-btn:hover:not(:disabled) {
 
   background: rgba(239, 68, 68, 0.22);
@@ -4660,25 +2432,11 @@
 
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 /* =========================================
 
    CCTV ALL CENTERS - READ ONLY DASHBOARD
 
 ========================================= */
-
-
 
 .csr-multi-root {
 
@@ -4687,8 +2445,6 @@
   gap: 18px;
 
 }
-
-
 
 .csr-multi-filters {
 
@@ -4701,8 +2457,6 @@
   flex-wrap: wrap;
 
 }
-
-
 
 .csr-multi-filters label {
 
@@ -4718,8 +2472,6 @@
 
 }
 
-
-
 .csr-multi-filters input,
 
 .csr-multi-filters select {
@@ -4732,8 +2484,6 @@
 
 }
 
-
-
 .csr-multi-filters select option {
 
   background: #ffffff;
@@ -4742,23 +2492,17 @@
 
 }
 
-
-
 .csr-multi-filters button {
 
   height: 40px;
 
 }
 
-
-
 .csr-multi-actions {
 
   justify-content: flex-end;
 
 }
-
-
 
 .csr-multi-scroll {
 
@@ -4768,8 +2512,6 @@
 
 }
 
-
-
 .csr-multi-paper {
 
   min-width: 1080px;
@@ -4777,8 +2519,6 @@
   box-sizing: border-box;
 
 }
-
-
 
 .csr-multi-breakdown,
 
@@ -4794,8 +2534,6 @@
 
 }
 
-
-
 .csr-multi-breakdown h3,
 
 .csr-multi-submissions h3 {
@@ -4808,8 +2546,6 @@
 
 }
 
-
-
 .csr-multi-table {
 
   width: 100%;
@@ -4819,8 +2555,6 @@
   font-size: 12px;
 
 }
-
-
 
 .csr-multi-table th,
 
@@ -4836,8 +2570,6 @@
 
 }
 
-
-
 .csr-multi-table th {
 
   background: #213550;
@@ -4847,8 +2579,6 @@
   font-weight: 800;
 
 }
-
-
 
 .csr-multi-table td {
 
@@ -4860,8 +2590,6 @@
 
 }
 
-
-
 .csr-multi-table td:first-child {
 
   text-align: left;
@@ -4872,15 +2600,11 @@
 
 }
 
-
-
 .csr-multi-table tbody tr:nth-child(even) td {
 
   background: #18283d;
 
 }
-
-
 
 .csr-multi-breakdown p {
 
@@ -4892,15 +2616,11 @@
 
 }
 
-
-
 .csr-multi-submissions .csr-multi-table {
 
   min-width: 780px;
 
 }
-
-
 
 .csr-multi-status {
 
@@ -4918,8 +2638,6 @@
 
 }
 
-
-
 /* บันทึกครบแล้ว - เขียว */
 
 .csr-multi-status.complete {
@@ -4929,8 +2647,6 @@
   background: rgba(34, 197, 94, 0.15);
 
 }
-
-
 
 /* บันทึกชั่วคราว - เหลือง */
 
@@ -4942,8 +2658,6 @@
 
 }
 
-
-
 /* ยังไม่บันทึก - แดง */
 
 .csr-multi-status.missing {
@@ -4953,8 +2667,6 @@
   background: rgba(239, 68, 68, 0.15);
 
 }
-
-
 
 .csr-multi-error {
 
@@ -4970,8 +2682,6 @@
 
 }
 
-
-
 @media (max-width: 900px) {
 
   .csr-multi-filters {
@@ -4982,8 +2692,6 @@
 
 }
 
-
-
 /* =========================================
 
    CENTRAL CENTER SELECTOR
@@ -4991,8 +2699,6 @@
    Admin / Supervisor only
 
 ========================================= */
-
-
 
 .csr-central-center-picker {
 
@@ -5007,8 +2713,6 @@
   padding: 14px 20px;
 
 }
-
-
 
 .csr-central-center-picker label {
 
@@ -5025,8 +2729,6 @@
   font-weight: 800;
 
 }
-
-
 
 .csr-central-center-picker select {
 
@@ -5048,8 +2750,6 @@
 
 }
 
-
-
 .csr-central-center-picker select option {
 
   color: #142235;
@@ -5058,8 +2758,6 @@
 
 }
 
-
-
 @media (max-width: 600px) {
 
   .csr-central-center-picker {
@@ -5067,8 +2765,6 @@
     justify-content: stretch;
 
   }
-
-
 
   .csr-central-center-picker label {
 
@@ -5080,8 +2776,6 @@
 
   }
 
-
-
   .csr-central-center-picker select {
 
     width: 100%;
@@ -5090,15 +2784,11 @@
 
 }
 
-
-
 /* =========================================
 
    ALL CENTERS DASHBOARD - SUMMARY TABLE
 
 ========================================= */
-
-
 
 /* เพิ่มพื้นที่ให้ตาราง 15 คอลัมน์ */
 
@@ -5108,8 +2798,6 @@
 
 }
 
-
-
 /* ตารางอยู่ภายในภาพ PNG ทั้งหมด */
 
 .csr-multi-breakdown > .csr-multi-scroll {
@@ -5117,8 +2805,6 @@
   overflow-x: visible;
 
 }
-
-
 
 /* หัวตาราง */
 
@@ -5132,8 +2818,6 @@
 
 }
 
-
-
 /* ข้อมูล */
 
 .csr-multi-breakdown .csr-multi-table td {
@@ -5145,8 +2829,6 @@
   white-space: nowrap;
 
 }
-
-
 
 /* แถวรวม */
 
@@ -5162,8 +2844,6 @@
 
 }
 
-
-
 /* หัวข้อตารางรวมทั่วไป + ด่าน */
 
 .csr-multi-overall-title {
@@ -5178,8 +2858,6 @@
 
 }
 
-
-
 /* ตารางรวมสองประเภท */
 
 .csr-multi-overall-table {
@@ -5187,8 +2865,6 @@
   width: 100%;
 
 }
-
-
 
 .csr-multi-overall-table th,
 
@@ -5202,8 +2878,6 @@
 
 }
 
-
-
 .csr-multi-overall-table td:nth-child(3),
 
 .csr-multi-overall-table td:nth-child(5) {
@@ -5212,15 +2886,11 @@
 
 }
 
-
-
 /* =========================================
 
    ALL CENTERS - FIX TABLE WIDTH
 
 ========================================= */
-
-
 
 /* ยกเลิกความกว้างขั้นต่ำ 1550px */
 
@@ -5236,8 +2906,6 @@
 
 }
 
-
-
 /* ไม่ให้ตารางดันกรอบ Dashboard */
 
 .csr-multi-breakdown {
@@ -5248,8 +2916,6 @@
 
 }
 
-
-
 .csr-multi-breakdown > .csr-multi-scroll {
 
   width: 100%;
@@ -5259,8 +2925,6 @@
   overflow-x: auto;
 
 }
-
-
 
 /* เฉพาะตารางสรุปรายศูนย์ */
 
@@ -5276,8 +2940,6 @@
 
 }
 
-
-
 /* คอลัมน์ศูนย์กว้าง 12% */
 
 /* อีก 14 คอลัมน์แบ่งพื้นที่ที่เหลือเท่ากัน */
@@ -5291,8 +2953,6 @@ thead tr:first-child th:first-child {
   width: 12%;
 
 }
-
-
 
 /* ทุกคอลัมน์ข้อมูลใช้ขนาดสม่ำเสมอ */
 
@@ -5324,8 +2984,6 @@ thead tr:first-child th:first-child {
 
 }
 
-
-
 /* ขนาดข้อความหัวตาราง */
 
 .csr-multi-breakdown
@@ -5338,8 +2996,6 @@ thead tr:first-child th:first-child {
 
 }
 
-
-
 /* ตัวเลขภายในตาราง */
 
 .csr-multi-breakdown
@@ -5351,8 +3007,6 @@ thead tr:first-child th:first-child {
   font-variant-numeric: tabular-nums;
 
 }
-
-
 
 /* ชื่อศูนย์ชิดซ้าย */
 
@@ -5374,8 +3028,6 @@ tfoot td:first-child {
 
 }
 
-
-
 /* จัดข้อความสรุปการดับให้อยู่กึ่งกลาง */
 
 .csr-root .csr-multi-overall-table tbody td:last-child {
@@ -5383,8 +3035,6 @@ tfoot td:first-child {
   text-align: center;
 
 }
-
-
 
 /* จัดคอลัมน์ ศูนย์ และ ตู้/ด่าน ให้อยู่กึ่งกลาง */
 
@@ -5396,15 +3046,11 @@ tfoot td:first-child {
 
 }
 
-
-
 /* =========================================
 
    ALL CENTERS - 4 COLOR COLUMN GROUPS
 
 ========================================= */
-
-
 
 /* กลุ่มที่ 1 : กล้องทั่วไป - สถานะ (เขียว) */
 
@@ -5418,8 +3064,6 @@ tbody td:nth-child(n+2):nth-child(-n+5) {
 
 }
 
-
-
 /* กลุ่มที่ 2 : กล้องทั่วไป - การดับ (ส้ม) */
 
 .csr-root .csr-multi-breakdown
@@ -5431,8 +3075,6 @@ tbody td:nth-child(n+6):nth-child(-n+8) {
   background: #332a23;
 
 }
-
-
 
 /* กลุ่มที่ 3 : กล้องด่าน - สถานะ (ฟ้า) */
 
@@ -5446,8 +3088,6 @@ tbody td:nth-child(n+9):nth-child(-n+12) {
 
 }
 
-
-
 /* กลุ่มที่ 4 : กล้องด่าน - การดับ (แดง) */
 
 .csr-root .csr-multi-breakdown
@@ -5460,15 +3100,11 @@ tbody td:nth-child(n+13):nth-child(-n+15) {
 
 }
 
-
-
 /* =========================================
 
    HEADER COLORS
 
 ========================================= */
-
-
 
 /* หัวตารางชั้นบน */
 
@@ -5482,8 +3118,6 @@ tbody td:nth-child(n+13):nth-child(-n+15) {
 
 }
 
-
-
 .csr-root .csr-multi-breakdown
 
 .csr-multi-table thead tr:first-child th:nth-child(3) {
@@ -5493,8 +3127,6 @@ tbody td:nth-child(n+13):nth-child(-n+15) {
   color: #bae6fd;
 
 }
-
-
 
 /* หัวคอลัมน์ชั้นที่สอง */
 
@@ -5508,8 +3140,6 @@ th:nth-child(-n+4) {
 
 }
 
-
-
 .csr-root .csr-multi-breakdown
 
 .csr-multi-table thead tr:nth-child(2)
@@ -5519,8 +3149,6 @@ th:nth-child(n+5):nth-child(-n+7) {
   background: #69452d;
 
 }
-
-
 
 .csr-root .csr-multi-breakdown
 
@@ -5532,8 +3160,6 @@ th:nth-child(n+8):nth-child(-n+11) {
 
 }
 
-
-
 .csr-root .csr-multi-breakdown
 
 .csr-multi-table thead tr:nth-child(2)
@@ -5544,15 +3170,11 @@ th:nth-child(n+12):nth-child(-n+14) {
 
 }
 
-
-
 /* =========================================
 
    SEPARATOR LINES
 
 ========================================= */
-
-
 
 /* เส้นแบ่งแต่ละกลุ่ม */
 
@@ -5576,8 +3198,6 @@ th:nth-child(n+12):nth-child(-n+14) {
 
 }
 
-
-
 /* แถวรวมด้านล่างยังใช้สีเดิม */
 
 .csr-root .csr-multi-breakdown
@@ -5598,8 +3218,6 @@ th:nth-child(n+12):nth-child(-n+14) {
 
 ========================================= */
 
-
-
 /* 1. กลุ่มกล้องทั่วไปที่มีการดับ - สีเหลือง */
 
 .csr-root .csr-multi-breakdown
@@ -5612,8 +3230,6 @@ tbody td:nth-child(n+6):nth-child(-n+8) {
 
 }
 
-
-
 /* 2. กลุ่มกล้องด่านที่มีการดับ - สีเหลือง */
 
 .csr-root .csr-multi-breakdown
@@ -5625,8 +3241,6 @@ tbody td:nth-child(n+13):nth-child(-n+15) {
   background: #3d341f;
 
 }
-
-
 
 /* 3. หัวตารางของกลุ่มกล้องทั่วไปที่ดับ */
 
@@ -5644,8 +3258,6 @@ th:nth-child(n+5):nth-child(-n+7) {
 
 }
 
-
-
 /* 4. หัวตารางของกลุ่มกล้องด่านที่ดับ */
 
 .csr-root .csr-multi-breakdown
@@ -5661,10 +3273,6 @@ th:nth-child(n+12):nth-child(-n+14) {
   color: #fff2ba;
 
 }
-
-
-
-
 
 /* กล้องดับมากกว่า 0 ให้พื้นหลังแดงทั้งช่อง */
 
@@ -5684,15 +3292,11 @@ tbody td.csr-outage-alert {
 
 }
 
-
-
 /* =========================================
 
    RESTORE LOWER TABLE HEADER
 
 ========================================= */
-
-
 
 /* คืนสีหัวตารางล่างเป็นน้ำเงินปกติ */
 
@@ -5701,8 +3305,6 @@ tbody td.csr-outage-alert {
 .csr-multi-table.csr-multi-overall-table
 
 thead tr:first-child th:nth-child(2),
-
-
 
 .csr-root .csr-multi-breakdown
 
@@ -5717,28 +3319,1436 @@ thead tr:first-child th:nth-child(3) {
 }
 
 /* CCTV repair follow-up dashboard: replaces old unit cards */
+
 .csr-repair-followup { padding: 15px; background:#152338; border:1px solid #344b66; border-radius:12px; display:grid; gap:12px; min-width:0; }
+
 .csr-repair-followup .csr-dashboard-section-heading { display:flex; justify-content:space-between; gap:12px; align-items:center; }
+
 .csr-repair-followup .csr-dashboard-section-heading h3 { margin:0; font-size:15px; }
+
 .csr-repair-warning,.csr-repair-recovered { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:9px; padding:12px; border-radius:9px; background:#1c2a3b; border:1px solid #49586b; border-left:3px solid #efaa65; color:#eaf3ff; font-size:12px; }
+
 .csr-repair-warning strong,.csr-repair-recovered strong { display:block; }
+
 .csr-repair-warning span { color:#c2d1e2; }
+
 .csr-repair-recovered { border-left-color:#5bcc9b; }
+
 .csr-repair-recovered p { margin:4px 0 0; font-size:11px; color:#bfd1e2; }
+
 .csr-repair-action-row { display:flex; gap:8px; flex-wrap:wrap; }
+
 .csr-repair-action-row button,.csr-repair-pagination button,.csr-repair-hidden button,.csr-repair-error button { padding:7px 11px; border:1px solid #536e90; border-radius:7px; background:#213650; color:#fff; cursor:pointer; }
+
 .csr-repair-action-row button:disabled,.csr-repair-pagination button:disabled { opacity:.45; cursor:not-allowed; }
+
 .csr-repair-table-scroll { width:100%; overflow-x:auto; }
+
 .csr-repair-work-table { border-collapse:collapse; table-layout:auto; width:100%; min-width:1230px; font-size:10.5px; color:#e6f0fb; }
+
 .csr-repair-work-table th { padding:10px 7px; text-align:left; background:#20344e; color:#d0e2f3; white-space:nowrap; }
+
 .csr-repair-work-table td { padding:8px 7px; border-top:1px solid #31445d; line-height:1.4; vertical-align:top; }
+
 .csr-repair-work-table td.is-number { text-align:center; font-weight:800; }
+
 .csr-repair-work-table td strong { color:white; }
+
 .csr-repair-work-table td small { display:block; font-size:10px; font-weight:800; margin-top:3px; }
+
 .csr-repair-work-table td.csr-sla-soon { color:#f7c96f; }
+
 .csr-repair-work-table td.csr-sla-overdue { color:#ff7d92; }
+
 .csr-repair-pagination { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; color:#b6cbe5; font-size:11px; }
+
 .csr-repair-pagination span { margin-right:auto; }
+
 .csr-repair-hidden { display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:11px; color:#b2c4de; }
+
 .csr-repair-loading,.csr-repair-error { padding:14px; background:#24334a; color:#d7e4f4; border-radius:8px; }
+
 .csr-repair-error { color:#ffb6c0; display:flex; gap:12px; align-items:center; }
+
+/* =========================================================
+   BULK CONFIRMATION AND COLLAPSIBLE CAMERA LIST
+   Extension only; existing dashboard, agent and repair styles untouched
+========================================================= */
+.csr-root .csr-table-head--bulk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.csr-camera-headline { display: flex; flex-direction: column; gap: 4px; min-width: 220px; }
+.csr-camera-headline h3 { margin: 0; }
+.csr-camera-headline small { font-size: 11px; color: #9eb2ce; line-height: 1.5; }
+.csr-camera-head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.csr-camera-head-actions input { width: min(310px, 100%); }
+.csr-root .csr-collapse-all { background: #24364e; white-space: nowrap; border-color: #52759e; }
+.csr-bulk-panel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  padding: 13px 15px;
+  margin: 12px 0;
+  border: 1px solid #3b526e;
+  background: #162338;
+  border-radius: 12px;
+}
+.csr-bulk-description { flex: 1 1 270px; display: flex; flex-direction: column; gap: 5px; }
+.csr-bulk-description strong { font-size: 13px; color: #f3f7ff; }
+.csr-bulk-description small { font-size: 11px; color: #a6b9d4; line-height: 1.5; }
+.csr-bulk-controls { display: flex; align-items: center; flex: 1 1 310px; justify-content: flex-end; gap: 8px; }
+.csr-root .csr-bulk-controls select { width: min(290px, 100%); }
+.csr-root .csr-bulk-confirm-button { background: #155e51; border-color: #278b77; color: #f0fdf7; white-space: nowrap; }
+.csr-root .csr-bulk-confirm-button:hover:not(:disabled) { background: #176e5e; border-color: #35b69c; }
+.csr-bulk-warning { width: 100%; color: #ffcc79; font-size: 11px; }
+.csr-box-list-collapsed {
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-radius: 10px;
+  border: 1px dashed #45617f;
+  color: #b3c7e0;
+  background: #151f2f;
+  font-size: 12px;
+}
+.csr-box-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.csr-box-head > .csr-box-toggle { flex: 1 1 0; min-width: 0; }
+.csr-box-confirm-controls { display: flex; align-items: center; gap: 6px; padding-right: 10px; flex-shrink: 0; }
+.csr-root .csr-box-confirm-controls select { width: 156px; min-width: 0; font-size: 11px; padding: 8px; }
+.csr-root .csr-box-confirm-button { white-space: nowrap; font-size: 11px; padding: 8px 10px; border-color: #326d63; background: #1d4843; }
+.csr-root .csr-box-confirm-button:hover:not(:disabled) { background: #216158; border-color: #42af9b; }
+.csr-save-blocked { color: #ffca8a; font-weight: 700; line-height: 1.6; }
+.csr-save-ready { color: #74e8ba; font-weight: 700; }
+.csr-root .csr-footer .csr-primary:disabled {
+  background: #465064;
+  border-color: #626e82;
+  color: #c1c9d5;
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+@media (max-width: 1120px) {
+  .csr-box-head { flex-wrap: wrap; }
+  .csr-box-head > .csr-box-toggle { flex: 1 1 100%; }
+  .csr-box-confirm-controls { padding: 0 12px 12px; flex: 1 1 100%; justify-content: flex-end; }
+}
+@media (max-width: 700px) {
+  .csr-camera-head-actions, .csr-camera-head-actions input, .csr-bulk-controls { width: 100%; }
+  .csr-bulk-controls { flex-direction: column; align-items: stretch; }
+  .csr-root .csr-bulk-controls select { width: 100%; }
+  .csr-bulk-confirm-button { width: 100%; }
+  .csr-box-confirm-controls { flex-wrap: wrap; }
+  .csr-root .csr-box-confirm-controls select { flex: 1 1 150px; width: auto; }
+}
+
+
+
+/* =========================================
+   FIX - BULK CONFIRM TOOLBAR
+   จัดปุ่มทุกตัวให้อยู่ระดับเดียวกัน
+========================================= */
+
+.csr-root .csr-box-toolbar {
+  align-items: center;
+  gap: 12px;
+}
+
+.csr-root .csr-box-toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.csr-root .csr-box-toolbar-actions .csr-bulk-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  flex-wrap: nowrap !important;
+  gap: 8px;
+  width: auto;
+}
+
+.csr-root .csr-box-toolbar .csr-bulk-controls select {
+  width: 220px;
+  min-width: 200px;
+  flex: 0 0 220px;
+  height: 40px;
+}
+
+.csr-root .csr-box-toolbar-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 11px;
+  white-space: nowrap;
+}
+
+.csr-root .csr-box-toolbar > label {
+  flex: 0 0 auto;
+}
+
+/* หน้าจอเล็กให้ตัดเป็นแถวอย่างเป็นระเบียบ */
+@media (max-width: 1100px) {
+  .csr-root .csr-box-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .csr-root .csr-box-toolbar-actions {
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 700px) {
+  .csr-root .csr-box-toolbar-actions .csr-bulk-controls {
+    flex-wrap: wrap !important;
+    justify-content: flex-start;
+  }
+}
+
+
+/* =========================================
+   FIX - COLLAPSE BUTTON BEFORE SEARCH
+========================================= */
+
+.csr-root .csr-camera-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 10px;
+  width: auto;
+}
+
+/* ย้ายปุ่มพับรายการไปทางซ้าย */
+.csr-root .csr-camera-head-actions .csr-collapse-all {
+  order: -1;
+  flex: 0 0 auto;
+  height: 40px;
+  white-space: nowrap;
+}
+
+/* ช่องค้นหาอยู่ทางขวา */
+.csr-root .csr-camera-head-actions input:not([type="checkbox"]) {
+  flex: 0 1 310px;
+  width: 310px;
+  min-width: 190px;
+  height: 40px;
+}
+
+/* หน้าจอเล็ก */
+@media (max-width: 700px) {
+  .csr-root .csr-camera-head-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .csr-root .csr-camera-head-actions input:not([type="checkbox"]) {
+    flex: 1 1 190px;
+    min-width: 0;
+    width: auto;
+  }
+}
+
+
+/* เพิ่มระยะห่างกรอบรายการกล้อง */
+.csr-root .csr-table-head--bulk + .csr-table-scroll {
+  margin-top: 12px;
+  padding: 12px 14px 14px;
+  box-sizing: border-box;
+}
+
+/* เว้นระยะระหว่างแถวปุ่มกับรายการตู้ */
+.csr-root .csr-table-head--bulk
++ .csr-table-scroll .csr-box-toolbar {
+  margin: 0 0 14px;
+}
+
+
+/* =========================================
+   SERVICE BOX - TWO ROW LAYOUT
+========================================= */
+
+/* แยกส่วนหัวตู้เป็น 2 บรรทัด */
+.csr-root .csr-box-head {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+/* บรรทัดที่ 1: ชื่อตู้ + สถานะ */
+.csr-root .csr-box-head > .csr-box-toggle {
+  width: 100%;
+  flex: none;
+  min-width: 0;
+  padding: 12px 14px 5px;
+  box-sizing: border-box;
+}
+
+/* สถานะอยู่ทางขวาของบรรทัดแรก */
+
+.csr-root .csr-box-head .csr-box-right {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.csr-root .csr-box-head .csr-box-right > * {
+  white-space: nowrap;
+}
+
+
+/* บรรทัดที่ 2: เลือกสถานะ + ยืนยันทั้งตู้ */
+.csr-root .csr-box-head .csr-box-confirm-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: none;
+  flex-wrap: nowrap;
+  width: 100%;
+  gap: 8px;
+  padding: 0 12px 12px;
+  box-sizing: border-box;
+}
+
+/* ขนาดช่องเลือก */
+.csr-root .csr-box-confirm-controls select {
+  width: 175px;
+  flex: 0 1 175px;
+  min-width: 0;
+}
+
+/* ขนาดปุ่มยืนยัน */
+.csr-root .csr-box-confirm-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+
+/* =========================================
+   SERVICE BOX - FINAL COMPACT LAYOUT
+========================================= */
+
+/* การ์ดซ้ายและขวาสูงเท่ากัน */
+.csr-root .csr-box-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.csr-root .csr-box-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 82px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* โครงสร้างการ์ด 2 แถว */
+.csr-root .csr-box-head--compact {
+  display: grid;
+  grid-template-rows: minmax(28px, 1fr) 30px;
+  align-items: stretch;
+  gap: 4px;
+  min-height: 82px;
+  padding: 7px 10px;
+  box-sizing: border-box;
+  flex: 1 0 auto;
+}
+
+/* แถวบน: ชื่อตู้ + รหัสตู้ + จำนวนกล้อง */
+.csr-root .csr-box-topline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.csr-root .csr-box-topline .csr-box-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+}
+
+.csr-root .csr-box-title-text {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.csr-root .csr-box-chevron {
+  flex: 0 0 16px;
+  margin-top: -4px;
+}
+
+/* รหัสตู้และจำนวนกล้องอยู่บรรทัดเดียวกัน */
+.csr-root .csr-box-topcode {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.csr-root .csr-box-topcode strong {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* ขยายข้อความจำนวนกล้อง */
+.csr-root .csr-box-topcode small {
+  font-size: 13px;
+  font-weight: 800;
+  color: #b9d4f6;
+}
+
+/* แถวล่าง: จัดทุกส่วนให้อยู่แนวเดียวกัน */
+.csr-root .csr-box-bottomline {
+  display: grid;
+  grid-template-columns: minmax(65px, 1fr) auto auto;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+/* จำนวนกล้องที่ยังไม่ Ping */
+.csr-root .csr-box-ping-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.csr-root .csr-box-ping-summary .csr-box-pending {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* กล่องเลือกสถานะและปุ่มยืนยัน ขนาดเท่ากันทุกการ์ด */
+.csr-root .csr-box-head--compact
+.csr-box-bottomline .csr-box-confirm-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  gap: 6px;
+}
+
+.csr-root .csr-box-bottomline
+.csr-box-confirm-controls select {
+  flex: 0 0 122px;
+  width: 122px;
+  min-width: 122px;
+  height: 30px;
+  padding: 4px 7px;
+  font-size: 11px;
+  box-sizing: border-box;
+}
+
+.csr-root .csr-box-bottomline .csr-box-confirm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 80px;
+  height: 30px;
+  min-height: 30px;
+  padding: 4px 8px;
+  font-size: 11px;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+/* ป้ายสถานะเท่ากันทั้งความกว้างและความสูง */
+.csr-root .csr-box-bottomline > .csr-box-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  min-width: 90px;
+  height: 30px;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  font-size: 11px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* เวลาเปิดรายละเอียด ให้ตู้ขยายเต็มแถวตามเดิม */
+.csr-root .csr-box-item:has(.csr-box-details) {
+  grid-column: 1 / -1;
+}
+
+/* จอแคบ */
+@media (max-width: 900px) {
+  .csr-root .csr-box-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .csr-root .csr-box-bottomline {
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+  }
+
+  .csr-root .csr-box-bottomline
+  .csr-box-confirm-controls {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .csr-root .csr-box-bottomline > .csr-box-badge {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+
+/* เว้นระยะห่างเมื่อพับรายการตู้ทั้งหมด */
+.csr-root .csr-table-head--bulk + .csr-box-list-collapsed {
+  margin-top: 14px;
+}
+
+
+/* =========================================
+   DASHBOARD BUTTONS - BOTTOM ALIGN
+========================================= */
+
+/* ขยับชุดปุ่มลงมาเสมอกับข้อความด้านล่าง */
+.csr-root .csr-dashboard-section > .csr-dashboard-tools {
+  align-items: flex-end;
+}
+
+/* จัดปุ่มทั้ง 5 ให้แบ่งพื้นที่เท่ากัน */
+.csr-root .csr-dashboard-section > .csr-dashboard-tools
+.csr-dashboard-actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  width: 465px;
+  max-width: 100%;
+  flex: 0 1 465px;
+  align-items: end;
+}
+
+/* ปุ่มทุกตัวกว้างและสูงเท่ากัน */
+.csr-root .csr-dashboard-section
+.csr-dashboard-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  min-height: 38px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  font-size: 11px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* หน้าจอแคบ */
+@media (max-width: 900px) {
+  .csr-root .csr-dashboard-section > .csr-dashboard-tools
+  .csr-dashboard-actions {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .csr-root .csr-dashboard-section > .csr-dashboard-tools
+  .csr-dashboard-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* =========================================
+   DASHBOARD ACTIONS - MODERN COLORS
+   ปรับสีเฉพาะปุ่ม Dashboard ทั้ง 5 ปุ่ม
+========================================= */
+
+/* 1. แก้ไขพรีวิว - สีน้ำเงิน */
+.csr-root .csr-dashboard-section > .csr-dashboard-tools
+.csr-dashboard-actions > button:nth-child(1) {
+  background: #235b83;
+  border-color: #438fc1;
+  color: #e8f5ff;
+}
+
+/* 2. คืนค่าทั้งหมด - สีแดงเข้ม */
+.csr-root .csr-dashboard-section > .csr-dashboard-tools
+.csr-dashboard-actions > button:nth-child(2) {
+  background: #713045;
+  border-color: #ac5068;
+  color: #ffe5eb;
+}
+
+/* 3. คัดลอกข้อความ - สีฟ้าอมเขียว */
+.csr-root .csr-dashboard-section > .csr-dashboard-tools
+.csr-dashboard-actions > button:nth-child(3) {
+  background: #17616c;
+  border-color: #3198a3;
+  color: #e0fbff;
+}
+
+/* 4. คัดลอกรูป - สีม่วง */
+.csr-root .csr-dashboard-section > .csr-dashboard-tools
+.csr-dashboard-actions > button:nth-child(4) {
+  background: #554078;
+  border-color: #8165ae;
+  color: #f1eaff;
+}
+
+/* 5. บันทึก PNG - สีเขียว */
+.csr-root .csr-dashboard-section > .csr-dashboard-tools
+.csr-dashboard-actions > button:nth-child(5) {
+  background: #196a4c;
+  border-color: #36a67b;
+  color: #e5fff2;
+}
+
+/* เอฟเฟกต์เมื่อเลื่อนเมาส์ */
+.csr-root .csr-dashboard-section > .csr-dashboard-tools
+.csr-dashboard-actions > button:hover:not(:disabled) {
+  filter: brightness(1.25);
+  transform: translateY(-1px);
+}
+
+/* ปุ่มที่กดไม่ได้ยังคงเป็นสีจาง */
+.csr-root .csr-dashboard-section > .csr-dashboard-tools
+.csr-dashboard-actions > button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* การเปลี่ยนสีอย่างนุ่มนวล */
+.csr-root .csr-dashboard-section > .csr-dashboard-tools
+.csr-dashboard-actions > button {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    filter 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+/* =========================================
+   FIX - BULK SELECT & SEARCH TEXT
+========================================= */
+
+/* 1. ช่องเลือกสถานะรวม */
+.csr-root .csr-box-toolbar .csr-bulk-controls select {
+  height: 40px;
+  box-sizing: border-box;
+
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+
+  text-align: center;
+  text-align-last: center;
+
+  padding: 0 28px;
+}
+
+/* รายการภายใน Dropdown */
+.csr-root .csr-bulk-controls select option {
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+/* 2. ช่องค้นหาชื่อกล้อง / IP / Service Box */
+.csr-root .csr-camera-head-actions input:not([type="checkbox"]) {
+  height: 40px;
+  box-sizing: border-box;
+
+  font-size: 14px;
+  font-weight: 500;
+  line-height: normal;
+
+  text-align: left;
+  padding: 0 14px;
+}
+
+/* ข้อความ Placeholder ในช่องค้นหา */
+.csr-root .csr-camera-head-actions input::placeholder {
+  color: #91a4bf;
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 1;
+}
+
+
+/* =========================================
+   COMBINED NETWORK SELECTOR + PING BAR
+========================================= */
+
+.csr-root .csr-network-controlbar {
+  display: grid;
+  grid-template-columns: auto minmax(130px, 1fr) auto;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 10px 12px;
+  margin: 14px 0 18px;
+  border: 1px solid #304157;
+  border-radius: 12px;
+  background: #152233;
+  box-sizing: border-box;
+}
+
+/* กลุ่มเลือกเครือข่ายด้านซ้าย */
+.csr-root .csr-network-controlbar > .csr-network-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* บีบปุ่มเลือกเครือข่ายให้พอดี */
+.csr-root .csr-network-controlbar
+.csr-network-tabs > button {
+  display: inline-flex;
+  flex: 0 0 150px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  min-width: 0;
+  padding: 0 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* ตัวเลขจำนวนกล้องในปุ่ม */
+.csr-root .csr-network-controlbar
+.csr-network-tabs button strong {
+  min-width: 30px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* ข้อมูลกล้องอยู่ฝั่งขวา */
+.csr-root .csr-network-controlbar
+.csr-network-runinfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  text-align: right;
+}
+
+.csr-root .csr-network-controlbar
+.csr-network-runinfo strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.csr-root .csr-network-controlbar
+.csr-network-runinfo small {
+  font-size: 11px;
+}
+
+/* ปุ่ม Ping ขวาสุด */
+.csr-root .csr-network-controlbar
+.csr-network-runbuttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.csr-root .csr-network-controlbar
+.csr-network-runbuttons .csr-primary {
+  min-width: 175px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+/* หน้าจอแคบ จัดเรียงให้ไม่เบียดกัน */
+@media (max-width: 850px) {
+  .csr-root .csr-network-controlbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .csr-root .csr-network-controlbar
+  > .csr-network-tabs {
+    grid-column: 1 / -1;
+  }
+
+  .csr-root .csr-network-controlbar
+  .csr-network-runinfo {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .csr-root .csr-network-controlbar
+  .csr-network-tabs > button {
+    flex: 1 1 0;
+  }
+}
+
+@media (max-width: 540px) {
+  .csr-root .csr-network-controlbar {
+    grid-template-columns: 1fr;
+  }
+
+  .csr-root .csr-network-controlbar
+  > .csr-network-tabs {
+    grid-column: 1;
+  }
+
+  .csr-root .csr-network-controlbar
+  .csr-network-runbuttons {
+    justify-content: stretch;
+    flex-wrap: wrap;
+  }
+
+  .csr-root .csr-network-controlbar
+  .csr-network-runbuttons .csr-primary {
+    flex: 1 1 auto;
+  }
+}
+
+
+/* =========================================
+   NETWORK BUTTONS - WIDTH & CONTRAST
+========================================= */
+
+/* เพิ่มความยาวปุ่มทั้งสอง */
+.csr-root .csr-network-controlbar
+.csr-network-tabs > button {
+  flex: 0 0 195px;
+  width: 195px;
+  height: 42px;
+  box-sizing: border-box;
+  font-size: 13px;
+  font-weight: 800;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* ปุ่มที่ไม่ได้เลือก - เพิ่มความชัดเจน */
+.csr-root .csr-network-controlbar
+.csr-network-tabs > button:not(.is-active) {
+  background: #263a54;
+  border: 1px solid #4b6688;
+  color: #dceaff;
+}
+
+/* เมื่อชี้เมาส์ */
+.csr-root .csr-network-controlbar
+.csr-network-tabs > button:not(.is-active):hover:not(:disabled) {
+  background: #304b6d;
+  border-color: #7299c8;
+}
+
+/* ปุ่มที่เลือกยังคงสีแดง */
+.csr-root .csr-network-controlbar
+.csr-network-tabs > button.is-active {
+  background: linear-gradient(135deg, #a92450, #832044);
+  border: 1px solid #c43e69;
+  color: #ffffff;
+}
+
+/* จอเล็กให้ปุ่มแบ่งพื้นที่เท่ากัน */
+@media (max-width: 850px) {
+  .csr-root .csr-network-controlbar
+  .csr-network-tabs > button {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+  }
+}
+
+
+/* =========================================
+   NETWORK BAR - MATCH COLLAPSED CARD SIZE
+========================================= */
+
+/* กำหนดขนาดการ์ดทั้งสองให้สอดคล้องกัน */
+.csr-root .csr-network-controlbar,
+.csr-root .csr-box-list-collapsed {
+  width: 100%;
+  min-height: 72px;
+  padding: 12px 15px;
+  box-sizing: border-box;
+  border-radius: 10px;
+}
+
+/* การ์ดเลือกเครือข่าย + Ping */
+.csr-root .csr-network-controlbar {
+  align-items: center;
+  margin: 14px 0 18px;
+}
+
+/* การ์ดเส้นประเมื่อพับรายการตู้ */
+.csr-root .csr-box-list-collapsed {
+  align-items: center;
+}
+
+
+/* =========================================
+   CCTV PING AGENT - ALIGNMENT & BUTTONS
+========================================= */
+
+/* แบ่งพื้นที่ซ้าย 50% / ขวา 50% โดยประมาณ */
+.csr-root .csr-agent {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 4fr)
+    repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 10px;
+}
+
+/* จัดกรอบข้อมูล Agent อยู่กึ่งกลางฝั่งซ้าย */
+.csr-root .csr-agent > .csr-agent-ready {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  align-self: center;
+  justify-self: center;
+}
+
+/* ให้ปุ่มทั้ง 3 และตัวนับกล้องเรียงเป็น 4 ช่อง */
+.csr-root .csr-agent > .csr-agent-actions {
+  display: contents;
+}
+
+/* ขนาดปุ่มทั้ง 3 เท่ากัน */
+.csr-root .csr-agent .csr-agent-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* ช่องนับกล้อง = ขนาดเดียวกับปุ่ม */
+.csr-root .csr-agent > .csr-agent-progress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* ปุ่มทดสอบเชื่อมต่อ - สีเขียว */
+.csr-root .csr-agent
+.csr-agent-actions > button:nth-child(3) {
+  background: #176849;
+  border: 1px solid #2da779;
+  color: #e6fff3;
+}
+
+/* Hover ปุ่มทดสอบ */
+.csr-root .csr-agent
+.csr-agent-actions > button:nth-child(3):hover:not(:disabled) {
+  background: #20845d;
+  border-color: #4adea3;
+}
+
+/* หน้าจอขนาดกลาง */
+@media (max-width: 1100px) {
+  .csr-root .csr-agent {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .csr-root .csr-agent > .csr-agent-ready {
+    grid-column: 1 / -1;
+    max-width: none;
+  }
+}
+
+/* หน้าจอเล็ก */
+@media (max-width: 650px) {
+  .csr-root .csr-agent {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .csr-root .csr-agent > .csr-agent-ready {
+    grid-column: 1 / -1;
+  }
+
+  .csr-root .csr-agent .csr-agent-actions > button {
+    white-space: normal;
+  }
+}
+
+
+/* =========================================
+   CCTV PING AGENT - CENTER ALIGNMENT
+   ขอบซ้าย/ขวาตรงกับเส้นแบ่งสองคอลัมน์
+========================================= */
+
+.csr-root .csr-agent {
+  display: grid;
+
+  /* กรอบ Agent ครึ่งซ้าย / ปุ่ม 4 ช่องครึ่งขวา */
+  grid-template-columns:
+    minmax(0, calc(50% - 6px))
+    repeat(4, minmax(0, 1fr));
+
+  align-items: center;
+  gap: 12px;
+
+  /* คืนความสูงเดิม ไม่บีบกรอบ */
+  padding: 14px 12px;
+  margin: 16px 0;
+  box-sizing: border-box;
+}
+
+/* กรอบ Agent ขยายจนถึงเส้นแบ่งกึ่งกลาง */
+.csr-root .csr-agent > .csr-agent-ready {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  align-self: center;
+  justify-self: stretch;
+}
+
+/* หน้าจอขนาดกลาง */
+@media (max-width: 1100px) {
+  .csr-root .csr-agent {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .csr-root .csr-agent > .csr-agent-ready {
+    grid-column: 1 / -1;
+  }
+}
+
+/* หน้าจอเล็ก */
+@media (max-width: 650px) {
+  .csr-root .csr-agent {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* =========================================
+   CCTV REPAIR FOLLOW-UP
+   FIXED COLUMNS - ONE LINE - NO SCROLLBAR
+========================================= */
+
+/* ไม่ให้ตารางเกิดแถบเลื่อนแนวนอน */
+.csr-root .csr-repair-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+/* ตารางกว้างเท่ากับกรอบเสมอ */
+.csr-root .csr-repair-work-table {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 10.5px;
+}
+
+/* ทุกช่องแสดงบรรทัดเดียว */
+.csr-root .csr-repair-work-table th,
+.csr-root .csr-repair-work-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+  padding: 9px 5px;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+/* แบ่งความกว้างแต่ละคอลัมน์รวม 100% */
+.csr-root .csr-repair-work-table th:nth-child(1) { width: 9%; }
+.csr-root .csr-repair-work-table th:nth-child(2) { width: 12%; }
+.csr-root .csr-repair-work-table th:nth-child(3) { width: 12%; }
+.csr-root .csr-repair-work-table th:nth-child(4) { width: 12%; }
+.csr-root .csr-repair-work-table th:nth-child(5) { width: 10%; }
+.csr-root .csr-repair-work-table th:nth-child(6) { width: 9%; }
+.csr-root .csr-repair-work-table th:nth-child(7) { width: 8%; }
+.csr-root .csr-repair-work-table th:nth-child(8) { width: 8%; }
+.csr-root .csr-repair-work-table th:nth-child(9) { width: 8%; }
+.csr-root .csr-repair-work-table th:nth-child(10) { width: 12%; }
+
+/* จัดตัวเลขให้อยู่กึ่งกลาง */
+.csr-root .csr-repair-work-table th:nth-child(7),
+.csr-root .csr-repair-work-table th:nth-child(8),
+.csr-root .csr-repair-work-table td:nth-child(7),
+.csr-root .csr-repair-work-table td:nth-child(8) {
+  text-align: center;
+}
+
+/* ชื่อใบงานไม่ดันคอลัมน์ */
+.csr-root .csr-repair-work-table td strong {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+/* ข้อความกำกับ SLA ไม่ขึ้นบรรทัดใหม่ */
+.csr-root .csr-repair-work-table td small {
+  display: inline;
+  margin: 0 0 0 4px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+
+/* =========================================
+   REPAIR TABLE - COLUMN SPACING
+========================================= */
+
+/* คอลัมน์ 8: จำนวนกล้องดับ */
+.csr-root .csr-repair-work-table th:nth-child(8),
+.csr-root .csr-repair-work-table td:nth-child(8) {
+  width: 9%;
+  text-align: center;
+  padding-left: 8px;
+  padding-right: 12px;
+}
+
+/* คอลัมน์ 9: สถานะ */
+.csr-root .csr-repair-work-table th:nth-child(9),
+.csr-root .csr-repair-work-table td:nth-child(9) {
+  width: 9%;
+  text-align: center;
+  padding-left: 12px;
+  padding-right: 8px;
+}
+
+/* คอลัมน์ 10: คนแจ้ง ปรับพื้นที่ให้รวมเท่าเดิม */
+.csr-root .csr-repair-work-table th:nth-child(10) {
+  width: 10%;
+}
+
+
+/* =========================================
+   REPAIR TABLE - MORE SPACE FOR REPORTER
+========================================= */
+
+/* ปรับสัดส่วนคอลัมน์ รวม 100% */
+
+/* 1. เลขที่ใบงาน */
+.csr-root .csr-repair-work-table th:nth-child(1) {
+  width: 8%;
+}
+
+/* 2. วันเวลาที่แจ้ง */
+.csr-root .csr-repair-work-table th:nth-child(2) {
+  width: 11%;
+}
+
+/* 3. วันเวลากล้องดับ */
+.csr-root .csr-repair-work-table th:nth-child(3) {
+  width: 11%;
+}
+
+/* 4. วันเวลาหมด SLA */
+.csr-root .csr-repair-work-table th:nth-child(4) {
+  width: 11%;
+}
+
+/* 5. ศูนย์ */
+.csr-root .csr-repair-work-table th:nth-child(5) {
+  width: 8%;
+}
+
+/* 6. ประเภทการดับ */
+.csr-root .csr-repair-work-table th:nth-child(6) {
+  width: 7%;
+}
+
+/* 7. จำนวนตู้/ด่าน */
+.csr-root .csr-repair-work-table th:nth-child(7) {
+  width: 9%;
+}
+
+/* 8. จำนวนกล้องดับ */
+.csr-root .csr-repair-work-table th:nth-child(8) {
+  width: 9%;
+}
+
+/* 9. สถานะ */
+.csr-root .csr-repair-work-table th:nth-child(9) {
+  width: 9%;
+}
+
+/* 10. คนแจ้ง - เพิ่มพื้นที่ */
+.csr-root .csr-repair-work-table th:nth-child(10) {
+  width: 12%;
+}
+
+/* จัดข้อความคนแจ้งชิดซ้าย */
+.csr-root .csr-repair-work-table th:nth-child(10),
+.csr-root .csr-repair-work-table td:nth-child(10) {
+  text-align: left;
+  padding-left: 12px;
+  padding-right: 6px;
+}
+
+
+/* =========================================
+   TOP HEADER + REPORT FILTERS
+========================================= */
+
+.csr-root .csr-top-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+/* หัวข้อรายงานฝั่งซ้าย */
+.csr-root .csr-top-layout > .csr-title {
+  margin: 0;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+/* ชุดกรอกข้อมูลฝั่งขวา */
+.csr-root .csr-top-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* ศูนย์และวันที่อยู่แถวเดียวกัน */
+.csr-root .csr-top-filters
+.csr-controls.csr-main-filters {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+/* ปุ่ม Excel อยู่ใต้ช่องกรอก */
+.csr-root .csr-top-filters .csr-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+/* ข้อความอธิบาย Excel */
+.csr-root .csr-top-filters .csr-actions small {
+  flex: 1 1 100%;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* จอแคบให้เรียงลงด้านล่าง */
+@media (max-width: 950px) {
+  .csr-root .csr-top-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 600px) {
+  .csr-root .csr-top-filters
+  .csr-controls.csr-main-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================
+   TOP EXCEL BUTTONS - EQUAL WIDTH
+   ขอบปุ่มตรงกับช่องเลือกศูนย์
+========================================= */
+
+/* ชุดปุ่มใช้ความกว้างเท่าคอลัมน์ศูนย์ */
+.csr-root .csr-top-filters .csr-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  width: calc((100% - 12px) / 2);
+  gap: 8px;
+  margin: 0;
+  align-items: center;
+}
+
+/* ปุ่มทั้งสองกว้างและสูงเท่ากัน */
+.csr-root .csr-top-filters .csr-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  min-height: 38px;
+
+  padding: 0 4px;
+  box-sizing: border-box;
+
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ช่องอัปโหลดที่ซ่อนไว้ */
+.csr-root .csr-top-filters
+.csr-actions input[type="file"][hidden] {
+  display: none;
+}
+
+/* ข้อความอธิบาย Excel อยู่แถวถัดไป */
+.csr-root .csr-top-filters .csr-actions small {
+  grid-column: 1 / -1;
+  width: max-content;
+  max-width: calc(200% + 20px);
+  min-width: 0;
+  font-size: 10px;
+}
+
+/* หน้าจอเล็ก */
+@media (max-width: 600px) {
+  .csr-root .csr-top-filters .csr-actions {
+    width: 100%;
+  }
+
+  .csr-root .csr-top-filters .csr-actions small {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
+
+/* =========================================
+   SERVICE BOX - FULL CARD CLICK
+========================================= */
+
+/* คลิกได้ทั้งบริเวณหัวการ์ด */
+.csr-root .csr-box-head--compact {
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+}
+
+/* เปลี่ยนพื้นหลังเล็กน้อยเมื่อชี้เมาส์ */
+.csr-root .csr-box-head--compact:hover {
+  background-color: rgba(79, 123, 177, 0.09);
+}
+
+/* ไม่ให้ปุ่มชื่อมีพื้นหลัง Hover แยกจากการ์ด */
+.csr-root .csr-box-head--compact
+.csr-box-toggle:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* จัดลูกศรให้ตรงกับข้อความชื่อกล้อง */
+.csr-root .csr-box-head--compact
+.csr-box-topline .csr-box-toggle {
+  align-items: flex-start;
+}
+
+/* ลูกศรตรงกับบรรทัดแรกของชื่อ */
+.csr-root .csr-box-head--compact
+.csr-box-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 18px;
+  margin-top: 0;
+  font-size: 20px;
+  line-height: 18px;
+  transform: translateY(-2px);
+}

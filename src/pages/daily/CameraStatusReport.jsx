@@ -396,7 +396,7 @@ function previewTextReport(snapshot) {
 
 const getMessageTone = (message) => {
   if (
-    /ไม่สำเร็จ|ติดต่อ Agent ไม่ได้|ต้องมีทะเบียน|กรุณา|สรุป Manual ต้อง/.test(message)
+    /ไม่สำเร็จ|ยังบันทึกไม่ได้|ติดต่อ Agent ไม่ได้|ต้องมีทะเบียน|กรุณา|สรุป Manual ต้อง/.test(message)
   ) {
     return 'error'
   }
@@ -806,7 +806,23 @@ function CameraStatusReportCenter({
     useState('')
 
   const [expandedBoxes, setExpandedBoxes] = useState({})
-  const [showPendingOnly, setShowPendingOnly] = useState(false)  
+  const [showPendingOnly, setShowPendingOnly] = useState(false)
+
+  // ยืนยันสถานะจำนวนมาก โดยไม่แก้ผล Ping ต้นฉบับ
+  const [bulkConfirmStatus, setBulkConfirmStatus] = useState('')
+  const [boxConfirmStatuses, setBoxConfirmStatuses] = useState({})
+
+  // พับทั้งส่วนรายการตู้เพื่อเลื่อนไปดูกราฟได้สะดวก
+  const [cameraListCollapsed, setCameraListCollapsed] = useState(true)
+
+  // ห้ามนำสถานะยืนยันของศูนย์/เครือข่าย/วันที่/กะเก่ามาใช้ข้ามกัน
+  useEffect(() => {
+    setBulkConfirmStatus('')
+    setBoxConfirmStatuses({})
+    setExpandedBoxes({})
+    setShowPendingOnly(false)
+    setCameraListCollapsed(true)
+  }, [centerId, network, reportDate, shift])
 
   const [principal, setPrincipal] =
     useState(null)
@@ -994,9 +1010,7 @@ function CameraStatusReportCenter({
 
       setResults(found)
 
-      setManual(
-        b.data?.manual_summary || null
-      )
+      setManual(null)
 
       setSavedInfo(
         b.data
@@ -1256,8 +1270,20 @@ function CameraStatusReportCenter({
     : autoSummary
 
     const notTestedCount = rows.filter(
-      r => r.ping_level === 'not_tested'
+      r => !r.ping_level || r.ping_level === 'not_tested'
     ).length
+
+    // กล้องที่ Ping แล้วแต่ยังไม่ยืนยัน สามารถยืนยันทีละตู้/ทั้งระบบได้
+    const pendingConfirmRows = rows.filter(
+      r => r.ping_level && r.ping_level !== 'not_tested' && !r.confirmed
+    )
+
+    // บันทึกได้เฉพาะเมื่อ Ping และยืนยันครบทุกกล้องในทะเบียน
+    const unconfirmedCount = pendingConfirmRows.length + notTestedCount
+    const readyToSave =
+      rows.length > 0 &&
+      unconfirmedCount === 0 &&
+      Object.keys(results).length > 0
 
     function chooseNetwork(value) {
   if (
@@ -1382,9 +1408,11 @@ const boxGroups = useMemo(() => {
         level,
 
         pending: cameras.filter(
-          c =>
-            c.ping_level !== 'not_tested' &&
-            !c.confirmed
+          c => c.ping_level && c.ping_level !== 'not_tested' && !c.confirmed
+        ).length,
+
+        notTested: cameras.filter(
+          c => !c.ping_level || c.ping_level === 'not_tested'
         ).length,
       }
     })
@@ -1399,7 +1427,8 @@ const boxGroups = useMemo(() => {
 
       if (
         showPendingOnly &&
-        group.pending === 0
+        group.pending === 0 &&
+        group.notTested === 0
       ) {
         return false
       }
@@ -1419,6 +1448,65 @@ const boxGroups = useMemo(() => {
 
 }, [rows, search, showPendingOnly])
 
+
+  /* =========================================
+     BULK / SERVICE BOX CONFIRMATION
+     - ยืนยันเฉพาะกล้องที่ Ping แล้วและยังไม่ยืนยัน
+     - ไม่เปลี่ยน ping_level, loss_pct, avg_ms และหลักฐาน Ping
+     - keep = คงสถานะจริงของกล้องแต่ละตัว
+  ========================================= */
+
+  const confirmStatusLabel = value => ({
+    keep: 'ตามสถานะรายกล้องเดิม',
+    online: 'ปกติ',
+    unknown: 'ตรวจสอบไม่ได้ / ผิดปกติ',
+    offline: 'กล้องดับ',
+  })[value] || '-'
+
+  const canBulkConfirm =
+    selectedLoaded && !loading && !running && !pingingIp &&
+    !saving && !importing && !manualIpBusy
+
+  const confirmCameras = (cameras, selectedStatus, scopeName) => {
+    if (!canBulkConfirm || !selectedStatus) return
+
+    const pending = cameras.filter(
+      camera => camera.ping_level &&
+        camera.ping_level !== 'not_tested' && !camera.confirmed
+    )
+
+    if (pending.length === 0) return
+
+    const accepted = window.confirm(
+      `ยืนยันสถานะ ${pending.length} กล้องใน${scopeName}?\n` +
+      `การเลือก: ${confirmStatusLabel(selectedStatus)}\n\n` +
+      'ระบบจะปรับเฉพาะกล้องที่ Ping แล้วแต่ยังไม่ยืนยัน\n' +
+      'ไม่เปลี่ยนกล้องที่ยืนยันไปแล้ว และไม่แก้ผล Ping ต้นทาง'
+    )
+    if (!accepted) return
+
+    setResults(previous => {
+      const next = { ...previous }
+      for (const camera of pending) {
+        const original = previous[camera.ip] || newResult(camera, null)
+        next[camera.ip] = {
+          ...original,
+          status: selectedStatus === 'keep' ? original.status : selectedStatus,
+          confirmed: true,
+        }
+      }
+      return next
+    })
+
+    setManual(null)
+    setSavedInfo(null)
+    setMessage(
+      `ยืนยัน ${pending.length} กล้องใน${scopeName}แล้ว` +
+      (notTestedCount > 0
+        ? ` • ยังมี ${notTestedCount} กล้องที่ยังไม่ Ping ไม่สามารถบันทึกได้`
+        : '')
+    )
+  }
 
   /* =========================================
      USER CONFIRMS CAMERA STATUS
@@ -2016,6 +2104,8 @@ const boxGroups = useMemo(() => {
 
       // แสดงกล้องทุกตู้
       setShowPendingOnly(false)
+      setBulkConfirmStatus('')
+      setBoxConfirmStatuses({})
 
       // แสดงแถบกำลัง Ping
       setRunning(true)
@@ -2207,6 +2297,16 @@ const boxGroups = useMemo(() => {
       return
     }
 
+    // ตรวจซ้ำตอนกดบันทึก แม้มีผู้เรียกฟังก์ชันโดยไม่ผ่านปุ่ม
+    if (!readyToSave) {
+      setMessage(
+        `ยังบันทึกไม่ได้: ยังไม่ Ping ${notTestedCount} กล้อง ` +
+        `และรอยืนยัน ${pendingConfirmRows.length} กล้อง ` +
+        'กรุณาตรวจสอบให้ครบก่อน'
+      )
+      return
+    }
+
     const raw = summarize(rows)
 
     if (manual) {
@@ -2237,14 +2337,12 @@ const boxGroups = useMemo(() => {
       }
     }
 
-    const isFinal =
-      raw.pending === 0 &&
-      notTestedCount === 0
+    const isFinal = true // ต้องผ่าน readyToSave ก่อนเท่านั้น
 
     if (
       !window.confirm(
         `บันทึก${SHIFTS[shift]} ${reportDate} ${NETWORKS.find(n => n.value === network)?.label}
-สถานะ: ${isFinal ? 'ยืนยันครบ' : `ชั่วคราว (ยังไม่ Ping ${notTestedCount} กล้อง / รอยืนยัน ${autoSummary.pending} กล้อง)`}
+สถานะ: ยืนยันครบ ${rows.length} กล้อง
 การบันทึกใหม่จะทับผลของกะ/วัน/วงนี้เท่านั้น ยืนยันหรือไม่?`
       )
     ) return
@@ -2747,7 +2845,7 @@ const boxGroups = useMemo(() => {
 
   return (
     <div className={`csr-root${pingingIp ? ' csr-ping-single-active' : ''}`}>
-
+      <div className="csr-top-layout">
       {/* HEADER */}
 
       <div className="csr-title">
@@ -2770,6 +2868,7 @@ const boxGroups = useMemo(() => {
         </div>
       </div>
 
+      <div className="csr-top-filters">
 
       {/* FILTERS */}
 
@@ -2813,6 +2912,7 @@ const boxGroups = useMemo(() => {
         <label>
           วันที่รายงาน
 
+          
           <input
             type="date"
             value={reportDate}
@@ -2820,13 +2920,15 @@ const boxGroups = useMemo(() => {
               running ||
               !!pingingIp ||
               saving ||
-              importing ||
-              loading
+              importing
             }
-            onChange={e =>
-              setReportDate(e.target.value)
-            }
+            onChange={e => {
+              if (e.target.value) {
+                setReportDate(e.target.value)
+              }
+            }}
           />
+
         </label>
 
       </div>
@@ -2877,6 +2979,8 @@ const boxGroups = useMemo(() => {
         </small>
 
       </div>
+      </div>
+    </div>
 
 
       {/* LOCAL PING AGENT */}
@@ -2920,7 +3024,7 @@ const boxGroups = useMemo(() => {
               window.location.assign(AGENT_DOWNLOAD_URL)
             }}
           >
-            ⬇ ดาวน์โหลด CCTV Ping Agent
+            ⬇ CCTV Ping Agent
           </button>
           <button
             type="button"
@@ -3138,8 +3242,11 @@ const boxGroups = useMemo(() => {
         </div>
 
 
-      {/* CAMERA NETWORK TABS */}
+      
+      {/* CAMERA NETWORK CONTROLS */}
+      <div className="csr-network-controlbar">
 
+        {/* ซ้าย: เลือกเครือข่าย */}
         <div
           className="csr-network-tabs"
           role="tablist"
@@ -3176,83 +3283,97 @@ const boxGroups = useMemo(() => {
           })}
         </div>
 
-        {/* PING CONTROLS FOR SELECTED NETWORK */}
-
-        <div className="csr-network-runbar">
-          <div className="csr-network-runinfo">
-            <strong>
-              {NETWORKS.find(
-                item => item.value === network
-              )?.label}
-            </strong>
-
-            <small>
-              จำนวน {inventory.length} กล้อง
-              {' • '}
-              ตรวจสอบแยกจากอีกเครือข่าย
-            </small>
-          </div>
-
-          <div className="csr-network-runbuttons">
-            <button
-              type="button"
-              className="csr-primary"
-              disabled={
-                !agentKey ||
-                !selectedLoaded ||
-                !inventory.length ||
-                running ||
-                !!pingingIp ||
-                loading ||
-                importing ||
-                saving
-              }
-              onClick={runPing}
-            >
-              {running
-                ? `กำลัง Ping ${
-                    NETWORKS.find(
-                      item => item.value === network
-                    )?.label
-                  }`
-                : `▶ Ping ${
-                    NETWORKS.find(
-                      item => item.value === network
-                    )?.label
-                  }`}
-            </button>
-
-            {running && (
-              <button
-                type="button"
-                onClick={() => {
-                  stopRef.current = true
-                }}
-              >
-                หยุดหลังจบชุดนี้
-              </button>
-            )}
-          </div>
+        {/* ขวา: ข้อมูลเครือข่ายที่เลือก */}
+        <div className="csr-network-runinfo">
+          <strong>
+            {NETWORKS.find(item => item.value === network)?.label}
+            {' · '}
+            {selectedLoaded
+              ? inventory.length
+              : networkOverview[network]?.total ?? 0}
+            {' กล้อง'}
+          </strong>
+          <small>ตรวจสอบแยกจากอีกเครือข่าย</small>
         </div>
 
-      <div className="csr-table-head">
+        {/* ขวาสุด: ปุ่ม Ping */}
+        <div className="csr-network-runbuttons">
+          <button
+            type="button"
+            className="csr-primary"
+            disabled={
+              !agentKey ||
+              !selectedLoaded ||
+              !inventory.length ||
+              running ||
+              !!pingingIp ||
+              loading ||
+              importing ||
+              saving
+            }
+            onClick={runPing}
+          >
+            {running
+              ? `กำลัง Ping ${
+                  NETWORKS.find(item => item.value === network)?.label
+                }`
+              : `▶ Ping ${
+                  NETWORKS.find(item => item.value === network)?.label
+                }`}
+          </button>
 
-        <h3>
-          รายการกล้องและการยืนยันสถานะ
-        </h3>
-
-        <input
-          aria-label="ค้นหากล้อง"
-          placeholder="ค้นหาชื่อกล้อง / IP / Service Box"
-          value={search}
-          onChange={e =>
-            setSearch(e.target.value)
-          }
-        />
+          {running && (
+            <button
+              type="button"
+              onClick={() => {
+                stopRef.current = true
+              }}
+            >
+              หยุดหลังจบชุดนี้
+            </button>
+          )}
+        </div>
 
       </div>
 
 
+      <div className="csr-table-head csr-table-head--bulk">
+        <div className="csr-camera-headline">
+          <h3>รายการกล้องและการยืนยันสถานะ</h3>
+          <small>
+            {boxGroups.length} ตู้/ด่านที่แสดง • {rows.length} กล้องทั้งหมด
+            {' • '}รอยืนยัน {pendingConfirmRows.length} กล้อง
+            {' • '}ยังไม่ Ping {notTestedCount} กล้อง
+          </small>
+        </div>
+        <div className="csr-camera-head-actions">
+          <input
+            aria-label="ค้นหากล้อง"
+            placeholder="ค้นหาชื่อกล้อง / IP / Service Box"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <button
+            type="button"
+            className="csr-collapse-all"
+            aria-expanded={!cameraListCollapsed}
+            onClick={() => setCameraListCollapsed(previous => !previous)}
+          >
+            {cameraListCollapsed ? '▾ แสดงรายการตู้ทั้งหมด' : '▴ พับรายการตู้ทั้งหมด'}
+          </button>
+        </div>
+      </div>
+
+      
+
+      {cameraListCollapsed ? (
+        <div className="csr-box-list-collapsed">
+          <span>รายการตู้ถูกพับอยู่ เพื่อให้เลื่อนลงไปดูกราฟได้สะดวก</span>
+          <button type="button" onClick={() => setCameraListCollapsed(false)}>
+            เปิดรายการตู้
+          </button>
+        </div>
+      ) : (
       <div className="csr-table-scroll">
 
         {/* =========================================
@@ -3269,11 +3390,49 @@ const boxGroups = useMemo(() => {
                 setShowPendingOnly(e.target.checked)
             }
             />
-            แสดงเฉพาะตู้ที่มีรายการรอยืนยัน
-            ({autoSummary.pending} กล้อง)
+            แสดงเฉพาะตู้ที่รอยืนยัน / ยังไม่ Ping
+            ({unconfirmedCount} กล้อง)
         </label>
 
         <div className="csr-box-toolbar-actions">
+
+          
+          <div
+            className="csr-bulk-controls"
+            style={{
+              flex: '0 1 auto',
+              flexWrap: 'wrap',
+            }}
+          >
+            <select
+              aria-label="เลือกสถานะสำหรับยืนยันรวม"
+              value={bulkConfirmStatus}
+              disabled={!canBulkConfirm || pendingConfirmRows.length === 0}
+              onChange={e => setBulkConfirmStatus(e.target.value)}
+            >
+              <option value="">เลือกสถานะรวม...</option>
+              <option value="keep">คงสถานะตามผลรายกล้อง</option>
+              <option value="online">กล้องปกติ</option>
+              <option value="unknown">ตรวจสอบไม่ได้ / ผิดปกติ</option>
+              <option value="offline">กล้องดับ</option>
+            </select>
+
+            <button
+              type="button"
+              className="csr-bulk-confirm-button"
+              disabled={
+                !canBulkConfirm ||
+                !bulkConfirmStatus ||
+                pendingConfirmRows.length === 0
+              }
+              onClick={() =>
+                confirmCameras(rows, bulkConfirmStatus, 'เครือข่ายนี้')
+              }
+            >
+              ยืนยันทั้งหมด ({pendingConfirmRows.length})
+            </button>
+          </div>
+
 
             <button
             type="button"
@@ -3311,7 +3470,7 @@ const boxGroups = useMemo(() => {
             yellow: 'ตรวจสอบ',
             orange: 'ผิดปกติ',
             red: 'กล้องดับ',
-            idle: 'ยังไม่ตรวจครบ',
+            idle: 'ยังไม่ตรวจสอบ',
             }[group.level]
 
             return (
@@ -3322,54 +3481,115 @@ const boxGroups = useMemo(() => {
             >
 
                 {/* SERVICE BOX HEADER */}
+                
+                  
+                  <div
+                    className="csr-box-head csr-box-head--compact"
+                    onClick={e => {
+                      // ไม่ขยาย/ยุบเมื่อใช้ช่องเลือกหรือปุ่มยืนยัน
+                      if (
+                        e.target.closest(
+                          'button, select, input, textarea, a'
+                        )
+                      ) {
+                        return
+                      }
 
-                <button
-                type="button"
-                className="csr-box-toggle"
-                aria-expanded={isOpen}
-                onClick={() =>
-                    setExpandedBoxes(prev => ({
-                    ...prev,
-                    [group.key]: !prev[group.key],
-                    }))
-                }
-                >
+                      setExpandedBoxes(prev => ({
+                        ...prev,
+                        [group.key]: !prev[group.key],
+                      }))
+                    }}
+                  >
 
-                <span className="csr-box-chevron">
-                    {isOpen ? '⌄' : '›'}
-                </span>
 
-                <div className="csr-box-info">
+                    {/* แถวบน: ชื่อตู้และรหัสตู้ */}
+                    <div className="csr-box-topline">
 
-                    <strong>
-                    {group.name}
-                    </strong>
+                      <button
+                        type="button"
+                        className="csr-box-toggle"
+                        aria-expanded={isOpen}
+                        onClick={() =>
+                          setExpandedBoxes(prev => ({
+                            ...prev,
+                            [group.key]: !prev[group.key],
+                          }))
+                        }
+                      >
+                        <span className="csr-box-chevron">
+                          {isOpen ? '⌄' : '›'}
+                        </span>
 
-                    <small>
-                    {group.serviceBox}
-                    {' • '}
-                    {group.cameras.length} กล้อง
-                    </small>
+                        <span className="csr-box-title-text">
+                          {group.name}
+                        </span>
+                      </button>
 
-                </div>
+                      <div className="csr-box-topcode">
+                        <strong>{group.serviceBox}</strong>
+                        <small>{group.cameras.length} กล้อง</small>
+                      </div>
 
-                <div className="csr-box-right">
+                    </div>
 
-                    <span
-                    className={`csr-box-badge ${group.level}`}
-                    >
-                    {levelText}
-                    </span>
+                    {/* แถวล่าง: Ping / เลือกสถานะ / ยืนยัน / สถานะตู้ */}
+                    <div className="csr-box-bottomline">
 
-                    {group.pending > 0 && (
-                    <small className="csr-box-pending">
-                        รอยืนยัน {group.pending} ตัว
-                    </small>
-                    )}
+                      <div className="csr-box-ping-summary">
+                        {group.pending > 0 && (
+                          <small className="csr-box-pending">
+                            รอยืนยัน {group.pending} ตัว
+                          </small>
+                        )}
 
-                </div>
+                        {group.notTested > 0 && (
+                          <small className="csr-box-pending">
+                            ยังไม่ Ping {group.notTested} ตัว
+                          </small>
+                        )}
+                      </div>
 
-                </button>
+                      <div className="csr-box-confirm-controls">
+                        <select
+                          aria-label={`เลือกสถานะทั้งตู้ ${group.serviceBox}`}
+                          value={boxConfirmStatuses[group.key] || 'keep'}
+                          disabled={!canBulkConfirm || group.pending === 0}
+                          onChange={e =>
+                            setBoxConfirmStatuses(prev => ({
+                              ...prev,
+                              [group.key]: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="keep">ตามสถานะกล้อง</option>
+                          <option value="online">ที่รอยืนยัน: ปกติ</option>
+                          <option value="unknown">ที่รอยืนยัน: ตรวจสอบไม่ได้</option>
+                          <option value="offline">ที่รอยืนยัน: กล้องดับ</option>
+                        </select>
+
+                        <button
+                          type="button"
+                          className="csr-box-confirm-button"
+                          disabled={!canBulkConfirm || group.pending === 0}
+                          onClick={() =>
+                            confirmCameras(
+                              group.cameras,
+                              boxConfirmStatuses[group.key] || 'keep',
+                              `ตู้/ด่าน ${group.serviceBox}`
+                            )
+                          }
+                        >
+                          ยืนยันทั้งตู้ ({group.pending})
+                        </button>
+                      </div>
+
+                      <span className={`csr-box-badge ${group.level}`}>
+                        {levelText}
+                      </span>
+
+                    </div>
+                  </div>
 
 
                 {/* CAMERAS INSIDE SERVICE BOX */}
@@ -3537,6 +3757,7 @@ const boxGroups = useMemo(() => {
         </div>
 
       </div>
+      )}
 
       <p className="csr-hint">
         แสดงรายการแยกตาม Service Box •
@@ -3546,101 +3767,17 @@ const boxGroups = useMemo(() => {
       </p>
 
 
-      {/* MANUAL SUMMARY */}
-
-      <div className="csr-manual">
-
-        <label>
-          <input
-            type="checkbox"
-            disabled={running || !!pingingIp || saving || importing || !selectedLoaded}
-            checked={!!manual}
-            onChange={e =>
-              setManual(
-                e.target.checked
-                  ? {
-                      online:
-                        autoSummary.online,
-
-                      offline:
-                        autoSummary.offline,
-
-                      unknown:
-                        autoSummary.unknown,
-
-                      reason: '',
-                    }
-                  : null
-              )
-            }
-          />
-
-          ปรับตัวเลขสรุป Manual
-          (ผล Ping รายตัวยังถูกเก็บไว้)
-        </label>
-
-        {manual && (
-
-          <div className="csr-controls">
-
-            {[
-              ['online', 'กล้องติด'],
-              ['offline', 'กล้องดับ'],
-              ['unknown', 'ตรวจสอบ/ผิดปกติ'],
-            ].map(([key, label]) => (
-
-              <label key={key}>
-                {label}
-
-                <input
-                  inputMode="numeric"
-                  type="text"
-                  value={manual[key]}
-                  onChange={e =>
-                    setManual(m => ({
-                      ...m,
-
-                      [key]:
-                        e.target.value,
-                    }))
-                  }
-                />
-              </label>
-
-            ))}
-
-            <label className="csr-wide">
-              เหตุผลที่ปรับยอด
-
-              <input
-                value={manual.reason}
-                onChange={e =>
-                  setManual(m => ({
-                    ...m,
-
-                    reason:
-                      e.target.value,
-                  }))
-                }
-                placeholder="จำเป็นต้องระบุ"
-              />
-            </label>
-
-          </div>
-
-        )}
-
-      </div>
+      
 
 
       {/* SAVE */}
 
       <div className="csr-footer">
 
-        <span>
-          {autoSummary.pending || notTestedCount
-            ? `ยังไม่ Ping ${notTestedCount} กล้อง • รอยืนยัน ${autoSummary.pending} กล้อง — บันทึกได้เป็นฉบับชั่วคราว`
-            : 'ตรวจสอบครบทุกรายการ — พร้อมบันทึกผลยืนยัน'}
+        <span className={readyToSave ? 'csr-save-ready' : 'csr-save-blocked'}>
+          {readyToSave
+            ? '✓ ยืนยันครบทุกกล้อง — พร้อมบันทึกผล'
+            : `ยังบันทึกไม่ได้ • ยังไม่ Ping ${notTestedCount} กล้อง • รอยืนยัน ${pendingConfirmRows.length} กล้อง — โปรดตรวจสอบให้ครบทุกตู้`}
         </span>
 
         <button
@@ -3653,13 +3790,14 @@ const boxGroups = useMemo(() => {
             saving ||
             importing ||
             !selectedLoaded ||
-            !inventory.length
+            !readyToSave
           }
+          title={readyToSave ? 'บันทึกผลตรวจที่ยืนยันครบแล้ว' : 'ต้อง Ping และยืนยันกล้องทุกตัวก่อนบันทึก'}
           onClick={saveReport}
         >
           {saving
             ? 'กำลังบันทึก...'
-            : 'ยืนยันและบันทึกผล'}
+            : readyToSave ? 'ยืนยันและบันทึกผล' : 'ยังยืนยันไม่ครบ — บันทึกไม่ได้'}
         </button>
 
       </div>
