@@ -5,6 +5,7 @@ import {
 } from 'react'
 
 import { supabase } from '../lib/supabase'
+import { formatMemberPhone } from './Users'
 
 
 const REPAIR_TEAM_LABELS = {
@@ -143,7 +144,7 @@ function SystemUsers({ profile }) {
       member_id: member.member_id,
       team_code: member.team_code,
       full_name: member.full_name || '',
-      phone: member.phone || '',
+      phone: formatMemberPhone(member.phone) || member.phone || '',
     })
   }
 
@@ -1130,7 +1131,7 @@ const technicianCount = useMemo(
 
         
         <div className="list-stat-card">
-          <span>Technician (ช่าง)</span>
+          <span>Technician</span>
           <strong>{technicianCount}</strong>
           <small>บัญชี</small>
         </div>
@@ -1227,9 +1228,9 @@ const technicianCount = useMemo(
                 setRepairTeamFilter(e.target.value)
               }
             >
-              <option value="all">ทุกชุดช่าง</option>
-              <option value="takbai">ชุดช่างตากใบ</option>
-              <option value="pattani">ชุดช่างปัตตานี</option>
+              <option value="all">ช่างทั้งหมด</option>
+              <option value="takbai">ช่างตากใบ</option>
+              <option value="pattani">ช่างปัตตานี</option>
             </select>
           </div>
         </div>
@@ -1287,6 +1288,17 @@ const technicianCount = useMemo(
 
                 <input
                   type="tel"
+                  
+                    onBlur={e => {
+                      const formatted = formatMemberPhone(e.target.value)
+                      if (formatted) {
+                        setRepairMemberForm(old => ({
+                          ...old,
+                          phone: formatted,
+                        }))
+                      }
+                    }}
+
                   value={repairMemberForm.phone}
                   onChange={e =>
                     setRepairMemberForm(old => ({
@@ -1357,7 +1369,9 @@ const technicianCount = useMemo(
                 </div>
 
                 <p>
-                  เบอร์โทร: {member.phone || 'ยังไม่ระบุ'}
+                  เบอร์โทร: {member.phone
+                    ? formatMemberPhone(member.phone) || 'กรุณาตรวจสอบเบอร์โทร'
+                    : 'ยังไม่ระบุ'}
                 </p>
 
                 <div className="member-actions">
@@ -1589,7 +1603,7 @@ const technicianCount = useMemo(
 
                 
                 <option value="technician">
-                  Technician (ช่าง)
+                  Technician
                 </option>
 
 
@@ -1972,7 +1986,7 @@ const technicianCount = useMemo(
                                   user.role === 'supervisor'
                                     ? 'Supervisor'
                                     : user.role === 'technician'
-                                    ? 'Technician (ช่าง)'
+                                    ? 'Technician'
                                     : 'Operator'
 
                                 }

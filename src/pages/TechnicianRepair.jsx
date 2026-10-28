@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import './TechnicianRepair.css'
+import { formatMemberPhone } from './Users'
 
 // ขอบเขตการมองเห็นของช่าง (ตรวจสิทธิ์จริงซ้ำใน RLS)
 const TEAM_CENTERS = {
@@ -168,7 +169,8 @@ const makeForm = (profile, count, order = null) => {
     slaReason: order?.repair_sla_reason || '',
   
     technician: order?.technician_names || '',
-    phone: order?.technician_phone || '',
+    phone: formatMemberPhone(order?.technician_phone)
+      || order?.technician_phone || '',
     equipment: rows,
 
   }
@@ -1105,7 +1107,7 @@ export default function TechnicianRepair({ profile }) {
       : '',
     p_equipment_items: equipment,
     p_technician_name: form.technician.trim(),
-    p_technician_phone: form.phone.trim(),
+    p_technician_phone: form.phone.trim().replace(/\D/g, ''),
   }
 
   const { data, error: err } = await supabase.rpc(
@@ -1874,7 +1876,8 @@ export default function TechnicianRepair({ profile }) {
                       ผู้ปฏิบัติงาน:{' '}
                       {current.technician_names || '-'}
                       {' · '}
-                      โทร. {current.technician_phone || '-'}
+                      โทร. {formatMemberPhone(current.technician_phone)
+                        || current.technician_phone || '-'}
                     </p>
 
                     {Array.isArray(
@@ -2375,9 +2378,8 @@ export default function TechnicianRepair({ profile }) {
                             technician: ev.target.value,
                             
                               phone: p
-                                ? (p.contact_phone || '')
+                                ? (formatMemberPhone(p.contact_phone) || p.contact_phone || '')
                                 : '',
-
                           }))
                         }}
                       >
@@ -2412,6 +2414,12 @@ export default function TechnicianRepair({ profile }) {
                       <input
                         type="tel"
                         value={form.phone}
+                        
+                        onBlur={e => {
+                          const formatted = formatMemberPhone(e.target.value)
+                          if (formatted) changeForm('phone', formatted)
+                        }}
+
                         onChange={e =>
                           changeForm(
                             'phone',

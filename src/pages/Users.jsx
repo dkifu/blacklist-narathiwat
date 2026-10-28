@@ -177,7 +177,10 @@ function Users({ profile }) {
     if (!isAdmin) return
 
     setEditingCenterPhoneId(Number(centerId))
-    setCenterPhoneDraft(getCenterPhone(centerId))
+    
+  const phone = getCenterPhone(centerId)
+    setCenterPhoneDraft(formatMemberPhone(phone) || phone)
+
   }
 
   const saveCenterPhone = async centerId => {
@@ -1678,6 +1681,12 @@ function Users({ profile }) {
                     type="tel"
                     value={centerPhoneDraft}
                     onChange={e => setCenterPhoneDraft(e.target.value)}
+                    
+                    onBlur={e => {
+                      const formatted = formatMemberPhone(e.target.value)
+                      if (formatted) setCenterPhoneDraft(formatted)
+                    }}
+
                     placeholder="เบอร์โทรกลางของศูนย์"
                     disabled={savingCenterPhone}
                     style={{
@@ -2315,5 +2324,5 @@ function Users({ profile }) {
   )
 }
 
-
+export { formatMemberPhone }
 export default Users
