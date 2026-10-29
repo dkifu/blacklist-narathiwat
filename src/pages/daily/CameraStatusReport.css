@@ -3326,6 +3326,11 @@ thead tr:first-child th:nth-child(3) {
 
 .csr-repair-followup .csr-dashboard-section-heading h3 { margin:0; font-size:15px; }
 
+/* เว้นระยะระหว่างตารางสรุปบน กับกล่องติดตามใบแจ้งซ่อม */
+.csr-repair-followup {
+  margin-top: 14px;
+}
+
 .csr-repair-warning,.csr-repair-recovered { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:9px; padding:12px; border-radius:9px; background:#1c2a3b; border:1px solid #49586b; border-left:3px solid #efaa65; color:#eaf3ff; font-size:12px; }
 
 .csr-repair-warning strong,.csr-repair-recovered strong { display:block; }
@@ -4751,4 +4756,630 @@ thead tr:first-child th:nth-child(3) {
   font-size: 20px;
   line-height: 18px;
   transform: translateY(-2px);
+}
+
+/* =========================================
+   CCTV DAILY REPORT — MODERN DASHBOARD
+   Scoped to .csr-modern-report
+========================================= */
+
+.csr-modern-report {
+  --report-green: #12d7a9;
+  --report-red: #fa687e;
+  --report-blue: #a4ceff;
+
+  box-sizing: border-box;
+  width: 100%;
+  color: #f4f8ff;
+
+  background:
+    linear-gradient(135deg, #071629, #0b1e35) !important;
+
+  border: 1px solid #254763;
+  border-radius: 18px;
+  padding: 24px;
+}
+
+/* Header */
+
+.csr-modern-report .csr-dashboard-paper-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.csr-modern-report .csr-dashboard-paper-head h2 {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+/* Two network panels */
+
+.csr-modern-report .csr-dashboard-network-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px;
+}
+
+.csr-modern-report .csr-dashboard-network-panel {
+  min-width: 0;
+  padding: 18px;
+
+  background:
+    linear-gradient(145deg, #0d223b, #091a30);
+
+  border: 1px solid #285173;
+  border-radius: 16px;
+}
+
+.csr-modern-report .csr-dashboard-panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.csr-modern-report .csr-dashboard-panel-title h3 {
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.csr-modern-report .csr-dashboard-data-label.is-saved {
+  background: #063f35;
+  border: 1px solid #078e69;
+  color: #18e5aa;
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+
+/* Donut and KPI layout */
+
+.csr-modern-report .csr-dashboard-donut-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.csr-modern-report .csr-dashboard-donut {
+  position: relative;
+  width: min(100%, 218px);
+  aspect-ratio: 1;
+  height: auto;
+  margin: auto;
+}
+
+.csr-modern-report .csr-dashboard-donut svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.csr-modern-report .csr-dashboard-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.csr-modern-report .csr-dashboard-donut-center strong {
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.csr-modern-report .csr-dashboard-donut-center small {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Main KPI cards */
+
+.csr-modern-report .csr-modern-stats {
+  display: grid !important;
+  gap: 9px;
+  min-width: 0;
+}
+
+.csr-modern-report .csr-modern-stats > .csr-stat-item {
+  display: grid !important;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 6px 10px;
+
+  min-height: 68px;
+  padding: 11px 12px;
+
+  background: #071a31;
+  border: 1px solid #234768;
+  border-radius: 9px;
+}
+
+.csr-modern-report .csr-stat-item > small {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.csr-modern-report .csr-stat-item > strong {
+  grid-column: 3;
+  grid-row: 1;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.csr-modern-report .csr-stat-item.is-online > strong {
+  color: var(--report-green);
+}
+
+.csr-modern-report .csr-stat-item.is-offline > strong {
+  color: var(--report-red);
+}
+
+.csr-modern-report .csr-stat-item > .csr-dot,
+.csr-modern-report .csr-stat-item > .csr-report-camera-icon {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.csr-modern-report .csr-stat-item > .csr-dot {
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+}
+
+.csr-modern-report .csr-stat-item > .csr-dot.is-green {
+  background: var(--report-green);
+}
+
+.csr-modern-report .csr-stat-item > .csr-dot.is-red {
+  background: var(--report-red);
+}
+
+.csr-modern-report .csr-stat-item > .csr-meter {
+  grid-column: 2;
+  grid-row: 2;
+
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+
+  background: #273550;
+  border-radius: 20px;
+}
+
+.csr-modern-report .csr-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.csr-modern-report .csr-meter-green {
+  background: var(--report-green);
+}
+
+.csr-modern-report .csr-meter-red {
+  background: var(--report-red);
+}
+
+.csr-modern-report .csr-stat-item > em {
+  grid-column: 3;
+  grid-row: 2;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  font-style: normal;
+  text-align: right;
+}
+
+/* Outage / fault cards */
+
+.csr-modern-report .csr-dashboard-outage-box {
+  margin-top: 20px;
+  padding: 13px;
+
+  background: #07182d;
+  border: 1px solid #244564;
+  border-radius: 12px;
+}
+
+.csr-modern-report .csr-dashboard-outage-box > strong {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+.csr-modern-report .csr-dashboard-outage-three {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.csr-modern-report .csr-dashboard-outage-three > .csr-fault-item {
+  display: grid !important;
+  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: center;
+  align-items: center;
+  gap: 3px 7px;
+
+  min-width: 0;
+  min-height: 80px;
+  padding: 10px;
+
+  background: linear-gradient(145deg, #102b47, #0b213b);
+  border: none;
+  border-radius: 10px;
+}
+
+.csr-modern-report .csr-fault-item > b {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--report-red);
+}
+
+.csr-modern-report .csr-fault-item > small {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #d5e7f8;
+  overflow-wrap: anywhere;
+}
+
+/* CCTV icons */
+
+.csr-report-camera-icon,
+.csr-report-cabinet-icon {
+  display: block;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  color: var(--report-red, #fa687e);
+}
+
+.csr-report-camera-icon.csr-icon-total {
+  width: 23px;
+  height: 23px;
+  color: var(--report-blue, #a4ceff);
+}
+
+.csr-modern-report .csr-fault-item > .csr-report-camera-icon,
+.csr-modern-report .csr-fault-item > .csr-report-cabinet-icon,
+.csr-modern-report .csr-fault-item > .csr-cctv-cluster {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.csr-cctv-cluster {
+  position: relative;
+  display: block;
+  width: 38px;
+  height: 42px;
+  color: var(--report-red, #fa687e);
+}
+
+.csr-cctv-cluster .csr-report-camera-icon {
+  position: absolute;
+  width: 25px;
+  height: 25px;
+}
+
+.csr-cctv-cluster .csr-report-camera-icon:nth-child(1) {
+  top: 0;
+  left: 0;
+}
+
+.csr-cctv-cluster .csr-report-camera-icon:nth-child(2) {
+  top: 8px;
+  left: 15px;
+}
+
+.csr-cctv-cluster .csr-report-camera-icon:nth-child(3) {
+  top: 21px;
+  left: 3px;
+}
+
+/* Mobile screen preview */
+
+@media (max-width: 760px) {
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper) {
+    padding: 12px;
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-dashboard-network-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-dashboard-network-panel {
+    padding: 12px;
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-dashboard-donut-row {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 9px;
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-dashboard-donut {
+    width: min(100%, 150px);
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-dashboard-paper-head h2 {
+    font-size: 19px;
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-dashboard-donut-center strong {
+    font-size: 19px;
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-stat-item > strong {
+    font-size: 19px;
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-dashboard-outage-three {
+    gap: 5px;
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-dashboard-outage-three > .csr-fault-item {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    padding: 8px 4px;
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-fault-item > .csr-report-camera-icon,
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-fault-item > .csr-report-cabinet-icon,
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-fault-item > .csr-cctv-cluster {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-fault-item > b {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: 21px;
+  }
+
+  .csr-modern-report:not(.csr-export-fixed):not(.csr-multi-paper)
+  .csr-fault-item > small {
+    grid-column: 1;
+    grid-row: 3;
+  }
+}
+
+/* Fixed layout for image export */
+
+.csr-modern-report.csr-export-fixed {
+  box-sizing: border-box !important;
+  width: 1200px !important;
+  min-width: 1200px !important;
+  max-width: 1200px !important;
+}
+
+.csr-modern-report.csr-export-fixed
+.csr-dashboard-network-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+/* ตัวเลขและหน่วยปัญหากล้อง */
+.csr-modern-report .csr-fault-item > b {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* ตัวเลขสีแดงชมพู */
+.csr-modern-report .csr-fault-number {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fa687e;
+  line-height: 1.2;
+}
+
+/* หน่วย ตู้ / ด่าน / ตัว สีขาว */
+.csr-modern-report .csr-fault-unit {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fa687e;
+}
+
+/* ขยายข้อความคำอธิบาย */
+.csr-modern-report .csr-fault-item > small {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #ffffff;
+}
+
+.csr-modern-report .csr-stat-item > .csr-dot {
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+}
+
+.csr-modern-report .csr-stat-item > .csr-dot.is-green {
+  background: var(--report-green);
+}
+
+.csr-modern-report .csr-stat-item > .csr-dot.is-red {
+  background: var(--report-red);
+}
+
+.csr-modern-report .csr-stat-item > .csr-dot.is-blue {
+  background: #7fc4ff;
+}
+
+/* จัดกึ่งกลางแนวตั้งเฉพาะกล้องทั้งหมด */
+.csr-modern-report .csr-modern-stats > .csr-stat-item.is-total {
+  grid-template-rows: 1fr;
+  align-items: center;
+  align-content: center;
+}
+
+/* จุดสีฟ้า */
+.csr-modern-report .csr-stat-item.is-total > .csr-dot {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+}
+
+/* ข้อความกล้องทั้งหมด */
+.csr-modern-report .csr-stat-item.is-total > small {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* ตัวเลขทั้งหมด */
+.csr-modern-report .csr-stat-item.is-total > strong {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+  line-height: 1.2;
+  margin: 0;
+}
+
+/* =========================================
+   CCTV DASHBOARD — COMPACT HEIGHT
+   ลดความสูงการ์ดโดยไม่ลดขนาดตัวอักษร
+========================================= */
+
+/* ลดระยะขอบภายในการ์ดใหญ่ */
+.csr-modern-report .csr-dashboard-network-panel {
+  padding: 14px;
+}
+
+/* ลดช่องว่างเหนือกราฟและ KPI */
+.csr-modern-report .csr-dashboard-donut-row {
+  margin-top: 6px;
+  gap: 14px;
+}
+
+/* ลดระยะห่างระหว่าง KPI ทั้ง 3 แถว */
+.csr-modern-report .csr-modern-stats {
+  gap: 6px;
+}
+
+/* ลดความสูงกล่อง KPI แต่คงฟอนต์เดิม */
+.csr-modern-report .csr-modern-stats > .csr-stat-item {
+  min-height: 54px;
+  padding: 7px 10px;
+  gap: 4px 8px;
+}
+
+/* ขยับกล่องปัญหาเข้าใกล้กราฟ */
+.csr-modern-report .csr-dashboard-outage-box {
+  margin-top: 10px;
+  padding: 10px;
+}
+
+/* ลดความสูงกล่องสรุปปัญหา 3 ช่อง */
+.csr-modern-report .csr-dashboard-outage-three > .csr-fault-item {
+  min-height: 68px;
+  padding: 8px;
+}
+
+/* =========================================
+   CCTV DASHBOARD — COMPACT FAULT CARDS
+========================================= */
+
+/* ลดพื้นที่ว่างของกล่องปัญหา */
+.csr-modern-report .csr-dashboard-outage-box {
+  margin-top: 6px;
+  padding: 8px 10px;
+}
+
+/* ลดช่องว่างใต้หัวข้อปัญหา */
+.csr-modern-report .csr-dashboard-outage-box > strong {
+  margin: 0 0 5px;
+  line-height: 1.3;
+}
+
+/* ลดความสูงการ์ด และขยับเนื้อหาไปทางขวา */
+.csr-modern-report
+.csr-dashboard-outage-three > .csr-fault-item {
+  grid-template-columns: 52px minmax(0, 1fr);
+  column-gap: 5px;
+  row-gap: 2px;
+
+  min-height: 58px;
+  padding: 6px 8px;
+}
+
+/* คงไอคอนไว้ตำแหน่งเดิม */
+.csr-modern-report .csr-fault-item > svg,
+.csr-modern-report .csr-fault-item > .csr-cctv-cluster {
+  justify-self: start;
+}
+
+/* ตัวเลข หน่วย และคำอธิบายชิดแนวเดียวกัน */
+.csr-modern-report .csr-fault-item > b,
+.csr-modern-report .csr-fault-item > small {
+  justify-self: start;
+  margin: 0;
+}
+
+/* ขอบโค้งตารางสรุปสถานะกล้องรายศูนย์ */
+.csr-root .csr-multi-breakdown > .csr-multi-scroll {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #2a4968;
+  border-radius: 13px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* ข้อความกรณีไม่มีใบแจ้งซ่อม */
+.csr-repair-empty-all-centers {
+  margin: 20px 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #ffffff;
+}
+
+/* =========================================
+   ศชต. — คงเลย์เอาต์กราฟแนวนอน
+   บนคอม / แท็บเล็ต / มือถือ
+========================================= */
+
+@media (max-width: 1199px) {
+  .csr-root .csr-multi-paper.csr-modern-report {
+    width: 1200px;
+    min-width: 1200px;
+    max-width: none;
+    box-sizing: border-box;
+  }
 }
