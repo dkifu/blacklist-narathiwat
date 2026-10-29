@@ -33,6 +33,7 @@ const makeDailyReportForm = (reportDate, unitName = '') => ({
 
   cameraReady: 0,
   cameraBroken: 0,
+  cameraManualReason: '',
 
   avgCameraReady: 0,
   avgCameraBroken: 0,
@@ -94,6 +95,218 @@ const makeFormFromSaved = (
           dailyCctvPrevention: 0,
         }
       : {}),
+  }
+}
+
+const isCentralCctv = name => {
+  const value = String(name || '')
+    .replace(/[\s.\u200B\uFF0E]/g, '')
+    .toLowerCase()
+
+  return [
+    'ศูนย์สชต',
+    'สชต',
+    'ศูนย์ศชต',
+    'ศชต',
+  ].includes(value)
+}
+
+const validCameraCounts = source => {
+  if (!source) return null
+
+  const keys = ['total', 'online', 'offline', 'unknown']
+  const values = keys.map(key => Number(source[key]))
+
+  if (
+    values.some(value =>
+      !Number.isSafeInteger(value) || value < 0
+    )
+  ) return null
+
+  const [total, online, offline, unknown] = values
+
+  if (total !== online + offline + unknown) {
+    return null
+  }
+
+  return { total, online, offline, unknown }
+}
+
+async function loadMorningCameraTotals({
+  centerId,
+  centerName,
+  reportDate,
+  centers,
+}) {
+  const isCentral = isCentralCctv(centerName)
+  let reports = []
+  let expectedCenters = []
+
+  if (isCentral) {
+    const { data, error } = await supabase.rpc(
+      'camera_all_centers_daily',
+      {
+        p_report_date: reportDate,
+        p_shift: 'morning',
+      }
+    )
+
+    if (error) throw error
+
+    const validCenters = new Set(
+      centers
+        .filter(c => !isCentralCctv(c.name))
+        .map(c => String(c.id))
+    )
+
+    const totals = {
+      total: 0,
+      online: 0,
+      offline: 0,
+      unknown: 0,
+    }
+
+    const confirmedCenters = new Set()
+    const confirmedNetworks = new Set()
+
+    for (const row of data || []) {
+      const id = String(row.center_id)
+
+      if (!validCenters.has(id)) continue
+      if (!['general', 'checkpoint'].includes(row.network_type)) {
+        continue
+      }
+
+      if (row.is_saved !== true || row.is_final !== true) {
+        continue
+      }
+
+      const counts = validCameraCounts(row)
+      if (!counts) continue
+
+      const key = `${id}:${row.network_type}`
+      if (confirmedNetworks.has(key)) continue
+
+      confirmedNetworks.add(key)
+      confirmedCenters.add(id)
+
+      for (const field of Object.keys(totals)) {
+        totals[field] += counts[field]
+      }
+    }
+
+    if (!confirmedNetworks.size) {
+      return {
+        ok: false,
+        message: 'ยังไม่มีผล Ping กะเช้าที่ได้รับการยืนยัน',
+      }
+    }
+
+    const missingCenters =
+      validCenters.size - confirmedCenters.size
+
+    const partialCenters = [...confirmedCenters].filter(id =>
+      !confirmedNetworks.has(`${id}:general`) ||
+      !confirmedNetworks.has(`${id}:checkpoint`)
+    ).length
+
+    return {
+      ok: true,
+      ...totals,
+      partial: missingCenters > 0 || partialCenters > 0,
+      message:
+        `ผล Ping กะเช้า ${confirmedCenters.size}/${validCenters.size} ศูนย์` +
+        (missingCenters > 0
+          ? ` · ยังไม่มีผล ${missingCenters} ศูนย์`
+          : '') +
+        (partialCenters > 0
+          ? ` · ผลบางเครือข่ายยังไม่ครบ ${partialCenters} ศูนย์`
+          : ''),
+    }
+  }
+
+  else {
+    const { data, error } = await supabase
+      .from('camera_status_daily')
+      .select(
+        'center_id,network_type,is_final,final_summary'
+      )
+      .eq('center_id', Number(centerId))
+      .eq('report_date', reportDate)
+      .eq('shift', 'morning')
+
+    if (error) throw error
+
+    reports = data || []
+    expectedCenters = [String(centerId)]
+  }
+
+  if (!expectedCenters.length) {
+    return {
+      ok: false,
+      message: 'ยังไม่พบข้อมูลศูนย์ที่ต้องนำมารวมยอด',
+    }
+  }
+
+  const totals = {
+    total: 0,
+    online: 0,
+    offline: 0,
+    unknown: 0,
+  }
+
+  const missing = []
+
+  for (const id of expectedCenters) {
+    for (const network of ['general', 'checkpoint']) {
+      const row = reports.find(item =>
+        String(item.center_id) === id &&
+        item.network_type === network
+      )
+
+      const confirmed = isCentral
+        ? row?.is_saved === true && row?.is_final === true
+        : row?.is_final === true
+
+      const counts = confirmed
+        ? validCameraCounts(
+            isCentral ? row : row.final_summary
+          )
+        : null
+
+      if (!counts) {
+        missing.push(`${id}/${network}`)
+        continue
+      }
+
+      for (const key of Object.keys(totals)) {
+        totals[key] += counts[key]
+      }
+    }
+  }
+
+  if (missing.length) {
+    return {
+      ok: false,
+      message: `ผลยืนยันกะเช้ายังไม่ครบ ${missing.length} รายการ`,
+    }
+  }
+
+  if (totals.unknown > 0) {
+    return {
+      ok: false,
+      message:
+        `ยังมีกล้องรอตรวจสอบ ${totals.unknown} ตัว ` +
+        'จึงยังไม่ปรับยอดอัตโนมัติ',
+    }
+  }
+
+  return {
+    ok: true,
+    ...totals,
+    message: isCentral
+      ? 'ผลยืนยันกะเช้า · รวมทุกศูนย์'
+      : 'ผลยืนยันกะเช้า · กล้องทั่วไปและกล้องด่าน',
   }
 }
 
@@ -209,7 +422,11 @@ function DailyCctvReport({ profile }) {
 
     const reportLoadSeqRef = useRef(0)
 
+    const [cameraPingInfo, setCameraPingInfo] =
+      useState(null)
 
+    const [isCameraEditing, setIsCameraEditing] =
+      useState(false)  
     
 
 
@@ -427,7 +644,13 @@ function DailyCctvReport({ profile }) {
         String(selectedCenterId)
   )
 
-  
+  const centralCameraIncomplete =
+    isCentralCctv(selectedCenter?.name) &&
+    (
+      !cameraPingInfo?.ok ||
+      cameraPingInfo?.partial === true ||
+      Number(cameraPingInfo?.unknown || 0) > 0
+    )
 
   useEffect(() => {
 
@@ -583,6 +806,7 @@ useEffect(() => {
   setIsReportSaved(false)
   setSavedImageSize(0)
   setReportLoadError('')
+  setCameraPingInfo(null)
 
   if (!centerId || !requestedDate) {
     setIsReportLoading(false)
@@ -596,6 +820,27 @@ useEffect(() => {
 
   const loadSavedDailyReport = async () => {
     try {
+
+      let pingInfo
+
+        try {
+          pingInfo = await loadMorningCameraTotals({
+            centerId,
+            centerName: centerUnitName,
+            reportDate: requestedDate,
+            centers,
+          })
+        } catch (error) {
+          console.error('Load morning Ping totals:', error)
+          pingInfo = {
+            ok: false,
+            message: 'ไม่สามารถโหลดผล Ping ได้',
+          }
+        }
+
+        if (!isCurrent()) return
+
+        setCameraPingInfo(pingInfo)
       // 1. ค้นหารายงานของศูนย์และวันที่เลือกก่อน
       const {
         data: exactReport,
@@ -620,20 +865,34 @@ useEffect(() => {
       // 2. วันนั้นเคยบันทึกแล้ว
       // ใช้ข้อมูลจริงของวันนั้น ไม่ใช้ค่าเริ่มต้น
       if (exactReport) {
-        setForm(
-          makeFormFromSaved(
-            exactReport.report_data,
-            requestedDate,
-            centerUnitName
-          )
+        const savedForm = makeFormFromSaved(
+          exactReport.report_data,
+          requestedDate,
+          centerUnitName
         )
 
+        const useAuto =
+          pingInfo.ok &&
+          savedForm.cameraSource !== 'manual'
+
+        const changed = useAuto && (
+          Number(savedForm.cameraReady) !== pingInfo.online ||
+          Number(savedForm.cameraBroken) !== pingInfo.offline
+        )
+
+        setForm(useAuto ? {
+          ...savedForm,
+          cameraReady: pingInfo.online,
+          cameraBroken: pingInfo.offline,
+          cameraSource: 'auto',
+        } : savedForm)
+
         setSavedImageSize(
-          exactReport.image_size_bytes || 0
+          changed ? 0 : (exactReport.image_size_bytes || 0)
         )
 
         setIsReportSaved(
-          Boolean(exactReport.image_path)
+          Boolean(exactReport.image_path) && !changed
         )
 
         return
@@ -666,16 +925,25 @@ useEffect(() => {
 
       // 4. นำข้อมูลล่าสุดมาเป็นฐาน
       // แต่เริ่มยอดรายวันเป็นศูนย์
-      if (latestReport?.report_data) {
-        setForm(
-          makeFormFromSaved(
+      const baseForm = latestReport?.report_data
+        ? makeFormFromSaved(
             latestReport.report_data,
             requestedDate,
             centerUnitName,
             true
           )
-        )
-      }
+        : makeDailyReportForm(
+            requestedDate,
+            centerUnitName
+          )
+
+      setForm({
+        ...baseForm,
+        cameraReady: pingInfo.ok ? pingInfo.online : 0,
+        cameraBroken: pingInfo.ok ? pingInfo.offline : 0,
+        cameraSource: pingInfo.ok ? 'auto' : 'none',
+        cameraManualReason: '',
+      })
 
       // วันใหม่ยังไม่บันทึกเสมอ
       setIsReportSaved(false)
@@ -710,12 +978,15 @@ useEffect(() => {
   selectedCenter?.name,
   isCenter,
   profile?.agency,
+  centers,
 ])
 
 
 const handleDailyCenterChange = (nextCenterId) => {
   // ยกเลิกผลของคำขอโหลดข้อมูลเก่า
   reportLoadSeqRef.current += 1
+
+    setIsCameraEditing(false)
 
   const center = centers.find(
     (item) =>
@@ -725,6 +996,7 @@ const handleDailyCenterChange = (nextCenterId) => {
   setSelectedCenterId(nextCenterId)
   setIsReportLoading(Boolean(nextCenterId))
   setReportLoadError('')
+  setCameraPingInfo(null)
 
   setIsReportSaved(false)
   setSavedImageSize(0)
@@ -743,12 +1015,14 @@ const handleDailyCenterChange = (nextCenterId) => {
 
 const handleDailyDateChange = (nextDate) => {
   reportLoadSeqRef.current += 1
+    setIsCameraEditing(false)
 
   setIsReportLoading(
     Boolean(selectedCenterId && nextDate)
   )
 
   setReportLoadError('')
+  setCameraPingInfo(null)
   setIsReportSaved(false)
   setSavedImageSize(0)
 
@@ -787,6 +1061,44 @@ const handleDailyDateChange = (nextDate) => {
         ? 0
         : number
     )
+  }
+
+  const handleManualCameraChange = (field, value) => {
+    const number = Number(value)
+
+    if (
+      !Number.isSafeInteger(number) ||
+      number < 0
+    ) return
+
+    setIsReportSaved(false)
+    setSavedImageSize(0)
+
+    setForm(prev => ({
+      ...prev,
+      [field]: number,
+      cameraSource: 'manual',
+    }))
+  }
+
+  const handleRestorePingCameraTotals = () => {
+    if (
+      !cameraPingInfo?.ok ||
+      isReportLoading ||
+      isSavingReport
+    ) return
+
+    setForm(prev => ({
+      ...prev,
+      cameraReady: cameraPingInfo.online,
+      cameraBroken: cameraPingInfo.offline,
+      cameraSource: 'auto',
+      cameraManualReason: '',
+    }))
+
+    setIsCameraEditing(false)
+    setIsReportSaved(false)
+    setSavedImageSize(0)
   }
 
   const readLogo = (file, setter) => {
@@ -1305,6 +1617,18 @@ const projectDuration =
             return
             }
 
+            if (
+              form.cameraSource === 'manual' &&
+              !String(form.cameraManualReason || '').trim()
+            ) {
+              alert('กรุณาระบุเหตุผลการแก้ไขยอดกล้อง')
+              return
+            }
+
+            if (centralCameraIncomplete) {
+              alert('ศชต. ต้องมีผล Ping กะเช้าที่ยืนยันครบทุกศูนย์ก่อนบันทึก')
+              return
+            }
 
             setIsSavingReport(true)
             setIsReportSaved(false)
@@ -1789,7 +2113,8 @@ const projectDuration =
                 disabled={
                   isSavingReport ||
                   isReportLoading ||
-                  Boolean(reportLoadError)
+                  Boolean(reportLoadError) ||
+                  centralCameraIncomplete
                 }
             >
                 {isSavingReport
@@ -2071,20 +2396,84 @@ const projectDuration =
               <NumberInput
                 label="กล้องพร้อมใช้งาน"
                 value={form.cameraReady}
+                disabled={!isCameraEditing}
                 onChange={(value) =>
-                  changeNumber('cameraReady', value)
+                  handleManualCameraChange('cameraReady', value)
                 }
               />
 
               <NumberInput
                 label="กล้องเสีย"
                 value={form.cameraBroken}
+                disabled={!isCameraEditing}
                 onChange={(value) =>
-                  changeNumber('cameraBroken', value)
+                  handleManualCameraChange('cameraBroken', value)
                 }
               />
 
             </div>
+
+            <div className="daily-camera-actions">
+              <button
+                type="button"
+                className="daily-camera-edit-button"
+                disabled={isReportLoading || isSavingReport}
+                onClick={() =>
+                  setIsCameraEditing(prev => !prev)
+                }
+              >
+                {isCameraEditing
+                  ? '🔒 ล็อกช่อง'
+                  : '✏️ แก้ไขยอดกล้อง'}
+              </button>
+
+              {cameraPingInfo?.ok && (
+                <button
+                  type="button"
+                  className="daily-camera-restore-button"
+                  disabled={isReportLoading || isSavingReport}
+                  onClick={handleRestorePingCameraTotals}
+                >
+                  🔄 คืนยอดจาก Ping
+                </button>
+              )}
+            </div>
+
+            {form.cameraSource === 'manual' && (
+              <div style={{ marginTop: 12 }}>
+                <label>
+                  เหตุผลการแก้ไขยอดกล้อง *
+
+                  <input
+                    type="text"
+                    value={form.cameraManualReason || ''}
+                    placeholder="ระบุเหตุผลที่แก้ไขยอดกล้อง"
+                    disabled={isSavingReport || isReportLoading}
+                    onChange={(e) =>
+                      changeField(
+                        'cameraManualReason',
+                        e.target.value
+                      )
+                    }
+                  />
+                </label>
+              </div>
+            )}
+
+            {cameraPingInfo && (
+              <small
+                style={{
+                  display: 'block',
+                  marginTop: 8,
+                  color: cameraPingInfo.ok && !centralCameraIncomplete
+                    ? '#22c55e'
+                    : '#f59e0b',
+                }}
+              >
+                {cameraPingInfo.ok && !centralCameraIncomplete ? '✓ ' : '⚠ '}
+                {cameraPingInfo.message}
+              </small>
+            )}
 
           </section>
 
@@ -2831,6 +3220,7 @@ function NumberInput({
   label,
   value,
   onChange,
+  disabled = false,
 }) {
   return (
     <label>
@@ -2840,7 +3230,14 @@ function NumberInput({
         type="number"
         min="0"
         placeholder="0"
-        value={Number(value) === 0 ? '' : (value ?? '')}
+        disabled={disabled}
+        value={
+          disabled
+            ? (value ?? 0)
+            : Number(value) === 0
+              ? ''
+              : (value ?? '')
+        }
         onChange={(e) =>
           onChange(e.target.value)
         }
