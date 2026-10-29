@@ -142,6 +142,7 @@ const newResult = (camera, ping) => {
 
     // ผลวิเคราะห์จาก Ping (ห้ามแก้ทับด้วยผลที่เจ้าหน้าที่ยืนยัน)
     ping_source_level: ping?.level ?? null,
+    pinged_at: ping ? new Date().toISOString() : null,
     ping_level: level,
     avg_ms: ping?.avgMs ?? null,
     loss_pct: ping?.lossPct ?? null,
@@ -2534,6 +2535,7 @@ const boxGroups = useMemo(() => {
                   long,
                   ping_level,
                   ping_source_level,
+                  pinged_at,
                   avg_ms,
                   loss_pct,
                   status,
@@ -2552,6 +2554,7 @@ const boxGroups = useMemo(() => {
                   long,
                   ping_level,
                   ping_source_level,
+                  pinged_at,
                   avg_ms,
                   loss_pct,
                   status,

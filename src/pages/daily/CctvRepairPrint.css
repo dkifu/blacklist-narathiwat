@@ -124,28 +124,6 @@
 }
 
 /* =========================================
-   DRAFT WATERMARK
-========================================= */
-
-.rp-watermark {
-  position: absolute;
-  z-index: -1;
-
-  top: 95mm;
-  left: 17%;
-
-  color: rgba(180, 31, 73, 0.10);
-
-  font-size: 70px;
-  font-weight: 900;
-  white-space: nowrap;
-
-  pointer-events: none;
-
-  transform: rotate(-30deg);
-}
-
-/* =========================================
    DOCUMENT HEADER
 ========================================= */
 

@@ -282,6 +282,10 @@ export default function CctvRepairPrint({
     order.repair_completed_at
   )
 
+  // วันเวลารายงานใช้เวลาจาก Supabase เมื่อกดส่งให้ ศชต. เท่านั้น
+  // ในฉบับร่างไม่แสดงวันที่หรือเวลาที่รายงาน
+  const submitted = formatCompletedAt(order.submitted_at)
+
   const technicianTeam =
     order.team_code === 'takbai'
       ? 'ช่างตากใบ'
@@ -352,14 +356,6 @@ export default function CctvRepairPrint({
 
       <div className="rp-scroll">
         <article className="rp-paper">
-          {order.status === 'draft' && (
-            <div
-              className="rp-watermark"
-              aria-hidden="true"
-            >
-              ฉบับร่าง
-            </div>
-          )}
 
           {/* =====================================
               DOCUMENT HEADER
@@ -403,21 +399,21 @@ export default function CctvRepairPrint({
                 </span>
               </div>
 
-              <div>
-                <b>วันที่รายงาน</b>
+              {order.status !== 'draft' && (
+                <>
+                  <div>
+                    <b>วันที่รายงาน</b>
+                    <span>{submitted.date || '-'}</span>
+                  </div>
 
-                <span>
-                  {formatDateBE(order.report_date)}
-                </span>
-              </div>
-
-              <div>
-                <b>กะปฏิบัติงาน</b>
-
-                <span>
-                  {SHIFT_LABELS[order.shift] || '-'}
-                </span>
-              </div>
+                  <div>
+                    <b>เวลาที่รายงาน</b>
+                    <span>
+                      {submitted.time ? `${submitted.time} น.` : '-'}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </header>
 
@@ -445,6 +441,8 @@ export default function CctvRepairPrint({
                 whiteSpace: 'nowrap',
                 }}
             >
+                {SHIFT_LABELS[order.shift] || '-'}
+                {' · '}
                 สถานะ: {STATUS_LABELS[order.status] || order.status || '-'}
             </span>
             </h2>

@@ -14,7 +14,7 @@ import CenterTasks from './pages/CenterTasks'
 import DailyReport from './pages/DailyReport'
 import MonthlyReport from './pages/MonthlyReport'
 import TechnicianRepair from './pages/TechnicianRepair'
-
+import AgentMonitor from './pages/AgentMonitor'
 
 
 
@@ -190,6 +190,7 @@ function App() {
     adminTasks: 'งาน Admin',
     centerTasks: 'งานศูนย์',
     technicianRepair: 'งานซ่อม',
+    agentMonitor: 'สถานะ Ping Agent',
     dailyReport: 'รายงานประจำวัน',
     monthlyReport: 'รายงานประจำเดือน',
     activityLog: 'Activity Log',
@@ -404,6 +405,17 @@ function App() {
               </button>
             )}
 
+            {canUseAdminPages && (
+              <button
+                type="button"
+                className={`menu-item ${
+                  currentPage === 'agentMonitor' ? 'active' : ''
+                }`}
+                onClick={() => setCurrentPage('agentMonitor')}
+              >
+                สถานะ Ping Agent
+              </button>
+            )}
 
             {isCenter && (
               <button
@@ -624,6 +636,12 @@ function App() {
             ) : currentPage === 'centerTasks' ? (
 
               <CenterTasks profile={profile} />  
+            
+            ) : currentPage === 'agentMonitor' &&
+              
+              canUseAdminPages ? (
+
+              <AgentMonitor profile={profile} />
 
             ) : currentPage === 'dailyReport' ? (
 

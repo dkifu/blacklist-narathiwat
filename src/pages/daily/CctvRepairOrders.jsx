@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-
-
 import {
 
   ClipboardList,
@@ -18,17 +16,11 @@ import {
 
 } from 'lucide-react'
 
-
-
 import { supabase } from '../../lib/supabase'
 
 import './CctvRepairOrders.css'
 
-
-
 import CctvRepairPrint from './CctvRepairPrint'
-
-
 
 /* =========================================
 
@@ -38,9 +30,7 @@ import CctvRepairPrint from './CctvRepairPrint'
 
    Database: YYYY-MM-DD
 
-========================================= */
-
-
+\========================================= */
 
 // ค.ศ. -> พ.ศ. สำหรับแสดงบนหน้าเว็บ
 
@@ -48,29 +38,41 @@ const formatRepairBE = value => {
 
   if (!value) return ''
 
-
-
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(
 
     String(value).slice(0, 10)
 
   )
 
-
-
   if (!match) return ''
 
-
-
   const yearBE = Number(match[1]) + 543
-
-
 
   return `${match[3]}/${match[2]}/${yearBE}`
 
 }
 
+// วันและเวลาที่กดส่งใบงานให้ ศชต. (เวลาประเทศไทย)
+// เวลาดังกล่าวถูกบันทึกโดย Supabase ใน submitted_at
+const formatRepairSubmittedAt = value => {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return '—'
 
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Bangkok',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(parsed).map(part => [part.type, part.value])
+  )
+
+  return `${parts.day}/${parts.month}/${Number(parts.year) + 543} ${parts.hour}:${parts.minute} น.`
+}
 
 // พ.ศ. -> ค.ศ. สำหรับส่งเข้า Supabase
 
@@ -82,11 +84,7 @@ const parseRepairBE = value => {
 
   )
 
-
-
   if (!match) return ''
-
-
 
   const day = Number(match[1])
 
@@ -94,17 +92,11 @@ const parseRepairBE = value => {
 
   const yearBE = Number(match[3])
 
-
-
   if (yearBE < 2400 || yearBE > 3000) return ''
-
-
 
   const year = yearBE - 543
 
   const date = new Date(Date.UTC(year, month - 1, day))
-
-
 
   if (
 
@@ -120,8 +112,6 @@ const parseRepairBE = value => {
 
   }
 
-
-
   return [
 
     String(year).padStart(4, '0'),
@@ -134,15 +124,11 @@ const parseRepairBE = value => {
 
 }
 
-
-
 // วันที่ก่อนหน้าของวันที่รายงาน 1 วัน
 
 const previousRepairBE = isoDate => {
 
   const value = String(isoDate || '').slice(0, 10)
-
-
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
 
@@ -150,19 +136,11 @@ const previousRepairBE = isoDate => {
 
   }
 
-
-
   const date = new Date(`${value}T12:00:00Z`)
-
-
 
   if (Number.isNaN(date.getTime())) return ''
 
-
-
   date.setUTCDate(date.getUTCDate() - 1)
-
-
 
   return formatRepairBE(
 
@@ -172,8 +150,6 @@ const previousRepairBE = isoDate => {
 
 }
 
-
-
 const todayTH = () =>
 
   new Date().toLocaleDateString('sv-SE', {
@@ -181,8 +157,6 @@ const todayTH = () =>
     timeZone: 'Asia/Bangkok',
 
   })
-
-
 
 const SHIFT_LABELS = {
 
@@ -193,8 +167,6 @@ const SHIFT_LABELS = {
   night: 'กะดึก',
 
 }
-
-
 
 const STATUS_LABELS = {
 
@@ -214,8 +186,6 @@ const STATUS_LABELS = {
 
 }
 
-
-
 const TEAM_LABELS = {
 
   takbai: 'ช่างตากใบ',
@@ -224,15 +194,11 @@ const TEAM_LABELS = {
 
 }
 
-
-
 export default function CctvRepairOrders({ profile, initialSelection }) {
 
   const role = String(profile?.role || '').toLowerCase()
 
   const isAdmin = ['admin', 'supervisor'].includes(role)
-
-
 
   // บัญชีเจ้าหน้าที่ศูนย์ ศชต. ตัวจริง
 
@@ -244,16 +210,14 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     String(profile?.username || '').toLowerCase() === 'centercctv'
 
-
-
     const [centers, setCenters] = useState([])
-
-
 
     const [centerId, setCenterId] = useState(
 
     initialSelection?.centerId
+
         ? String(initialSelection.centerId)
+
         : !isAdmin && !isCentralAccount && profile?.center_id
 
         ? String(profile.center_id)
@@ -261,8 +225,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
         : ''
 
     )
-
-
 
     // Admin / Supervisor เลือกศูนย์ ศชต.
 
@@ -274,35 +236,31 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     (isAdmin && String(centerId) === '10')
 
-
-
   const [reportDateBE, setReportDateBE] = useState(
 
     () => formatRepairBE(initialSelection?.reportDate || todayTH())
 
     )
 
-
-
-    // วันที่ ค.ศ. สำหรับใช้กับ RPC และฐานข้อมูล
+    // วันที่ของผล Ping ต้นทาง (ไม่ใช่วันที่ส่งใบแจ้งซ่อม)
+  // วันที่/เวลาส่งรายงานอย่างเป็นทางการ = submitted_at
+  // ถูกบันทึกโดย RPC เมื่อกด "ส่งใบแจ้งซ่อมให้ ศชต."
+  // วันที่ ค.ศ. สำหรับใช้กับ RPC และฐานข้อมูล
 
   const reportDate = parseRepairBE(reportDateBE)
 
   const [shift, setShift] = useState(initialSelection?.shift || 'morning')
 
-
-
   const [availableUnits, setAvailableUnits] = useState([])
+
+  // Force the offline list to re-fetch after using a Ping result.
+  const [availableRevision, setAvailableRevision] = useState(0)
 
   const [orders, setOrders] = useState([])
 
   const [ticketNo, setTicketNo] = useState('')
 
-
-
   const [lastTicketNo, setLastTicketNo] = useState('')
-
-
 
   const [ticketLoading, setTicketLoading] = useState(false)
 
@@ -318,13 +276,12 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
   const [orderUnits, setOrderUnits] = useState([])
 
-
-
   const [busy, setBusy] = useState(false)
 
   const [loadingUnits, setLoadingUnits] = useState(false)
 
   const [message, setMessage] = useState('')
+
   const [messageType, setMessageType] = useState('success')
 
   const [printData, setPrintData] = useState(null)
@@ -337,19 +294,13 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
   const [reporterMemberId, setReporterMemberId] = useState('')
 
-
-
   const [outageDate, setOutageDate] = useState(
 
     () => previousRepairBE(todayTH())
 
   )
 
-
-
   const [outageTime, setOutageTime] = useState('')
-
-
 
   const currentOrder = useMemo(
 
@@ -365,7 +316,75 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
   )
 
+  // เมื่อเลือกใบงานฉบับร่าง ให้ข้อมูลรายงานต้นทาง
 
+  // ตรงกับวันที่และกะของใบงานนั้นโดยอัตโนมัติ
+
+  useEffect(() => {
+
+    if (
+
+      isCentral ||
+
+      currentOrder?.status !== 'draft' ||
+
+      String(currentOrder.center_id) !== String(centerId)
+
+    ) {
+
+      return
+
+    }
+
+    const selectedDateBE =
+
+      formatRepairBE(currentOrder.report_date)
+
+    if (selectedDateBE) {
+
+      setReportDateBE(previous =>
+
+        previous === selectedDateBE
+
+          ? previous
+
+          : selectedDateBE
+
+      )
+
+    }
+
+    if (SHIFT_LABELS[currentOrder.shift]) {
+
+      setShift(previous =>
+
+        previous === currentOrder.shift
+
+          ? previous
+
+          : currentOrder.shift
+
+      )
+
+    }
+
+  }, [
+
+    currentOrder?.id,
+
+    currentOrder?.status,
+
+    currentOrder?.center_id,
+
+    currentOrder?.report_date,
+
+    currentOrder?.shift,
+
+    centerId,
+
+    isCentral,
+
+  ])
 
   // ต้องเลือกใบ Draft ที่ตรงกับศูนย์ วันที่ และกะ
 
@@ -383,15 +402,11 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     currentOrder?.shift === shift
 
-
-
   // โหลดสมาชิกตามศูนย์ของใบงานที่เลือก
 
     useEffect(() => {
 
     let cancelled = false
-
-
 
     async function loadMembers() {
 
@@ -403,8 +418,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
         }
 
-
-
         const { data, error } = await supabase
 
         .from('center_members')
@@ -415,11 +428,7 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
         .order('name')
 
-
-
         if (cancelled) return
-
-
 
         if (error) {
 
@@ -433,17 +442,11 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
         }
 
-
-
         setMembers(data || [])
 
     }
 
-
-
     loadMembers()
-
-
 
     return () => {
 
@@ -452,8 +455,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
     }
 
     }, [currentOrder?.center_id, isCentral])
-
-
 
   // คืนข้อมูลผู้แจ้งและวันเวลาของใบงานที่เลือก
 
@@ -464,8 +465,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
         String(currentOrder?.reporter_member_id || '')
 
     )
-
-
 
     // ถ้ามีวันที่บันทึกไว้แล้ว ให้ใช้วันที่เดิม
 
@@ -484,8 +483,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
             )
 
     )
-
-
 
     setOutageTime(
 
@@ -507,8 +504,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     ])  
 
-
-
   const selectedReporter = members.find(
 
     member =>
@@ -517,15 +512,11 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     ) || null  
 
-
-
   // โหลดเฉพาะ 6 ศูนย์ที่ถูกกำหนดชุดช่างไว้
 
   useEffect(() => {
 
     let cancelled = false
-
-
 
     async function loadCenters() {
 
@@ -539,8 +530,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
           .order('id'),
 
-
-
         supabase
 
           .from('cctv_repair_center_teams')
@@ -549,13 +538,10 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
       ])
 
-
-
       if (cancelled) return
 
-
-
       if (centerResult.error || teamResult.error) {
+
         setMessageType('error')
 
         setMessage(
@@ -572,8 +558,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
       }
 
-
-
       const teamMap = new Map(
 
         (teamResult.data || []).map(item => [
@@ -585,8 +569,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
         ])
 
       )
-
-
 
       const items = (centerResult.data || [])
 
@@ -606,11 +588,7 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
         }))
 
-
-
       setCenters(items)
-
-
 
       if (isAdmin) {
 
@@ -620,11 +598,7 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     }
 
-
-
     loadCenters()
-
-
 
     return () => {
 
@@ -633,8 +607,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
     }
 
   }, [isAdmin])
-
-
 
   const loadOrders = useCallback(
 
@@ -647,8 +619,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
         return
 
       }
-
-
 
       let query = supabase
 
@@ -667,6 +637,8 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
           team_code,
 
           report_date,
+
+          submitted_at,
 
           shift,
 
@@ -688,14 +660,13 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
         `)
 
-        
         .neq('status', 'cancelled')
+
         .neq('status', 'closed')
+
         .order('created_at', { ascending: false })
+
         .limit(100)
-
-
-
 
       if (isCentral) {
 
@@ -713,11 +684,7 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
         }
 
-
-
       const { data, error } = await query
-
-
 
       if (error) {
 
@@ -729,26 +696,27 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
       }
 
-
-
       const items = data || []
 
       setOrders(items)
 
-
-
       setCurrentOrderId(previous => { 
+
         if (
+
           preferredId !== null &&
+
           items.some(
+
             order => String(order.id) === String(preferredId)
+
           )
+
         ) {
+
           return String(preferredId)
+
         }
-
-
-
 
         const existing = items.find(
 
@@ -756,11 +724,7 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
         )
 
-
-
         if (existing) return String(existing.id)
-
-
 
         const initialOrder = isCentral
 
@@ -768,11 +732,7 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
         : items.find(order => order.status === 'draft') || items[0]
 
-
-
         return initialOrder ? String(initialOrder.id) : ''
-
-
 
       })
 
@@ -781,8 +741,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
     [centerId, isCentral]
 
   )
-
-
 
   const loadOrderUnits = useCallback(async orderId => {
 
@@ -794,8 +752,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     }
 
-
-
     const { data, error } = await supabase
 
       .from('cctv_repair_order_units')
@@ -805,8 +761,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
       .eq('order_id', Number(orderId))
 
       .order('id')
-
-
 
     if (error) {
 
@@ -818,13 +772,9 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     }
 
-
-
     setOrderUnits(data || [])
 
   }, [])
-
-
 
   // รายการใบงานของศูนย์ / รายการทุกศูนย์ของ ศชต.
 
@@ -834,15 +784,11 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
   }, [loadOrders])
 
-
-
   // ตู้และด่านที่ Offline จากผล Ping
 
   useEffect(() => {
 
     let cancelled = false
-
-
 
     async function loadAvailable() {
 
@@ -854,15 +800,11 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
       }
 
-
-
       setLoadingUnits(true)
-
-
 
       const { data, error } = await supabase.rpc(
 
-        'cctv_repair_available_units',
+        'cctv_repair_available_units_unconsumed',
 
         {
 
@@ -876,15 +818,9 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
       )
 
-
-
       if (cancelled) return
 
-
-
       setLoadingUnits(false)
-
-
 
       if (error) {
 
@@ -898,17 +834,11 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
       }
 
-
-
       setAvailableUnits(data || [])
 
     }
 
-
-
     loadAvailable()
-
-
 
     return () => {
 
@@ -916,9 +846,7 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     }
 
-  }, [centerId, reportDate, shift, isCentral])
-
-
+  }, [centerId, reportDate, shift, isCentral, availableRevision])
 
   useEffect(() => {
 
@@ -926,19 +854,11 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
   }, [currentOrderId, loadOrderUnits])
 
-
-
   // โหลดเลขใบงานถัดไป เมื่อเลือกศูนย์
 
     useEffect(() => {
 
     let cancelled = false
-
-
-
-
-
-
 
     if (!centerId || isCentral) {
 
@@ -954,10 +874,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     }
 
-
-
-
-
         setTicketNo('')
 
         setLastTicketNo('')
@@ -965,12 +881,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
         setTicketError('')
 
         setTicketLoading(true)
-
-
-
-
-
-
 
     async function loadTicket() {
 
@@ -981,8 +891,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
           p_center_id: Number(centerId),
 
         }),
-
-
 
         supabase
 
@@ -1002,11 +910,7 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
       ])
 
-
-
       if (cancelled) return
-
-
 
       setTicketNo(
 
@@ -1018,8 +922,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
       )
 
-
-
       setLastTicketNo(
 
         lastResult.error
@@ -1029,8 +931,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
           : String(lastResult.data?.[0]?.ticket_no || '')
 
       )
-
-
 
       setTicketError(
 
@@ -1042,19 +942,11 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
       )
 
-
-
       setTicketLoading(false)
 
     }
 
-
-
-
-
     loadTicket()
-
-
 
     return () => {
 
@@ -1064,23 +956,15 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     }, [centerId, isCentral])
 
-
-
     // รีเฟรชเลขหลังสร้างหรือลบใบงาน
 
     async function refreshNextTicket() {
 
     if (!centerId || isCentral) return
 
-
-
     setTicketLoading(true)
 
     setTicketError('')
-
-
-
-
 
     const [nextResult, lastResult] = await Promise.all([
 
@@ -1089,8 +973,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
         p_center_id: Number(centerId),
 
       }),
-
-
 
       supabase
 
@@ -1110,8 +992,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     ])
 
-
-
     setTicketNo(
 
       nextResult.error
@@ -1121,8 +1001,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
         : String(nextResult.data || '')
 
     )
-
-
 
     setLastTicketNo(
 
@@ -1134,8 +1012,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     )
 
-
-
     setTicketError(
 
       nextResult.error?.message ||
@@ -1146,24 +1022,19 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     )
 
-
-
     setTicketLoading(false)
-
-
 
     }
 
-
-
   async function runAction(callback) {
+
     if (busy) return
 
     setBusy(true)
+
     setMessageType('success')
+
     setMessage('')
-
-
 
     try {
 
@@ -1172,8 +1043,8 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
     } catch (error) {
 
         console.error('[CCTV Repair Error]', error)
-        setMessageType('error')
 
+        setMessageType('error')
 
         setMessage(
 
@@ -1197,8 +1068,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
   }
 
-
-
   function createDraft() {
 
   if (
@@ -1221,13 +1090,9 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
   }
 
-
-
   runAction(async () => {
 
     const requestedTicket = ticketNo.trim().toUpperCase()
-
-
 
     const { data, error } = await supabase.rpc(
 
@@ -1247,8 +1112,6 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     )
 
-
-
     if (error) {
 
       // อาจมีเครื่องอื่นสร้างเลขนี้ไปก่อนแล้ว
@@ -1259,13 +1122,9 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
     }
 
-
-
     await loadOrders(data)
 
     await refreshNextTicket()
-
-
 
     setMessage(
 
@@ -1277,13 +1136,9 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
 }
 
-
-
   function addUnit(unit) {
 
-    if (!currentOrder || currentOrder.status !== 'draft') return
-
-
+    if (!canAddToCurrentOrder || busy) return
 
     runAction(async () => {
 
@@ -1303,13 +1158,11 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
       )
 
-
-
       if (error) throw error
 
-
-
       await loadOrderUnits(currentOrder.id)
+
+      setAvailableRevision(n => n + 1)
 
       setMessage(`เพิ่ม ${unit.unit_label} ลงใบงานแล้ว`)
 
@@ -1317,13 +1170,9 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
   }
 
-
-
   function removeUnit(unit) {
 
-    if (!currentOrder || currentOrder.status !== 'draft') return
-
-
+    if (!canAddToCurrentOrder || busy) return
 
     runAction(async () => {
 
@@ -1341,13 +1190,11 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
       )
 
-
-
       if (error) throw error
 
-
-
       await loadOrderUnits(currentOrder.id)
+
+      setAvailableRevision(n => n + 1)
 
       setMessage(`นำ ${unit.unit_label} ออกจากใบงานแล้ว`)
 
@@ -1355,13 +1202,9 @@ export default function CctvRepairOrders({ profile, initialSelection }) {
 
   }
 
-
-
 function saveDraftInfo() {
 
-  if (!currentOrder || currentOrder.status !== 'draft') return
-
-
+  if (!canAddToCurrentOrder || busy) return
 
   runAction(async () => {
 
@@ -1373,21 +1216,15 @@ function saveDraftInfo() {
 
       parseRepairBE(outageDate)
 
-
-
     const orderReportDate =
 
       String(currentOrder.report_date || '').slice(0, 10)
-
-
 
     if (!reporterMemberId) {
 
       throw new Error('กรุณาเลือกผู้แจ้งซ่อม')
 
     }
-
-
 
     if (!normalizedOutageDate) {
 
@@ -1399,15 +1236,11 @@ function saveDraftInfo() {
 
     }
 
-
-
     if (!outageTime) {
 
       throw new Error('กรุณาระบุเวลาที่กล้องดับ')
 
     }
-
-
 
     // ห้ามวันที่ดับเกินวันที่รายงานของใบงานนี้
 
@@ -1422,8 +1255,6 @@ function saveDraftInfo() {
       )
 
     }
-
-
 
     const { error } = await supabase.rpc(
 
@@ -1443,19 +1274,13 @@ function saveDraftInfo() {
 
     )
 
-
-
     if (error) {
 
       throw error
 
     }
 
-
-
     await loadOrders(currentOrder.id)
-
-
 
     setMessage('บันทึกข้อมูลผู้แจ้งเรียบร้อยแล้ว')
 
@@ -1463,15 +1288,11 @@ function saveDraftInfo() {
 
 }
 
-
-
 // ส่งใบแจ้งซ่อมให้ ศชต.
 
 function submitRepairOrder() {
 
-  if (!currentOrder || currentOrder.status !== 'draft') return
-
-
+  if (!canAddToCurrentOrder || busy) return
 
   const confirmed = window.confirm(
 
@@ -1481,11 +1302,7 @@ function submitRepairOrder() {
 
   )
 
-
-
   if (!confirmed) return
-
-
 
   runAction(async () => {
 
@@ -1501,11 +1318,7 @@ function submitRepairOrder() {
 
     )
 
-
-
     if (error) throw error
-
-
 
     await loadOrders(currentOrder.id)
 
@@ -1514,10 +1327,6 @@ function submitRepairOrder() {
   })
 
 }
-
-
-
-
 
 // =========================================
 
@@ -1539,8 +1348,6 @@ function cancelCentralRepairOrder(order) {
 
   ) return
 
-
-
   const reason = window.prompt(
 
     `ระบุเหตุผลการยกเลิก ${order.ticket_no}\n` +
@@ -1551,15 +1358,9 @@ function cancelCentralRepairOrder(order) {
 
   )
 
-
-
   if (reason === null) return
 
-
-
   const normalizedReason = reason.trim()
-
-
 
   if (normalizedReason.length < 5) {
 
@@ -1569,8 +1370,6 @@ function cancelCentralRepairOrder(order) {
 
   }
 
-
-
   if (!window.confirm(
 
     `ยืนยันยกเลิก ${order.ticket_no}?\n\n` +
@@ -1578,8 +1377,6 @@ function cancelCentralRepairOrder(order) {
     `เหตุผล: ${normalizedReason}`
 
   )) return
-
-
 
   runAction(async () => {
 
@@ -1597,8 +1394,6 @@ function cancelCentralRepairOrder(order) {
 
     )
 
-
-
     if (error) throw error
 
     if (data !== true) {
@@ -1607,13 +1402,9 @@ function cancelCentralRepairOrder(order) {
 
     }
 
-
-
     setEditingTicketId('')
 
     await loadOrders()
-
-
 
     setMessage(
 
@@ -1625,10 +1416,6 @@ function cancelCentralRepairOrder(order) {
 
 }
 
-
-
-
-
 // =========================================
 
 // เปิดช่องแก้ไขเลขใบงาน
@@ -1639,15 +1426,9 @@ function openCentralTicketEdit(order) {
 
   if (!isCentral || !order || busy) return
 
-
-
   const oldTicket = String(order.ticket_no || '')
 
-
-
   setEditingTicketId(String(order.id))
-
-
 
   // เลขรูปแบบเก่า CCTV-... ให้กรอกเลขใหม่
 
@@ -1661,15 +1442,9 @@ function openCentralTicketEdit(order) {
 
   )
 
-
-
   setEditingTicketReason('')
 
 }
-
-
-
-
 
 // =========================================
 
@@ -1691,15 +1466,11 @@ function saveCentralTicketEdit() {
 
   ) return
 
-
-
   const newTicket = editingTicketNo.trim().toUpperCase()
 
   const reason = editingTicketReason.trim()
 
   const oldTicket = currentOrder.ticket_no
-
-
 
   if (!newTicket) {
 
@@ -1709,8 +1480,6 @@ function saveCentralTicketEdit() {
 
   }
 
-
-
   if (reason.length < 5) {
 
     window.alert('กรุณาระบุเหตุผลอย่างน้อย 5 ตัวอักษร')
@@ -1718,8 +1487,6 @@ function saveCentralTicketEdit() {
     return
 
   }
-
-
 
   if (!window.confirm(
 
@@ -1732,8 +1499,6 @@ function saveCentralTicketEdit() {
     `เหตุผล: ${reason}`
 
   )) return
-
-
 
   runAction(async () => {
 
@@ -1753,11 +1518,7 @@ function saveCentralTicketEdit() {
 
     )
 
-
-
     if (error) throw error
-
-
 
     if (data !== true) {
 
@@ -1765,19 +1526,13 @@ function saveCentralTicketEdit() {
 
     }
 
-
-
     await loadOrders(currentOrder.id)
-
-
 
     setEditingTicketId('')
 
     setEditingTicketNo('')
 
     setEditingTicketReason('')
-
-
 
     setMessage(
 
@@ -1789,19 +1544,11 @@ function saveCentralTicketEdit() {
 
 }
 
-
-
-
-
-
-
 // ยกเลิกใบแจ้งซ่อมฉบับร่าง
 
 function cancelDraftOrder(order) {
 
   if (!order || order.status !== 'draft' || busy) return
-
-
 
   const confirmed = window.confirm(
 
@@ -1817,11 +1564,7 @@ function cancelDraftOrder(order) {
 
   )
 
-
-
   if (!confirmed) return
-
-
 
   runAction(async () => {
 
@@ -1836,8 +1579,6 @@ function cancelDraftOrder(order) {
       }
 
     )
-
-
 
     // แสดงข้อผิดพลาดให้เห็นทันที
 
@@ -1855,8 +1596,6 @@ function cancelDraftOrder(order) {
 
     }
 
-
-
     if (data !== true) {
 
       throw new Error(
@@ -1866,8 +1605,6 @@ function cancelDraftOrder(order) {
       )
 
     }
-
-
 
     // ลบการ์ดออกจากหน้าจอ
 
@@ -1883,8 +1620,6 @@ function cancelDraftOrder(order) {
 
     )
 
-
-
     // ยกเลิกการเลือกใบงานที่ถูกลบ
 
     setCurrentOrderId(previous =>
@@ -1897,19 +1632,16 @@ function cancelDraftOrder(order) {
 
     )
 
-
-
     // โหลดข้อมูลจริงจากฐานข้อมูลอีกครั้ง
 
     await loadOrders()
-
-
 
     // อัปเดตเลขใบงานถัดไป
 
     await refreshNextTicket()
 
-
+    // Cancellation never returns consumed Ping data to the pool.
+    setAvailableRevision(n => n + 1)
 
     setMessage(
 
@@ -1925,21 +1657,15 @@ function cancelDraftOrder(order) {
 
 }
 
-
-
 // =========================================
 
 // DRAG & DROP CCTV REPAIR UNIT
 
 // =========================================
 
-
-
 const REPAIR_DRAG_TYPE =
 
   'application/x-cctv-repair-unit'
-
-
 
 function handleUnitDragStart(event, unit) {
 
@@ -1959,11 +1685,7 @@ function handleUnitDragStart(event, unit) {
 
   }
 
-
-
   event.dataTransfer.effectAllowed = 'copy'
-
-
 
   event.dataTransfer.setData(
 
@@ -1981,13 +1703,9 @@ function handleUnitDragStart(event, unit) {
 
 }
 
-
-
 function handleUnitDragOver(event) {
 
   if (!canAddToCurrentOrder || busy) return
-
-
 
   if (
 
@@ -2001,13 +1719,9 @@ function handleUnitDragOver(event) {
 
   }
 
-
-
   event.preventDefault()
 
   event.dataTransfer.dropEffect = 'copy'
-
-
 
   // อัปเดต React เพียงครั้งเดียวเมื่อเข้าพื้นที่
 
@@ -2021,23 +1735,15 @@ function handleUnitDragOver(event) {
 
 }
 
-
-
-
-
 // ป้องกัน DragLeave หลอกเมื่อเมาส์ผ่าน element ลูก
 
 function handleUnitDragLeave(event) {
 
   const rect = event.currentTarget.getBoundingClientRect()
 
-
-
   const x = event.clientX
 
   const y = event.clientY
-
-
 
   const stillInside =
 
@@ -2049,13 +1755,9 @@ function handleUnitDragLeave(event) {
 
     y <= rect.bottom
 
-
-
   // ยังอยู่ในกรอบจริง ไม่ต้องปิดไฮไลต์
 
   if (stillInside) return
-
-
 
   dragInsideRef.current = false
 
@@ -2063,23 +1765,15 @@ function handleUnitDragLeave(event) {
 
 }
 
-
-
 function handleUnitDrop(event) {
 
   event.preventDefault()
-
-
 
   dragInsideRef.current = false
 
   setDragOver(false)
 
-
-
   if (!canAddToCurrentOrder || busy) return
-
-
 
   const raw = event.dataTransfer.getData(
 
@@ -2087,15 +1781,9 @@ function handleUnitDrop(event) {
 
   )
 
-
-
   if (!raw) return
 
-
-
   let dropped
-
-
 
   try {
 
@@ -2107,8 +1795,6 @@ function handleUnitDrop(event) {
 
   }
 
-
-
   // ตรวจว่าการ์ดที่ลากเป็นข้อมูลจริงในรายการ
 
   const unit = availableUnits.find(item =>
@@ -2119,33 +1805,21 @@ function handleUnitDrop(event) {
 
   )
 
-
-
   if (!unit || !unit.source_is_final) return
 
-
-
   const key = `${unit.network_type}:${unit.unit_label}`
-
-
 
   // ไม่เพิ่มตู้/ด่านเดิมซ้ำ
 
   if (selectedUnitKeys.has(key)) return
 
-
-
   addUnit(unit)
 
 }
 
-
-
 function openRepairPrint(orderId) {
 
   if (!orderId) return
-
-
 
   runAction(async () => {
 
@@ -2165,8 +1839,6 @@ function openRepairPrint(orderId) {
 
         .single(),
 
-
-
       supabase
 
         .from('cctv_repair_order_units')
@@ -2179,23 +1851,17 @@ function openRepairPrint(orderId) {
 
     ])
 
-
-
     if (orderResult.error) {
 
       throw orderResult.error
 
     }
 
-
-
     if (unitsResult.error) {
 
       throw unitsResult.error
 
     }
-
-
 
     setPrintData({
 
@@ -2209,15 +1875,11 @@ function openRepairPrint(orderId) {
 
 }
 
-
-
   const selectedUnitKeys = new Set(
 
     orderUnits.map(unit => `${unit.network_type}:${unit.unit_label}`)
 
   )
-
-
 
   // แสดงเฉพาะตู้/ด่านที่ยังไม่ได้เพิ่มลงใบงาน
 
@@ -2225,15 +1887,9 @@ function openRepairPrint(orderId) {
 
     const key = `${unit.network_type}:${unit.unit_label}`
 
-
-
     return !selectedUnitKeys.has(key)
 
     })
-
-
-
-
 
   // การ์ดใบแจ้งซ่อม ใช้ร่วมกันทั้งศูนย์ทั่วไปและ ศชต.
 
@@ -2269,8 +1925,6 @@ function openRepairPrint(orderId) {
 
           </strong>
 
-
-
           <span>
 
             {order.center_name_snapshot}
@@ -2281,11 +1935,13 @@ function openRepairPrint(orderId) {
 
           </span>
 
-
-
           <small>
 
-            {formatRepairBE(order.report_date)}
+            {order.status === 'draft'
+
+              ? `ข้อมูล Ping: ${formatRepairBE(order.report_date)}`
+
+              : `ส่งรายงาน: ${formatRepairSubmittedAt(order.submitted_at)}`}
 
             {' · '}
 
@@ -2294,8 +1950,6 @@ function openRepairPrint(orderId) {
           </small>
 
         </button>
-
-
 
         {order.status === 'draft' && !isCentral && (
 
@@ -2327,10 +1981,6 @@ function openRepairPrint(orderId) {
 
   }
 
-
-
-
-
   return (
 
     <div className="repair-page">
@@ -2359,13 +2009,14 @@ function openRepairPrint(orderId) {
 
       </header>
 
-
-
       {!!message && (
 
         <div
+
           className={`repair-message repair-message--${messageType}`}
+
           role={messageType === 'error' ? 'alert' : 'status'}
+
         >
 
           {message}
@@ -2374,15 +2025,49 @@ function openRepairPrint(orderId) {
 
       )}
 
-
-
       {!isCentralAccount && (
 
         <section className="repair-panel">
 
           <h2>ข้อมูลรายงานต้นทาง</h2>
 
+            {canAddToCurrentOrder && (
 
+              <p
+
+                className="repair-muted"
+
+                style={{
+
+                  margin: '10px 0 14px',
+
+                  color: '#8de5b8',
+
+                  fontSize: 13,
+
+                }}
+
+              >
+
+                กำลังแก้ไขใบงานฉบับร่าง:{' '}
+
+                <strong>
+
+                  {currentOrder.ticket_no || `#${currentOrder.id}`}
+
+                </strong>
+
+                {' · '}
+
+                วันที่ข้อมูล Ping: {formatRepairBE(currentOrder.report_date)}
+
+                {' · '}
+
+                {SHIFT_LABELS[currentOrder.shift] || '-'}
+
+              </p>
+
+            )}
 
           <div className="repair-filters">
 
@@ -2422,11 +2107,9 @@ function openRepairPrint(orderId) {
 
             </label>
 
-
-
             <label>
 
-            วันที่รายงาน (พ.ศ.)
+            วันที่ข้อมูล Ping (พ.ศ.)
 
             <input
 
@@ -2449,8 +2132,6 @@ function openRepairPrint(orderId) {
             />
 
             </label>
-
-
 
             <label>
 
@@ -2480,8 +2161,6 @@ function openRepairPrint(orderId) {
 
           </div>
 
-
-
           {!isCentral ? (
 
             <div>
@@ -2504,9 +2183,7 @@ function openRepairPrint(orderId) {
 
                 <label>
 
-                    เลขที่ใบแจ้งซ่อม
-
-
+                    เลขที่ใบแจ้งซ่อมใหม่
 
                     <input
 
@@ -2534,8 +2211,6 @@ function openRepairPrint(orderId) {
 
                 </label>
 
-
-
                   <p
 
                     className="repair-muted"
@@ -2562,11 +2237,7 @@ function openRepairPrint(orderId) {
 
                   </p>
 
-
-
                 </div>
-
-
 
                 {ticketError ? (
 
@@ -2591,8 +2262,6 @@ function openRepairPrint(orderId) {
                 </p>
 
                 )}
-
-
 
                 <div className="repair-form-actions">
 
@@ -2627,8 +2296,6 @@ function openRepairPrint(orderId) {
                     สร้างใบแจ้งซ่อมฉบับร่าง
 
                 </button>
-
-
 
                 <button
 
@@ -2674,8 +2341,6 @@ function openRepairPrint(orderId) {
 
       )}
 
-
-
       <section className="repair-panel">
 
         <h2>
@@ -2685,10 +2350,6 @@ function openRepairPrint(orderId) {
           {isCentral ? 'ใบแจ้งซ่อมจากทุกศูนย์' : 'ใบแจ้งซ่อมของศูนย์'}
 
         </h2>
-
-
-
-
 
         {orders.length === 0 ? (
 
@@ -2712,8 +2373,6 @@ function openRepairPrint(orderId) {
 
                 )
 
-
-
                 return (
 
                 <div
@@ -2734,8 +2393,6 @@ function openRepairPrint(orderId) {
 
                     </div>
 
-
-
                     <span className="repair-team-count">
 
                         {teamOrders.length} ใบงาน
@@ -2743,8 +2400,6 @@ function openRepairPrint(orderId) {
                     </span>
 
                     </div>
-
-
 
                     <div className="repair-order-list">
 
@@ -2784,11 +2439,7 @@ function openRepairPrint(orderId) {
 
         )}
 
-
-
       </section>
-
-
 
       {!isCentral && currentOrder?.status === 'draft' && (
 
@@ -2796,23 +2447,17 @@ function openRepairPrint(orderId) {
 
             <h2>ข้อมูลผู้แจ้งซ่อม</h2>
 
-
-
-
-
               <p className="repair-muted" style={{ marginBottom: 14 }}>
 
                 ใบงานที่กำลังแก้ไข:{' '}
 
                 <strong>{currentOrder.ticket_no || `#${currentOrder.id}`}</strong>
 
-                {' · '}วันที่รายงาน: {formatRepairBE(currentOrder.report_date)}
+                {' · '}วันที่ข้อมูล Ping: {formatRepairBE(currentOrder.report_date)}
 
                 {' · '}{SHIFT_LABELS[currentOrder.shift] || '-'}
 
               </p>
-
-
 
               {!canAddToCurrentOrder && (
 
@@ -2825,10 +2470,6 @@ function openRepairPrint(orderId) {
                 </p>
 
               )}
-
-
-
-
 
             <div className="repair-filters">
 
@@ -2845,8 +2486,6 @@ function openRepairPrint(orderId) {
                 >
 
                 <option value="">เลือกสมาชิกประจำศูนย์</option>
-
-
 
                 {members.map(member => (
 
@@ -2865,8 +2504,6 @@ function openRepairPrint(orderId) {
                 </select>
 
             </label>
-
-
 
             <label>
 
@@ -2890,8 +2527,6 @@ function openRepairPrint(orderId) {
 
             </label>
 
-
-
             <label>
 
                 เวลาที่กล้องดับ
@@ -2909,8 +2544,6 @@ function openRepairPrint(orderId) {
             </label>
 
             </div>
-
-
 
             {selectedReporter && (
 
@@ -2930,8 +2563,6 @@ function openRepairPrint(orderId) {
 
             )}
 
-
-
             <div className="repair-form-actions">
 
             <button
@@ -2942,19 +2573,13 @@ function openRepairPrint(orderId) {
 
                 onClick={saveDraftInfo}
 
-
-
                 disabled={busy || !canAddToCurrentOrder}
-
-
 
             >
 
                 บันทึกข้อมูลผู้แจ้ง
 
             </button>
-
-
 
             <button
 
@@ -2966,11 +2591,13 @@ function openRepairPrint(orderId) {
 
                 disabled={
 
-                busy ||
+                  busy ||
 
-                !currentOrder.reporter_member_id ||
+                  !canAddToCurrentOrder ||
 
-                orderUnits.length === 0
+                  !currentOrder.reporter_member_id ||
+
+                  orderUnits.length === 0
 
                 }
 
@@ -2981,8 +2608,6 @@ function openRepairPrint(orderId) {
             </button>
 
             </div>
-
-
 
             {message && (
 
@@ -3006,8 +2631,6 @@ function openRepairPrint(orderId) {
 
         )}
 
-
-
       <div className="repair-columns">
 
         {!isCentral && (
@@ -3017,8 +2640,6 @@ function openRepairPrint(orderId) {
             <h2>
 
                 ตู้/ด่านที่มีกล้อง Offline
-
-
 
             <span
 
@@ -3041,8 +2662,6 @@ function openRepairPrint(orderId) {
                 </span>
 
                 </h2>
-
-
 
             {loadingUnits ? (
 
@@ -3076,8 +2695,6 @@ function openRepairPrint(orderId) {
 
                     const alreadyAdded = selectedUnitKeys.has(key)
 
-
-
                     const canDrag =
 
                     canAddToCurrentOrder &&
@@ -3088,15 +2705,16 @@ function openRepairPrint(orderId) {
 
                     unit.source_is_final
 
-
-
                     return (
 
                     <div
 
                         className={
+
                           'repair-unit-card repair-available-unit-card' +
+
                           (canDrag ? ' is-draggable' : '')
+
                         }
 
                         key={key}
@@ -3131,8 +2749,6 @@ function openRepairPrint(orderId) {
 
                       <strong>{unit.unit_label}</strong>
 
-
-
                       <span>
 
                         {unit.network_type === 'checkpoint'
@@ -3153,8 +2769,6 @@ function openRepairPrint(orderId) {
 
                       </span>
 
-
-
                       <small>
 
                         {unit.full_outage
@@ -3173,8 +2787,6 @@ function openRepairPrint(orderId) {
 
                       </small>
 
-
-
                       <button
 
                         type="button"
@@ -3183,9 +2795,7 @@ function openRepairPrint(orderId) {
 
                           busy ||
 
-                          !currentOrder ||
-
-                          currentOrder.status !== 'draft' ||
+                          !canAddToCurrentOrder ||
 
                           alreadyAdded ||
 
@@ -3217,8 +2827,6 @@ function openRepairPrint(orderId) {
 
         )}
 
-
-
         <section
 
             className={
@@ -3239,8 +2847,6 @@ function openRepairPrint(orderId) {
 
           <h2>รายการในใบแจ้งซ่อม</h2>
 
-
-
           {canAddToCurrentOrder && (
 
             <div className="repair-drop-hint">
@@ -3259,8 +2865,6 @@ function openRepairPrint(orderId) {
 
             )}
 
-
-
             {currentOrder?.status === 'draft' &&
 
             !canAddToCurrentOrder &&
@@ -3276,8 +2880,6 @@ function openRepairPrint(orderId) {
                 </p>
 
             )}
-
-
 
           {!currentOrder ? (
 
@@ -3315,8 +2917,6 @@ function openRepairPrint(orderId) {
 
               </div>
 
-
-
               <button
 
                 type="button"
@@ -3335,10 +2935,6 @@ function openRepairPrint(orderId) {
 
               </button>
 
-
-
-
-
               {isCentral && (
 
                 <>
@@ -3350,10 +2946,6 @@ function openRepairPrint(orderId) {
                     style={{ marginTop: 12, marginBottom: 14 }}
 
                     >
-
-
-
-
 
                     {[
 
@@ -3391,8 +2983,6 @@ function openRepairPrint(orderId) {
 
                     )}
 
-
-
                     {[
 
                         'submitted',
@@ -3425,8 +3015,6 @@ function openRepairPrint(orderId) {
 
                     </div>
 
-
-
                     {editingTicketId === String(currentOrder.id) && (
 
                     <div
@@ -3453,15 +3041,11 @@ function openRepairPrint(orderId) {
 
                         </h3>
 
-
-
                         <p className="repair-muted">
 
                         เลขปัจจุบัน: {currentOrder.ticket_no}
 
                         </p>
-
-
 
                         <div
 
@@ -3480,8 +3064,6 @@ function openRepairPrint(orderId) {
                         <label>
 
                             เลขใบงานใหม่
-
-
 
                             <input
 
@@ -3513,13 +3095,9 @@ function openRepairPrint(orderId) {
 
                         </label>
 
-
-
                         <label>
 
                             เหตุผลการแก้ไข
-
-
 
                             <input
 
@@ -3544,8 +3122,6 @@ function openRepairPrint(orderId) {
                         </label>
 
                         </div>
-
-
 
                         <div className="repair-form-actions">
 
@@ -3572,8 +3148,6 @@ function openRepairPrint(orderId) {
                             บันทึกเลขใบงานใหม่
 
                         </button>
-
-
 
                         <button
 
@@ -3603,10 +3177,6 @@ function openRepairPrint(orderId) {
 
                 )}  
 
-
-
-
-
               {orderUnits.length === 0 ? (
 
                 <p className="repair-muted">
@@ -3619,69 +3189,117 @@ function openRepairPrint(orderId) {
 
                 <div className="repair-card-list">
 
-                  
                   {orderUnits.map(unit => (
+
                     <div
+
                       className="repair-unit-card repair-order-unit-card"
+
                       key={unit.id}
+
                     >
+
                       {/* แถวบน: รหัสตู้ + จำนวนกล้อง + ปุ่มนำออก */}
+
                       <div className="repair-order-unit-head">
+
                         <div className="repair-order-unit-title">
+
                           <strong>{unit.unit_label}</strong>
 
                           <span className="repair-order-unit-count">
+
                             กล้องดับ {unit.down_camera_count} ตัว
+
                           </span>
+
                         </div>
 
                         {!isCentral && currentOrder?.status === 'draft' && (
+
                           <button
+
                             type="button"
+
                             className="repair-remove-button"
-                            disabled={busy}
+
+                            disabled={busy || !canAddToCurrentOrder}
+
                             onClick={() => removeUnit(unit)}
+
                           >
+
                             <Trash2 size={15} />
+
                             นำออกจากใบงาน
+
                           </button>
+
                         )}
+
                       </div>
 
                       {/* แถวล่าง: รายชื่อกล้องแบบพับ/ขยาย */}
+
                       {Array.isArray(unit.camera_snapshot) &&
+
                         unit.camera_snapshot.length > 0 && (
+
                           <details
+
                             className="repair-camera-snapshot"
+
                             name="repair-unit-cameras"
+
                           >
+
                             <summary className="repair-camera-snapshot-toggle">
+
                               <span>
+
                                 รายชื่อกล้องที่แจ้งซ่อม ({unit.camera_snapshot.length} ตัว)
+
                               </span>
+
                             </summary>
 
                             <div className="repair-camera-snapshot-content">
+
                               {unit.camera_snapshot.map((camera, index) => (
+
                                 <div
+
                                   key={`${camera.ip || 'camera'}-${index}`}
+
                                   className="repair-camera-snapshot-item"
+
                                 >
+
                                   <span>
+
                                     {index + 1}. {camera.name || 'ไม่ระบุชื่อกล้อง'}
+
                                   </span>
 
                                   <small>
-                                    IP: {camera.ip || '-'}
-                                  </small>
-                                </div>
-                              ))}
-                            </div>
-                          </details>
-                        )}
-                    </div>
-                  ))}
 
+                                    IP: {camera.ip || '-'}
+
+                                  </small>
+
+                                </div>
+
+                              ))}
+
+                            </div>
+
+                          </details>
+
+                        )}
+
+                    </div>
+
+                  ))}
 
                 </div>
 
