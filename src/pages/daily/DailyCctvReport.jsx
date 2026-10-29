@@ -1662,7 +1662,7 @@ const projectDuration =
             .from('daily-reports')
             .createSignedUrl(
                 report.image_path,
-                60 * 60
+                60 * 60 * 24 * 30
             )
 
 
