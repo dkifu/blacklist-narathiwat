@@ -4414,11 +4414,14 @@ const boxGroups = useMemo(() => {
    READ ONLY / NOT MOUNTING PING COMPONENT
 ========================================= */
 
-function CameraAllCentersView({ shift }) {
+function CameraAllCentersView() {
   const [day, setDay] = useState(todayTH)
 
+  // CCTV_CENTRAL_AUTO_SHIFT_V1
+  // หน้า ศชต. เริ่มที่กะปัจจุบันตามเวลาไทย ไม่อิงกะจากหน้าเมนู
+  // ยังให้ผู้ใช้เลือกกะอื่นเพื่อดูย้อนหลังได้ตามปกติ
   const [selectedShift, setSelectedShift] = useState(
-    SHIFTS[shift] ? shift : 'morning'
+    () => currentBangkokShift() || 'morning'
   )
 
   const [reports, setReports] = useState([])
@@ -4432,9 +4435,8 @@ function CameraAllCentersView({ shift }) {
 
   const allReportRef = useRef(null)
 
-  useEffect(() => {
-    if (SHIFTS[shift]) setSelectedShift(shift)
-  }, [shift])
+  // ไม่ใช้ props.shift บังคับเปลี่ยนกะของหน้า ศชต.
+  // เพื่อไม่ให้ทับการเลือกดูกะอื่นด้วยตนเอง
 
   /* โหลดข้อมูลจาก Supabase */
 
@@ -5623,7 +5625,7 @@ export default function CameraStatusReport(props) {
           </div>
         )}
 
-        <CameraAllCentersView shift={props.shift} />
+        <CameraAllCentersView />
       </>
     )
   }
