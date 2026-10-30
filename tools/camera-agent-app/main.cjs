@@ -432,7 +432,7 @@ function ping(ip) {
           : avgMs === null
             ? 'red'
 
-            : avgMs < 20 && lossPct === 0
+            : avgMs < 30 && lossPct === 0
               ? 'green'
 
               : avgMs < 80 && lossPct < 67
