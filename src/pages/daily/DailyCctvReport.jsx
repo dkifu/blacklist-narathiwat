@@ -292,6 +292,17 @@ async function loadMorningCameraTotals({
     }
   }
 
+  
+  if (totals.unknown > 0) {
+    return {
+      ok: false,
+      message:
+        `ยังมีกล้องตรวจสอบ/ผิดปกติ ${totals.unknown} ตัว ` +
+        'กรุณาตรวจสอบและปรับสถานะก่อนจัดทำรายงาน',
+    }
+  }
+
+
   return {
     ok: true,
     ...totals,
@@ -635,12 +646,16 @@ function DailyCctvReport({ profile }) {
         String(selectedCenterId)
   )
 
-  const centralCameraIncomplete =
-    isCentralCctv(selectedCenter?.name) &&
+  
+  
+  const cameraReportIncomplete =
+    Boolean(selectedCenterId) &&
     (
       !cameraPingInfo?.ok ||
-      cameraPingInfo?.partial === true
+      cameraPingInfo?.partial === true ||
+      Number(cameraPingInfo?.unknown || 0) > 0
     )
+
 
   useEffect(() => {
 
@@ -1615,10 +1630,30 @@ const projectDuration =
               return
             }
 
-            if (centralCameraIncomplete) {
-              alert('ศชต. ต้องมีผล Ping กะเช้าที่ยืนยันครบทุกศูนย์ก่อนบันทึก')
+            
+            if (cameraReportIncomplete) {
+              const reasons = []
+
+              if (!cameraPingInfo?.ok || cameraPingInfo?.partial) {
+                reasons.push(
+                  cameraPingInfo?.message ||
+                  'ผล Ping กะเช้ายังไม่ครบ'
+                )
+              }
+
+              if (Number(cameraPingInfo?.unknown || 0) > 0) {
+                reasons.push(
+                  `มีกล้องตรวจสอบ/ผิดปกติ ${cameraPingInfo.unknown} ตัว`
+                )
+              }
+
+              alert(
+                reasons.join('\n') +
+                '\nกรุณาตรวจสอบและปรับสถานะกล้องให้ถูกต้องก่อนบันทึก'
+              )
               return
             }
+
 
             setIsSavingReport(true)
             setIsReportSaved(false)
@@ -2104,7 +2139,7 @@ const projectDuration =
                   isSavingReport ||
                   isReportLoading ||
                   Boolean(reportLoadError) ||
-                  centralCameraIncomplete
+                  cameraReportIncomplete
                 }
             >
                 {isSavingReport
@@ -2455,12 +2490,12 @@ const projectDuration =
                 style={{
                   display: 'block',
                   marginTop: 8,
-                  color: cameraPingInfo.ok && !centralCameraIncomplete
+                  color: cameraPingInfo.ok && !cameraReportIncomplete
                     ? '#22c55e'
                     : '#f59e0b',
                 }}
               >
-                {cameraPingInfo.ok && !centralCameraIncomplete ? '✓ ' : '⚠ '}
+                {cameraPingInfo.ok && !cameraReportIncomplete ? '✓ ' : '⚠ '}
                 {cameraPingInfo.message}
               </small>
             )}

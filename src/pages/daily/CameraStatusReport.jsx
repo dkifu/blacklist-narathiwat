@@ -1429,10 +1429,18 @@ function CameraStatusReportCenter({
 
     // บันทึกได้เฉพาะเมื่อ Ping และยืนยันครบทุกกล้องในทะเบียน
     const unconfirmedCount = pendingConfirmRows.length + notTestedCount
+    
+    const abnormalCount = rows.filter(
+      r => r.status === 'unknown'
+    ).length
+
     const readyToSave =
       rows.length > 0 &&
       unconfirmedCount === 0 &&
+      abnormalCount === 0 &&
+      Number(summary.unknown || 0) === 0 &&
       Object.keys(results).length > 0
+
 
     function chooseNetwork(value) {
   if (
@@ -2447,14 +2455,18 @@ const boxGroups = useMemo(() => {
     }
 
     // ตรวจซ้ำตอนกดบันทึก แม้มีผู้เรียกฟังก์ชันโดยไม่ผ่านปุ่ม
+    
     if (!readyToSave) {
       setMessage(
-        `ยังบันทึกไม่ได้: ยังไม่ Ping ${notTestedCount} กล้อง ` +
-        `และรอยืนยัน ${pendingConfirmRows.length} กล้อง ` +
-        'กรุณาตรวจสอบให้ครบก่อน'
+        `ยังบันทึกไม่ได้: ` +
+        `ยังไม่ Ping ${notTestedCount} กล้อง • ` +
+        `รอยืนยัน ${pendingConfirmRows.length} กล้อง • ` +
+        `ตรวจสอบ/ผิดปกติ ${Math.max(abnormalCount, Number(summary.unknown || 0))} กล้อง ` +
+        '— กรุณาตรวจสอบและปรับสถานะให้ถูกต้องก่อนบันทึก'
       )
       return
     }
+
 
     const raw = summarize(rows)
 
@@ -3963,11 +3975,13 @@ const boxGroups = useMemo(() => {
 
       <div className="csr-footer">
 
-        <span className={readyToSave ? 'csr-save-ready' : 'csr-save-blocked'}>
-          {readyToSave
-            ? '✓ ยืนยันครบทุกกล้อง — พร้อมบันทึกผล'
-            : `ยังบันทึกไม่ได้ • ยังไม่ Ping ${notTestedCount} กล้อง • รอยืนยัน ${pendingConfirmRows.length} กล้อง — โปรดตรวจสอบให้ครบทุกตู้`}
-        </span>
+        
+      <span className={readyToSave ? 'csr-save-ready' : 'csr-save-blocked'}>
+        {readyToSave
+          ? '✓ ยืนยันครบทุกกล้อง ไม่มีสถานะผิดปกติ — พร้อมบันทึกผล'
+          : `ยังบันทึกไม่ได้ • ยังไม่ Ping ${notTestedCount} กล้อง • รอยืนยัน ${pendingConfirmRows.length} กล้อง • ตรวจสอบ/ผิดปกติ ${abnormalCount} กล้อง — กรุณาตรวจสอบและปรับสถานะให้ถูกต้องก่อนบันทึก`}
+      </span>
+
 
         <button
           type="button"
@@ -3984,9 +3998,15 @@ const boxGroups = useMemo(() => {
           title={readyToSave ? 'บันทึกผลตรวจที่ยืนยันครบแล้ว' : 'ต้อง Ping และยืนยันกล้องทุกตัวก่อนบันทึก'}
           onClick={saveReport}
         >
+          
           {saving
             ? 'กำลังบันทึก...'
-            : readyToSave ? 'ยืนยันและบันทึกผล' : 'ยังยืนยันไม่ครบ — บันทึกไม่ได้'}
+            : readyToSave
+              ? 'ยืนยันและบันทึกผล'
+              : abnormalCount > 0
+                ? 'มีสถานะผิดปกติ — บันทึกไม่ได้'
+                : 'ยังยืนยันไม่ครบ — บันทึกไม่ได้'}
+
         </button>
 
       </div>
