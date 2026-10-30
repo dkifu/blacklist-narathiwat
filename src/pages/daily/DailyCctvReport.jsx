@@ -292,15 +292,6 @@ async function loadMorningCameraTotals({
     }
   }
 
-  if (totals.unknown > 0) {
-    return {
-      ok: false,
-      message:
-        `ยังมีกล้องรอตรวจสอบ ${totals.unknown} ตัว ` +
-        'จึงยังไม่ปรับยอดอัตโนมัติ',
-    }
-  }
-
   return {
     ok: true,
     ...totals,
@@ -648,8 +639,7 @@ function DailyCctvReport({ profile }) {
     isCentralCctv(selectedCenter?.name) &&
     (
       !cameraPingInfo?.ok ||
-      cameraPingInfo?.partial === true ||
-      Number(cameraPingInfo?.unknown || 0) > 0
+      cameraPingInfo?.partial === true
     )
 
   useEffect(() => {
