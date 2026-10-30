@@ -139,6 +139,7 @@ function buildEquipmentRows(items) {
    AUTOMATIC UNIT LAYOUT
 ========================================= */
 
+
 function getUnitColumns(count) {
   if (count <= 4) return 1
   if (count <= 8) return 2
@@ -146,8 +147,10 @@ function getUnitColumns(count) {
   if (count <= 16) return 4
   if (count <= 20) return 5
   if (count <= 24) return 6
-  return 7
+
+  return Math.min(10, Math.ceil(count / 4))
 }
+
 
 /* =========================================
    MAIN COMPONENT
@@ -527,8 +530,7 @@ export default function CctvRepairPrint({
             style={{
             '--rp-unit-columns': unitColumns,
             '--rp-unit-rows': unitRows,
-            '--rp-unit-height':
-                unitCount > 24 ? 'auto' : '52mm',
+            '--rp-unit-height': '52mm',
             }}
           >
             {unitCount === 0 ? (
@@ -564,10 +566,26 @@ export default function CctvRepairPrint({
 
                     <div className="rp-mini-unit-top">
                       <div className="rp-mini-unit-left">
-                        <strong>
+                        
+                        <strong
+                          style={
+                            String(unit.unit_label || '').length >
+                            (unitColumns >= 7 ? 12 : 22)
+                              ? {
+                                  fontSize:
+                                    String(unit.unit_label || '').length > 26
+                                      ? '6.5px'
+                                      : '7.5px',
+                                  lineHeight: 1.05,
+                                  overflowWrap: 'anywhere',
+                                }
+                              : undefined
+                          }
+                        >
                           {unitIndex + 1}.{' '}
                           {unit.unit_label || '-'}
                         </strong>
+
 
                         {unitColumns < 7 && (
                         <span className="rp-mini-unit-coordinate">
