@@ -472,7 +472,48 @@ function buildDashboardNetwork(report, networkType, inventoryCount = 0) {
     ...counts,
     ...colors,
     ...outage,
+    // CCTV_COPY_CAMERA_DETAILS_V1: รายกล้องสำหรับข้อความคัดลอก (ไม่แก้ข้อมูล Ping)
+    cameraDetails: details,
   }
+}
+
+function copyCameraDetailsLines(item) {
+  const cameras = Array.isArray(item.cameraDetails) ? item.cameraDetails : []
+  // CCTV_COPY_OFFLINE_ONLY_V1: เฉพาะกล้องดับ ไม่แสดงกล้องปกติหรือยังไม่ Ping
+  const offlineCameras = cameras.filter(camera => camera.status === 'offline')
+  if (!offlineCameras.length) {
+    return [cameras.length || Number(item.offline || 0) === 0
+      ? '- ไม่พบกล้องดับในรายงานนี้'
+      : '- ไม่พบรายละเอียดรายกล้องดับของรายงานนี้']
+  }
+
+  const unitWord = item.networkType === 'checkpoint' ? 'ด่าน' : 'ตู้'
+  const units = new Map()
+  for (const camera of offlineCameras) {
+    const rawLabel = String(camera.service_box || '').trim()
+    const key = rawLabel ? rawLabel.toLocaleUpperCase() : '__NO_UNIT__'
+    if (!units.has(key)) {
+      units.set(key, { label: rawLabel || 'ไม่ระบุรหัสตู้/ด่าน', cameras: [] })
+    }
+    units.get(key).cameras.push(camera)
+  }
+
+  const lines = [`รายละเอียดกล้องดับ (${offlineCameras.length} ตัว)`]
+  const sortedUnits = [...units.values()].sort((a, b) =>
+    a.label.localeCompare(b.label, 'th', { numeric: true })
+  )
+  for (const unit of sortedUnits) {
+    lines.push(`- ${unitWord} ${unit.label} | ดับ ${unit.cameras.length} กล้อง`)
+    const sorted = [...unit.cameras].sort((a, b) =>
+      String(a.ip || '').localeCompare(String(b.ip || ''), undefined, { numeric: true })
+    )
+    for (const [index, camera] of sorted.entries()) {
+      lines.push(
+        `    ${index + 1}. ${String(camera.name || '-').trim() || '-'} | IP: ${camera.ip || '-'}`
+      )
+    }
+  }
+  return lines
 }
 
 function previewTextReport(snapshot) {
@@ -492,11 +533,11 @@ function previewTextReport(snapshot) {
       `- ทั้งหมด ${item.total} กล้อง`,
       `- ปกติ ${item.online} (${previewPercentLabel(item.online, item.total)})`,
       `- ดับ ${item.offline} (${previewPercentLabel(item.offline, item.total)})`,
-      `- ตรวจสอบ/ผิดปกติ ${item.unknown} (${previewPercentLabel(item.unknown, item.total)})`,
       `- ดับทั้ง${item.unitName} ${item.fullUnitCount} ${item.unitName} รวม ${item.fullUnitCameraCount} กล้อง`,
       `- ดับรายตัว (ไม่ซ้ำกับทั้ง${item.unitName}) ${item.partialOfflineCount} กล้อง`,
       ''
     )
+    parts.push(...copyCameraDetailsLines(item), '')
   }
   parts.push('ข้อมูลใบงานแจ้งซ่อมตรวจสอบได้จากตารางติดตามงานใต้กราฟ')
   if (snapshot.note) parts.push(`หมายเหตุ: ${snapshot.note}`)
@@ -4666,28 +4707,35 @@ function CameraAllCentersView() {
 
   /* คัดลอกข้อความ */
 
+  // CCTV_CENTRAL_COPY_FORMAT_V2
   async function copyAllText() {
+    // ศชต.: สรุปยอดทุกศูนย์ + รายศูนย์เท่านั้น
+    // ไม่ใส่ไอคอน รายละเอียดตู้ กล้องรายตัว หรือ IP
     const lines = [
       'สรุปสถานะกล้อง CCTV ทุกศูนย์',
-      `${previewThaiDate(day)} • ${SHIFTS[selectedShift]}`,
+      `วันที่ ${previewThaiDate(day)} | ${SHIFTS[selectedShift]}`,
+      '',
+      'ภาพรวมทุกศูนย์',
     ]
 
     for (const n of [overview.general, overview.checkpoint]) {
       lines.push(
-        `${n.label}: ทั้งหมด ${n.total} ติด ${n.online} ` +
-        `ดับ ${n.offline} ดับทั้ง` +
-        `${n.type === 'general' ? 'ตู้' : 'ด่าน'} ` +
-        `${n.fullUnitCount} จุด ดับรายตัว ${n.partialOfflineCount}`
+        '',
+        n.label,
+        `  กล้องทั้งหมด: ${formatCount(n.total)} ตัว`,
+        `  กล้องติด: ${formatCount(n.online)} ตัว`,
+        `  กล้องดับ: ${formatCount(n.offline)} ตัว`,
       )
     }
 
+    lines.push('', '--------------------', 'สรุปสถานะแยกรายศูนย์')
+
     for (const c of overview.centers) {
       lines.push(
-        `${c.name}: ` +
-        `ทั่วไป ติด ${savedCell(c.general, 'online')} / ` +
-        `ดับ ${savedCell(c.general, 'offline')}; ` +
-        `ด่าน ติด ${savedCell(c.checkpoint, 'online')} / ` +
-        `ดับ ${savedCell(c.checkpoint, 'offline')}`
+        '',
+        c.name,
+        `  กล้องทั่วไป: ติด ${savedCell(c.general, 'online')} | ดับ ${savedCell(c.general, 'offline')}`,
+        `  กล้องด่าน: ติด ${savedCell(c.checkpoint, 'online')} | ดับ ${savedCell(c.checkpoint, 'offline')}`,
       )
     }
 

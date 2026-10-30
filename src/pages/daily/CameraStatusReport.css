@@ -5383,3 +5383,52 @@ thead tr:first-child th:nth-child(3) {
     box-sizing: border-box;
   }
 }
+
+/* CCTV_KPI_GRID_ALIGN_V1 */
+/* ตรึงช่องตัวเลขและเปอร์เซ็นต์ให้ตรงกันในแผง KPI */
+.csr-dashboard-paper .csr-modern-stats .csr-stat-item {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) 7.5ch;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+}
+.csr-dashboard-paper .csr-modern-stats .csr-stat-item > .csr-dot {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  margin: 0;
+}
+.csr-dashboard-paper .csr-modern-stats .csr-stat-item > small {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+.csr-dashboard-paper .csr-modern-stats .csr-stat-item > strong {
+  grid-column: 3;
+  grid-row: 1;
+  min-width: 0;
+  width: 100%;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.csr-dashboard-paper .csr-modern-stats .csr-stat-item > .csr-meter {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+.csr-dashboard-paper .csr-modern-stats .csr-stat-item > em {
+  grid-column: 3;
+  grid-row: 2;
+  width: 100%;
+  min-width: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
