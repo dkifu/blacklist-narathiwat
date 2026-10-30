@@ -164,7 +164,13 @@ const displayPingLevel = row => {
   if (row.confirmed) {
     if (row.status === 'online') return 'green'
     if (row.status === 'offline') return 'unreachable'
-    if (row.status === 'unknown') return 'orange'
+    if (row.status === 'unknown') {
+      const wasYellow =
+        row.ping_level === 'yellow' ||
+        (!row.ping_source_level && row.ping_level === 'orange')
+
+      return wasYellow ? 'yellow' : 'orange'
+    }
   }
 
   // แปลงรายงานเก่าที่บันทึกก่อนเปลี่ยนระบบสี
