@@ -1621,7 +1621,7 @@ const boxGroups = useMemo(() => {
 
   const confirmStatusLabel = value => ({
     keep: 'ตามสถานะรายกล้องเดิม',
-    online: 'ปกติ',
+    online: 'กล้องปกติ ยกเว้นกล้องดับ',
     unknown: 'ตรวจสอบไม่ได้ / ผิดปกติ',
     offline: 'กล้องดับ',
   })[value] || '-'
@@ -1654,8 +1654,15 @@ const boxGroups = useMemo(() => {
         const original = previous[camera.ip] || newResult(camera, null)
         next[camera.ip] = {
           ...original,
-          status: selectedStatus === 'keep' ? original.status : selectedStatus,
-          confirmed: true,
+          
+            status:
+              selectedStatus === 'online' && original.status === 'offline'
+                ? 'offline'
+                : selectedStatus === 'keep'
+                  ? original.status
+                  : selectedStatus,
+            confirmed: true,
+
         }
       }
       return next
@@ -3617,11 +3624,13 @@ const boxGroups = useMemo(() => {
               disabled={!canBulkConfirm || pendingConfirmRows.length === 0}
               onChange={e => setBulkConfirmStatus(e.target.value)}
             >
-              <option value="">เลือกสถานะรวม...</option>
-              <option value="keep">คงสถานะตามผลรายกล้อง</option>
-              <option value="online">กล้องปกติ</option>
-              <option value="unknown">ตรวจสอบไม่ได้ / ผิดปกติ</option>
-              <option value="offline">กล้องดับ</option>
+              
+            <option value="">เลือกสถานะรวม...</option>  
+            <option value="online">กล้องปกติ ยกเว้นกล้องดับ</option>
+            <option value="unknown">ตรวจสอบไม่ได้ / ผิดปกติ</option>
+            <option value="offline">กล้องดับ</option>
+
+
             </select>
 
             <button
@@ -3760,7 +3769,7 @@ const boxGroups = useMemo(() => {
                       <div className="csr-box-confirm-controls">
                         <select
                           aria-label={`เลือกสถานะทั้งตู้ ${group.serviceBox}`}
-                          value={boxConfirmStatuses[group.key] || 'keep'}
+                          value={boxConfirmStatuses[group.key] || 'online'}
                           disabled={!canBulkConfirm || group.pending === 0}
                           onChange={e =>
                             setBoxConfirmStatuses(prev => ({
@@ -3769,10 +3778,11 @@ const boxGroups = useMemo(() => {
                             }))
                           }
                         >
-                          <option value="keep">ตามสถานะกล้อง</option>
-                          <option value="online">ที่รอยืนยัน: ปกติ</option>
-                          <option value="unknown">ที่รอยืนยัน: ตรวจสอบไม่ได้</option>
-                          <option value="offline">ที่รอยืนยัน: กล้องดับ</option>
+                          
+                          <option value="online">กล้องปกติ ยกเว้นกล้องดับ</option>
+                          <option value="unknown">ตรวจสอบไม่ได้ / ผิดปกติ</option>
+                          <option value="offline">กล้องดับ</option>
+
                         </select>
 
                         <button
@@ -3782,7 +3792,7 @@ const boxGroups = useMemo(() => {
                           onClick={() =>
                             confirmCameras(
                               group.cameras,
-                              boxConfirmStatuses[group.key] || 'keep',
+                              boxConfirmStatuses[group.key] || 'online',
                               `ตู้/ด่าน ${group.serviceBox}`
                             )
                           }
