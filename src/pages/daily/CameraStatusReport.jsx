@@ -72,6 +72,46 @@ const todayTH = () =>
     timeZone: 'Asia/Bangkok',
   })
 
+// CCTV_SHIFT_TIME_GUARD_V1
+// กะปฏิบัติงานตามเวลาประเทศไทย: เช้า 08:00-15:59, บ่าย 16:00-23:59, ดึก 00:00-07:59
+// การตรวจในหน้าเว็บเป็นชั้นแรก; ควรเพิ่มการตรวจฝั่งฐานข้อมูลอีกชั้น
+const currentBangkokShift = () => {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    hour: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date())
+  const hour = Number(parts.find(part => part.type === 'hour')?.value)
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23) return null
+  return hour >= 8 && hour < 16
+    ? 'morning'
+    : hour >= 16
+      ? 'afternoon'
+      : 'night'
+}
+
+const checkCctvShiftTime = (role, selectedShift, selectedDate) => {
+  // ผู้ดูแลและหัวหน้าสามารถจัดการข้อมูลย้อนหลังได้ตามสิทธิ์เดิม
+  if (['admin', 'supervisor', 'super'].includes(role)) {
+    return { allowed: true, message: '' }
+  }
+
+  const actualShift = currentBangkokShift()
+  const actualDate = todayTH()
+  if (actualShift && selectedShift === actualShift && selectedDate === actualDate) {
+    return { allowed: true, message: '' }
+  }
+
+  return {
+    allowed: false,
+    message: actualShift
+      ? `ยังบันทึกไม่ได้: เวลาประเทศไทยขณะนี้เป็น${SHIFTS[actualShift]} วันที่ ${actualDate} ` +
+        `แต่หน้าที่เลือกเป็น${SHIFTS[selectedShift] || selectedShift} วันที่ ${selectedDate} ` +
+        'กรุณากลับไปเลือกกะและวันที่ปัจจุบัน'
+      : 'ยังบันทึกไม่ได้: ไม่สามารถตรวจสอบเวลาประเทศไทยได้',
+  }
+}
+
 const validIPv4 = ip => {
   const a = String(ip).trim().split('.')
 
@@ -950,6 +990,15 @@ function CameraStatusReportCenter({
 
   const [message, setMessage] =
     useState('')
+
+  // ป้องกันการทำงานผิดกะ โดยไม่จำกัดสิทธิ์อ่านรายงานย้อนหลัง
+  function ensureCurrentCctvShift(forManualAction = false) {
+    const access = checkCctvShiftTime(role, shift, reportDate)
+    if (access.allowed) return true
+    if (forManualAction) setManualIpMessage(access.message)
+    else setMessage(access.message)
+    return false
+  }
 
   const [savedInfo, setSavedInfo] =
     useState(null)
@@ -2249,6 +2298,8 @@ const boxGroups = useMemo(() => {
       return
     }
 
+    if (!ensureCurrentCctvShift()) return
+
     if (
       !window.confirm(
         `ตรวจ Ping ${inventory.length} กล้องของ${NETWORKS.find(n => n.value === network)?.label} จากคอมพิวเตอร์เครื่องนี้?`
@@ -2395,6 +2446,8 @@ const boxGroups = useMemo(() => {
       !agentKey || !selectedLoaded
     ) return
 
+    if (!ensureCurrentCctvShift()) return
+
     const camera = inventory.find(item => item.ip === ip)
     if (!camera) return
     const requestedScope = scopeKey
@@ -2457,6 +2510,8 @@ const boxGroups = useMemo(() => {
       running ||
       !!pingingIp
     ) return
+
+    if (!ensureCurrentCctvShift()) return
 
     if (
       Object.keys(results).length === 0
@@ -2729,6 +2784,7 @@ const boxGroups = useMemo(() => {
   async function applyManualCamera(action) {
     const camera = manualIpActive
     if (!camera || manualIpBusy || running || pingingIp || saving || importing || loading) return
+    if (!ensureCurrentCctvShift(true)) return
     if (network === camera.network_type && Object.keys(results).length > 0 && !savedInfo) {
       setManualIpMessage('เครือข่ายนี้มีผล Ping ที่ยังไม่ได้บันทึก กรุณาบันทึกรายงานก่อนแก้ด้วย IP')
       return
@@ -2778,6 +2834,8 @@ const boxGroups = useMemo(() => {
       importing ||
       loading
     ) return
+
+    if (!ensureCurrentCctvShift()) return
 
     if (
       Object.keys(results).length > 0 &&
