@@ -7,6 +7,7 @@
 const http = require('node:http')
 const net = require('node:net')
 const { parseDigestChallenge, digestAuthorization } = require('./nvr-client.cjs')
+const { createFaceImageClient } = require('./face-image-client.cjs')
 
 const ENDPOINT = '/cgi-bin/mediaFileFind.cgi'
 const MAX_RESPONSE = 256 * 1024
@@ -90,16 +91,21 @@ function createHistoricalClient({ host, username, password, port = 80, timeoutMs
 
   let challenge = null
   const jar = new Map()
+  const cookieHeader = () => Array.from(jar, ([k, v]) => `${k}=${v}`).join('; ')
+  let imageWindowOpen = false
+  const imageClient = createFaceImageClient({
+    host, username, password, port, timeoutMs, allowLoopback,
+    cookieProvider: () => imageWindowOpen ? cookieHeader() : '',
+  })
 
   async function call(params) {
     const path = ENDPOINT + '?' + encodeQuery(params)
-    const cookie = () => Array.from(jar, ([k, v]) => `${k}=${v}`).join('; ')
     const auth = () => challenge && digestAuthorization(challenge, 'GET', path, username, password)
-    let result = await requestOnce({ host, port, path, timeoutMs, authorization: auth(), cookie: cookie() })
+    let result = await requestOnce({ host, port, path, timeoutMs, authorization: auth(), cookie: cookieHeader() })
     applyCookies(jar, result.headers)
     if (result.status === 401) {
       challenge = parseDigestChallenge(result.headers['www-authenticate'])
-      result = await requestOnce({ host, port, path, timeoutMs, authorization: auth(), cookie: cookie() })
+      result = await requestOnce({ host, port, path, timeoutMs, authorization: auth(), cookie: cookieHeader() })
       applyCookies(jar, result.headers)
     }
     if (result.status !== 200) throw new Error(`NVR_HTTP_${result.status}`)
@@ -110,12 +116,15 @@ function createHistoricalClient({ host, username, password, port = 80, timeoutMs
     return result.body
   }
 
-  async function search({ uiChannel, startTime, endTime, onStep = () => {} }) {
+  async function search({ uiChannel, startTime, endTime, onStep = () => {}, onResult = null }) {
     if (!Number.isSafeInteger(uiChannel) || uiChannel < 1 || uiChannel > 1024) {
       throw new Error('INVALID_UI_CHANNEL')
     }
     if (!DATE_TIME.test(startTime) || !DATE_TIME.test(endTime) || startTime >= endTime) {
       throw new Error('INVALID_SEARCH_WINDOW')
+    }
+    if (onResult !== null && typeof onResult !== 'function') {
+      throw new Error('INVALID_RESULT_HANDLER')
     }
     let object = null
     let cleanupOk = true
@@ -140,8 +149,21 @@ function createHistoricalClient({ host, username, password, port = 80, timeoutMs
       onStep('SEARCH')
       const result = parseFlatFields(await call({ action: 'findNextFile', object, count: 10 }))
       if (!/^\d+$/.test(result.found || '')) throw new Error('NVR_NEXT_FILE_INVALID')
-      return { found: Number(result.found), fields: result }
+      const record = { found: Number(result.found), fields: result }
+      if (!onResult) return record
+      // The caller can inspect the result and download a verified JPEG BEFORE
+      // the Finder closes. The session Cookie itself remains private here.
+      imageWindowOpen = true
+      const imageResult = await onResult({
+        ...record,
+        getJpeg: (filePath, expectedBytes) => {
+          if (!imageWindowOpen) throw new Error('NVR_IMAGE_SESSION_CLOSED')
+          return imageClient.getJpeg(filePath, expectedBytes)
+        },
+      })
+      return { ...record, imageResult }
     } finally {
+      imageWindowOpen = false
       if (object) {
         for (const action of ['close', 'destroy']) {
           try {
