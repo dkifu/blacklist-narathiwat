@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
+import { Building, Waypoints, Settings2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import './CameraStatusReport.css'
 
@@ -265,73 +266,43 @@ const previewPercent = (count, total) =>
 const previewPercentLabel = (count, total) =>
   `${previewPercent(count, total).toFixed(1)}%`
 
-// ไอคอนกล้อง CCTV แบบ Bullet Camera
+
+
+/* CCTV_DASHBOARD_LUCIDE_ICONS_V1 */
+
+// กล้องดับรายตัว
 function CsrCctvIcon({ className = '' }) {
   return (
-    <svg
+    <Settings2
       className={`csr-report-camera-icon ${className}`}
-      viewBox="0 0 32 32"
-      fill="none"
+      strokeWidth={2}
       aria-hidden="true"
-    >
-      <path
-        d="M5.5 10.5 22 6l3.2 4-2.3 8-16 2.6-3.7-5.2z"
-        fill="currentColor"
-        fillOpacity="0.22"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M22 6l3.2 4-2.3 8-3.2-4.5"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-      <circle cx="22" cy="12.5" r="1.3" fill="currentColor" />
-      <path
-        d="M12 20l3 5m-6 0h12"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
+    />
   )
 }
 
-// ไอคอนกล้อง CCTV หลายตัว
+// กล้องดับเป็นตู้ / ด่าน
 function CsrCctvGroupIcon() {
   return (
-    <span className="csr-cctv-cluster" aria-hidden="true">
-      <CsrCctvIcon />
-      <CsrCctvIcon />
-      <CsrCctvIcon />
-    </span>
+    <Waypoints
+      className="csr-report-camera-icon"
+      strokeWidth={2}
+      aria-hidden="true"
+    />
   )
 }
 
-// ไอคอนตู้ควบคุม
+// ดับทั้งตู้ / ด่าน
 function CsrCabinetIcon() {
   return (
-    <svg
+    <Building
       className="csr-report-cabinet-icon"
-      viewBox="0 0 32 32"
-      fill="none"
+      strokeWidth={2}
       aria-hidden="true"
-    >
-      <rect
-        x="7" y="3" width="18" height="26" rx="3"
-        stroke="currentColor" strokeWidth="2"
-      />
-      <path
-        d="M10 11h12M10 19h12M10 26h12"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-      <circle cx="12" cy="8" r="1" fill="currentColor" />
-      <circle cx="12" cy="16" r="1" fill="currentColor" />
-    </svg>
+    />
   )
 }
+
 
 const previewThaiDate = value => {
   if (!value) return '-'
@@ -603,6 +574,7 @@ function cctvThaiTime(value) {
     shift,
     previewNetworks,
     revision,
+    onReadyChange,
     onOpenRepair,
     allCenters = false,
   }) {
@@ -625,6 +597,7 @@ function cctvThaiTime(value) {
     setState(null)
     setError('')
     setPage(0)
+    onReadyChange?.(false)
     if (!allCenters && !centerId) {
       return () => { cancelled = true }
     }
@@ -710,6 +683,8 @@ function cctvThaiTime(value) {
             reports: recentReports,
             acks: acks.data || [],
           })
+
+          onReadyChange?.(true)
         }
       } catch (err) {
         if (!cancelled) setError(err.message || 'อ่านข้อมูลติดตามงานซ่อมไม่สำเร็จ')
@@ -950,6 +925,8 @@ function cctvThaiTime(value) {
   )
 }
 
+
+
 function CameraStatusReportCenter({
   profile,
   shift,
@@ -1095,6 +1072,42 @@ function CameraStatusReportCenter({
 
   // Dashboard preview: the other network is loaded from the saved report.
   const previewRef = useRef(null)
+
+  // CCTV_DAILY_AUTO_FIT_V1
+  const previewStageRef = useRef(null)
+  const [previewFit, setPreviewFit] = useState({
+    scale: 1,
+    height: 0,
+  })
+
+  useEffect(() => {
+    const stage = previewStageRef.current
+    const paper = previewRef.current
+    if (!stage || !paper) return
+
+    const updateFit = () => {
+      const availableWidth = stage.clientWidth
+      if (availableWidth <= 0) return
+
+      const scale = availableWidth / 1200
+      const height = Math.ceil(paper.offsetHeight * scale)
+
+      setPreviewFit(prev =>
+        Math.abs(prev.scale - scale) < 0.0005 &&
+        prev.height === height
+          ? prev
+          : { scale, height }
+      )
+    }
+
+    const observer = new ResizeObserver(updateFit)
+    observer.observe(stage)
+    observer.observe(paper)
+    updateFit()
+
+    return () => observer.disconnect()
+  }, [])
+
   const [previewCache, setPreviewCache] = useState({ general: null, checkpoint: null })
   const [previewCacheScope, setPreviewCacheScope] = useState('')
   const [previewEditorOpen, setPreviewEditorOpen] = useState(false)
@@ -1104,6 +1117,7 @@ function CameraStatusReportCenter({
   const [previewNote, setPreviewNote] = useState('')
   const [previewOverrides, setPreviewOverrides] = useState({ general: null, checkpoint: null })
   const [exportingPreview, setExportingPreview] = useState(false)
+  const [repairReady, setRepairReady] = useState(false)
 
   // Manual status edits are saved atomically by a server-side RPC.
   const [manualIpSearch, setManualIpSearch] = useState('')
@@ -3038,6 +3052,7 @@ const boxGroups = useMemo(() => {
     if (!previewRef.current) {
       throw new Error('ไม่พบพื้นที่พรีวิว')
     }
+    
 
     const { default: html2canvas } =
       await import('html2canvas')
@@ -3067,6 +3082,10 @@ const boxGroups = useMemo(() => {
         if (!report) return
 
         report.classList.add('csr-export-fixed')
+
+        report.style.setProperty(
+          'transform', 'none', 'important'
+        )
 
         // ขยายเฉพาะเอกสารที่ใช้สร้าง PNG
         // ไม่เปลี่ยนขนาดหน้าเว็บที่เจ้าหน้าที่กำลังดู
@@ -4155,14 +4174,35 @@ const boxGroups = useMemo(() => {
             >
               {manualIpBusy ? 'กำลังคืนค่า...' : '↺ คืนค่าทั้งหมด'}
             </button>
-            <button type="button" disabled={!!previewEditError || exportingPreview} onClick={copyPreviewText}>
-              คัดลอกข้อความ
+            <button type="button" disabled={
+              !!previewEditError ||
+              exportingPreview ||
+              !repairReady ||
+              loading ||
+              !readyPreviewCache ||
+              !selectedLoaded
+            } onClick={copyPreviewText}>
+              {!repairReady ? 'โหลดข้อความ...' : 'คัดลอกข้อความ'}
             </button>
-            <button type="button" disabled={!!previewEditError || exportingPreview} onClick={() => exportPreviewPng(true)}>
-              คัดลอกรูป
+            <button type="button" disabled={
+              !!previewEditError ||
+              exportingPreview ||
+              !repairReady ||
+              loading ||
+              !readyPreviewCache ||
+              !selectedLoaded
+            } onClick={() => exportPreviewPng(true)}>
+              {!repairReady ? 'โหลดข้อมูล...' : 'คัดลอกรูป'}
             </button>
-            <button type="button" className="csr-primary" disabled={!!previewEditError || exportingPreview} onClick={() => exportPreviewPng(false)}>
-              {exportingPreview ? 'กำลังสร้างภาพ...' : 'บันทึก PNG'}
+            <button type="button" className="csr-primary" disabled={
+              !!previewEditError ||
+              exportingPreview ||
+              !repairReady ||
+              loading ||
+              !readyPreviewCache ||
+              !selectedLoaded
+            } onClick={() => exportPreviewPng(false)}>
+              {!repairReady ? 'โหลดภาพ...' : 'บันทึก PNG'}
             </button>
           </div>
         </div>
@@ -4255,9 +4295,24 @@ const boxGroups = useMemo(() => {
         )}
 
         <div
-          className="csr-dashboard-paper csr-modern-report"
-          ref={previewRef}
+          ref={previewStageRef}
+          style={{
+            width: '100%',
+            minWidth: 0,
+            position: 'relative',
+            height: previewFit.height
+              ? `${previewFit.height}px`
+              : undefined,
+          }}
         >
+          <div
+            className="csr-dashboard-paper csr-modern-report csr-export-fixed"
+            ref={previewRef}
+            style={{
+              transform: `scale(${previewFit.scale})`,
+              transformOrigin: 'top left',
+            }}
+          >
           <header className="csr-dashboard-paper-head">
             <div>
               <span className="csr-dashboard-paper-kicker">CCTV NETWORK · DAILY STATUS</span>
@@ -4305,7 +4360,7 @@ const boxGroups = useMemo(() => {
 
                       <small>กล้องทั้งหมด</small>
 
-                      <strong>
+                      <strong style={{ color: '#a4ceff' }}>
                         {item.total.toLocaleString('th-TH')}
                       </strong>
                     </div>
@@ -4381,7 +4436,8 @@ const boxGroups = useMemo(() => {
                       <CsrCabinetIcon />
 
                       <b>
-                        <span className="csr-fault-number">
+                        
+                        <span className={`csr-fault-number ${item.hasReport && Number(item.fullUnitCount) === 0 ? 'is-ok' : ''}`}>
                           {item.hasReport ? item.fullUnitCount : '—'}
                         </span>
                         <span className="csr-fault-unit">
@@ -4399,14 +4455,15 @@ const boxGroups = useMemo(() => {
                       <CsrCctvGroupIcon />
 
                       <b>
-                        <span className="csr-fault-number">
+                        
+                        <span className={`csr-fault-number ${item.hasReport && Number(item.fullUnitCameraCount) === 0 ? 'is-ok' : ''}`}>
                           {item.hasReport ? item.fullUnitCameraCount : '—'}
                         </span>
                         <span className="csr-fault-unit">ตัว</span>
                       </b>
 
                       <small>
-                        รวมกล้องที่ดับเป็น{item.unitName}
+                        กล้องดับเป็น{item.unitName}
                       </small>
                     </div>
 
@@ -4415,7 +4472,8 @@ const boxGroups = useMemo(() => {
                       <CsrCctvIcon />
 
                       <b>
-                        <span className="csr-fault-number">
+                        
+                        <span className={`csr-fault-number ${item.hasReport && Number(item.partialOfflineCount) === 0 ? 'is-ok' : ''}`}>
                           {item.hasReport ? item.partialOfflineCount : '—'}
                         </span>
                         <span className="csr-fault-unit">ตัว</span>
@@ -4440,9 +4498,11 @@ const boxGroups = useMemo(() => {
             previewNetworks={previewNetworks}
             revision={reloadIndex}
             onOpenRepair={onOpenRepair}
+            onReadyChange={setRepairReady}
           />
 
 
+        </div>
         </div>
       </section>
 
@@ -5114,7 +5174,7 @@ function CameraAllCentersView() {
                             <div className="csr-stat-item is-total">
                               <span className="csr-dot is-blue" />
                               <small>กล้องทั้งหมด</small>
-                              <strong>
+                              <strong style={{ color: '#a4ceff' }}>
                                 {item.hasReport ? formatCount(item.total) : '—'}
                               </strong>
                             </div>
@@ -5187,7 +5247,8 @@ function CameraAllCentersView() {
                               <CsrCabinetIcon />
 
                               <b>
-                                <span className="csr-fault-number">
+                                
+                                <span className={`csr-fault-number ${item.hasReport && Number(item.fullUnitCount) === 0 ? 'is-ok' : ''}`}>
                                   {item.hasReport
                                     ? formatCount(item.fullUnitCount)
                                     : '—'}
@@ -5205,7 +5266,8 @@ function CameraAllCentersView() {
                               <CsrCctvGroupIcon />
 
                               <b>
-                                <span className="csr-fault-number">
+                                
+                                <span className={`csr-fault-number ${item.hasReport && Number(item.fullUnitCameraCount) === 0 ? 'is-ok' : ''}`}>
                                   {item.hasReport
                                     ? formatCount(item.fullUnitCameraCount)
                                     : '—'}
@@ -5214,7 +5276,7 @@ function CameraAllCentersView() {
                               </b>
 
                               <small>
-                                รวมกล้องที่ดับเป็น{unitName}
+                                กล้องดับเป็น{unitName}
                               </small>
                             </div>
 
@@ -5223,7 +5285,8 @@ function CameraAllCentersView() {
                               <CsrCctvIcon />
 
                               <b>
-                                <span className="csr-fault-number">
+                                
+                                <span className={`csr-fault-number ${item.hasReport && Number(item.partialOfflineCount) === 0 ? 'is-ok' : ''}`}>
                                   {item.hasReport
                                     ? formatCount(item.partialOfflineCount)
                                     : '—'}

@@ -5262,6 +5262,7 @@ thead tr:first-child th:nth-child(3) {
   margin: 0;
 }
 
+
 /* ตัวเลขทั้งหมด */
 .csr-modern-report .csr-stat-item.is-total > strong {
   grid-column: 3;
@@ -5269,7 +5270,9 @@ thead tr:first-child th:nth-child(3) {
   align-self: center;
   line-height: 1.2;
   margin: 0;
+  color: var(--report-blue, #a4ceff);
 }
+
 
 /* =========================================
    CCTV DASHBOARD — COMPACT HEIGHT
@@ -5431,4 +5434,42 @@ thead tr:first-child th:nth-child(3) {
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* CCTV_FAULT_COLORS_V1 */
+
+/* icon ทั้งหมดในการ์ดปัญหา -> สีขาว */
+.csr-report-cabinet-icon,
+.csr-report-camera-icon {
+  color: #ffffff !important;
+}
+
+/* คำว่า ตู้ / ตัว / ด่าน -> สีขาว */
+.csr-fault-unit {
+  color: #ffffff !important;
+}
+
+
+/* CCTV_FAULT_NUMBER_STATUS_V1 */
+
+/* ไม่มีอุปกรณ์ดับ = สีเขียว */
+
+
+/* มีอุปกรณ์ดับ = สีแดง */
+.csr-modern-report .csr-fault-number.is-down {
+  color: #ff6b7d !important;
+}
+
+/* หน่วย ตู้ / ตัว / ด่าน = สีขาว */
+.csr-modern-report .csr-fault-unit {
+  color: #ffffff !important;
+}
+
+/* ไอคอนทั้ง 3 ช่อง = สีขาว */
+.csr-modern-report .csr-fault-item > svg {
+  color: #ffffff !important;
+}
+
+.csr-modern-report .csr-fault-number.is-ok {
+  color: #12d7a9 !important;
 }
