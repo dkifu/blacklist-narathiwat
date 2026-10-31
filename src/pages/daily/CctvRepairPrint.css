@@ -1028,3 +1028,21 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ปุ่มบันทึกรูป PNG */
+.rp-toolbar-actions .rp-save-image-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #1b4d73;
+  border: 1px solid #3679a8;
+  color: #ffffff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rp-toolbar-actions .rp-save-image-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

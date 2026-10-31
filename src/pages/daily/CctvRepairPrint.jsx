@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Printer, X, Copy, Share2 } from 'lucide-react'
+import { Printer, X, Copy, Share2, ImageDown } from 'lucide-react'
 import './CctvRepairPrint.css'
 import visionLogo from '../../assets/vision-logo.png'
 
@@ -312,6 +312,9 @@ export default function CctvRepairPrint({
   
 /* CCTV_REPAIR_IMAGE_SHARE_V1 */
 
+
+/* CCTV_REPAIR_IMAGE_SHARE_V1 */
+
 const createRepairImage = async () => {
   if (!paperRef.current) {
     throw new Error('ไม่พบเอกสารใบแจ้งซ่อม')
@@ -343,6 +346,41 @@ const createRepairImage = async () => {
     }, 'image/png')
   })
 }
+
+/* บันทึกใบแจ้งซ่อมเป็น PNG */
+
+const saveRepairImagePng = async () => {
+  if (imageBusy) return
+
+  setImageBusy(true)
+
+  try {
+    const blob = await createRepairImage()
+
+    const ticket = String(order.ticket_no || 'CCTV')
+      .replace(/[^a-zA-Z0-9_-]/g, '_')
+
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+
+    anchor.href = url
+    anchor.download = `CCTV-Repair-${ticket}.png`
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+
+    setTimeout(() => {
+      URL.revokeObjectURL(url)
+    }, 1500)
+
+    window.alert('เริ่มบันทึกรูป PNG แล้ว')
+  } catch (error) {
+    window.alert(`บันทึกรูปไม่สำเร็จ: ${error.message}`)
+  } finally {
+    setImageBusy(false)
+  }
+}
+
 
 const copyRepairImage = async () => {
   if (imageBusy) return
@@ -473,6 +511,20 @@ const shareRepairImage = async () => {
         >
           <Share2 size={17} />
           แชร์รูป (เลือก LINE)
+        </button>
+
+        <button
+          type="button"
+          className="rp-save-image-button"
+          onClick={saveRepairImagePng}
+          disabled={
+            imageBusy ||
+            loadingSavedOrder ||
+            (isClosed && (!savedOrder || !!savedOrderError))
+          }
+        >
+          <ImageDown size={17} />
+          บันทึกรูป PNG
         </button>
           
           
