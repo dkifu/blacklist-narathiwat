@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Printer, X, Copy, Share2, ImageDown } from 'lucide-react'
+import { Printer, X, Copy, Share2, ImageDown, ExternalLink } from 'lucide-react'
 import './CctvRepairPrint.css'
 import visionLogo from '../../assets/vision-logo.png'
+
 
 
 import { supabase } from '../../lib/supabase'
@@ -310,7 +311,7 @@ export default function CctvRepairPrint({
   }
 
   
-/* CCTV_REPAIR_IMAGE_SHARE_V1 */
+
 
 
 /* CCTV_REPAIR_IMAGE_SHARE_V1 */
@@ -485,6 +486,21 @@ const shareRepairImage = async () => {
         <div className="rp-toolbar-actions">
 
         
+          <a
+            className="rp-external-browser-button"
+            href={(() => {
+              const url = new URL(window.location.href)
+              url.searchParams.set('openExternalBrowser', '1')
+              return url.toString()
+            })()}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <ExternalLink size={17} />
+            เปิดในเบราว์เซอร์
+          </a>
+
+
         <button
           type="button"
           className="rp-copy-image-button"

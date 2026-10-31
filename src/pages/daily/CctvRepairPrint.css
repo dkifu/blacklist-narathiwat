@@ -1046,3 +1046,21 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+
+/* OPEN EXTERNAL BROWSER */
+.rp-toolbar-actions .rp-external-browser-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  color: #fff;
+  background: #315579;
+  border: 1px solid #5685af;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
