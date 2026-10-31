@@ -995,3 +995,36 @@
 .rp-tech-phone span {
   font-size: 10.5px;
 }
+
+
+/* CCTV_REPAIR_IMAGE_SHARE_V1 */
+.rp-toolbar-actions {
+  flex-wrap: wrap;
+}
+
+.rp-toolbar-actions .rp-copy-image-button,
+.rp-toolbar-actions .rp-share-image-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #ffffff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rp-toolbar-actions .rp-copy-image-button {
+  background: #1b4d73;
+  border: 1px solid #3679a8;
+}
+
+.rp-toolbar-actions .rp-share-image-button {
+  background: #167645;
+  border: 1px solid #279e60;
+}
+
+.rp-toolbar-actions .rp-copy-image-button:disabled,
+.rp-toolbar-actions .rp-share-image-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

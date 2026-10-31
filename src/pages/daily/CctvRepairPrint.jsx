@@ -1,10 +1,10 @@
-
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Printer, X } from 'lucide-react'
+import { Printer, X, Copy, Share2 } from 'lucide-react'
 import './CctvRepairPrint.css'
 import visionLogo from '../../assets/vision-logo.png'
 
-import { useEffect, useState } from 'react'
+
 import { supabase } from '../../lib/supabase'
 import { formatMemberPhone } from '../../pages/Users'
 
@@ -163,6 +163,10 @@ export default function CctvRepairPrint({
   onClose,
 }) {
   const [savedOrder, setSavedOrder] = useState(null)
+  
+  const paperRef = useRef(null)
+  const [imageBusy, setImageBusy] = useState(false)
+
   const [loadingSavedOrder, setLoadingSavedOrder] = useState(false)
   const [savedOrderError, setSavedOrderError] = useState('')
 
@@ -305,6 +309,116 @@ export default function CctvRepairPrint({
     window.print()
   }
 
+  
+/* CCTV_REPAIR_IMAGE_SHARE_V1 */
+
+const createRepairImage = async () => {
+  if (!paperRef.current) {
+    throw new Error('ไม่พบเอกสารใบแจ้งซ่อม')
+  }
+
+  const { default: html2canvas } = await import('html2canvas')
+
+  if (document.fonts?.ready) {
+    await document.fonts.ready
+  }
+
+  await Promise.all(
+    [...paperRef.current.querySelectorAll('img')].map(
+      img => img.decode?.().catch(() => {})
+    )
+  )
+
+  const canvas = await html2canvas(paperRef.current, {
+    scale: 2,
+    backgroundColor: '#ffffff',
+    useCORS: true,
+    logging: false,
+  })
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) resolve(blob)
+      else reject(new Error('สร้างภาพใบงานไม่สำเร็จ'))
+    }, 'image/png')
+  })
+}
+
+const copyRepairImage = async () => {
+  if (imageBusy) return
+
+  if (!navigator.clipboard?.write ||
+      typeof ClipboardItem === 'undefined') {
+    window.alert('เบราว์เซอร์นี้ไม่รองรับการคัดลอกรูป')
+    return
+  }
+
+  setImageBusy(true)
+
+  try {
+    const pngPromise = createRepairImage()
+
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'image/png': pngPromise,
+      }),
+    ])
+
+    window.alert(
+      'คัดลอกรูปใบงานสำเร็จ เปิด LINE แล้วกด Ctrl+V ได้เลย'
+    )
+  } catch (error) {
+    window.alert(`คัดลอกไม่สำเร็จ: ${error.message}`)
+  } finally {
+    setImageBusy(false)
+  }
+}
+
+const shareRepairImage = async () => {
+  if (imageBusy) return
+
+  if (typeof navigator.share !== 'function') {
+    window.alert(
+      'เบราว์เซอร์นี้ไม่รองรับการแชร์ไฟล์โดยตรง กรุณาใช้ปุ่มคัดลอกรูปแทน'
+    )
+    return
+  }
+
+  setImageBusy(true)
+
+  try {
+    const blob = await createRepairImage()
+
+    const ticket = String(order.ticket_no || 'CCTV')
+      .replace(/[^a-zA-Z0-9_-]/g, '_')
+
+    const file = new File(
+      [blob],
+      `CCTV-Repair-${ticket}.png`,
+      { type: 'image/png' }
+    )
+
+    if (navigator.canShare &&
+        !navigator.canShare({ files: [file] })) {
+      throw new Error('อุปกรณ์นี้ไม่รองรับการแชร์ไฟล์ภาพ')
+    }
+
+    await navigator.share({
+      files: [file],
+      title: `ใบแจ้งซ่อม CCTV ${order.ticket_no || ''}`,
+    })
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      window.alert(
+        `แชร์รูปไม่สำเร็จ: ${error.message}\nกรุณาใช้ปุ่มคัดลอกรูปแทน`
+      )
+    }
+  } finally {
+    setImageBusy(false)
+  }
+}
+
+
 
   return createPortal(
     <div
@@ -331,6 +445,36 @@ export default function CctvRepairPrint({
         </div>
 
         <div className="rp-toolbar-actions">
+
+        
+        <button
+          type="button"
+          className="rp-copy-image-button"
+          onClick={copyRepairImage}
+          disabled={
+            imageBusy ||
+            loadingSavedOrder ||
+            (isClosed && (!savedOrder || !!savedOrderError))
+          }
+        >
+          <Copy size={17} />
+          {imageBusy ? 'กำลังสร้างรูป...' : 'คัดลอกรูปใบงาน'}
+        </button>
+
+        <button
+          type="button"
+          className="rp-share-image-button"
+          onClick={shareRepairImage}
+          disabled={
+            imageBusy ||
+            loadingSavedOrder ||
+            (isClosed && (!savedOrder || !!savedOrderError))
+          }
+        >
+          <Share2 size={17} />
+          แชร์รูป (เลือก LINE)
+        </button>
+          
           
         <button
           type="button"
@@ -358,7 +502,7 @@ export default function CctvRepairPrint({
       ===================================== */}
 
       <div className="rp-scroll">
-        <article className="rp-paper">
+        <article ref={paperRef} className="rp-paper">
 
           {/* =====================================
               DOCUMENT HEADER
