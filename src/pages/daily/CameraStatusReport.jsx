@@ -4262,7 +4262,7 @@ const boxGroups = useMemo(() => {
             <div>
               <span className="csr-dashboard-paper-kicker">CCTV NETWORK · DAILY STATUS</span>
               <h2>{previewSnapshot.title}</h2>
-              <p>ศูนย์ {previewSnapshot.centerName} <span>•</span> {previewThaiDate(reportDate)} <span>•</span> {SHIFTS[shift]}</p>
+              <p>{previewSnapshot.centerName} <span>•</span> {previewThaiDate(reportDate)} <span>•</span> {SHIFTS[shift]}</p>
             </div>
             <div className="csr-dashboard-report-date">รายงานประจำวัน</div>
           </header>
