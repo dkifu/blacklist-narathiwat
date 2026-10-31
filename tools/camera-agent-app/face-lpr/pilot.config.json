@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "enabled": false,
+  "centerId": "narathiwat",
+  "nvrs": [
+    {
+      "id": "yakang-nvr-01",
+      "host": "172.17.2.23",
+      "enabled": false,
+      "cameras": [
+        { "id": "yakang-face-cam-09", "channel": 9, "type": "face" },
+        { "id": "yakang-lpr-cam-06", "channel": 6, "type": "lpr" }
+      ]
+    }
+  ],
+  "mappings": [
+    {
+      "id": "yakang-pilot-01",
+      "faceCameraId": "yakang-face-cam-09",
+      "lprCameraIds": ["yakang-lpr-cam-06"],
+      "capture": {
+        "offsetSeconds": -5,
+        "windowSeconds": 5,
+        "sampleCount": 5
+      }
+    }
+  ]
+}
