@@ -926,6 +926,137 @@ function cctvThaiTime(value) {
 }
 
 
+/* CCTV_SUBMISSION_OVERVIEW_FOR_CENTERS_V1 */
+function CctvSubmissionStatusOverview({ reportDate, shift, revision }) {
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError('')
+
+      const { data, error: rpcError } = await supabase.rpc(
+        'camera_submission_status_overview',
+        {
+          p_report_date: reportDate,
+          p_shift: shift,
+        }
+      )
+
+      if (cancelled) return
+
+      setRows(rpcError ? [] : (data || []))
+      setError(rpcError?.message || '')
+      setLoading(false)
+    }
+
+    load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [reportDate, shift, revision])
+
+  const centerMap = new Map()
+
+  for (const row of rows) {
+    const key = String(row.center_id)
+
+    if (!centerMap.has(key)) {
+      centerMap.set(key, {
+        id: key,
+        name: row.center_name,
+        general: null,
+        checkpoint: null,
+      })
+    }
+
+    if (row.network_type === 'general' ||
+        row.network_type === 'checkpoint') {
+      centerMap.get(key)[row.network_type] = row
+    }
+  }
+
+  const centers = [...centerMap.values()].sort((a, b) =>
+    a.name.localeCompare(b.name, 'th')
+  )
+
+  const formatTime = value => value
+    ? new Date(value).toLocaleString('th-TH', {
+        timeZone: 'Asia/Bangkok',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '—'
+
+  const renderStatus = (report, type) => [
+    <td key={`${type}-status`}>
+      <span className={`csr-multi-status ${
+        !report?.is_saved
+          ? 'missing'
+          : report.is_final
+            ? 'complete'
+            : 'draft'
+      }`}>
+        {!report?.is_saved
+          ? 'ยังไม่บันทึก'
+          : report.is_final
+            ? 'บันทึกแล้ว · ยืนยันครบ'
+            : 'บันทึกแล้ว · ชั่วคราว'}
+      </span>
+    </td>,
+    <td key={`${type}-time`}>
+      {report?.is_saved
+        ? formatTime(report.updated_at)
+        : '—'}
+    </td>,
+  ]
+
+  return (
+    <section className="csr-multi-submissions csr-center-submissions">
+      <h3>ติดตามสถานะการบันทึกรายงานของแต่ละศูนย์</h3>
+
+      {loading ? (
+        <p>กำลังโหลดสถานะการบันทึก...</p>
+      ) : error ? (
+        <p role="alert" className="csr-multi-error">
+          โหลดข้อมูลไม่สำเร็จ: {error}
+        </p>
+      ) : (
+        <div className="csr-multi-scroll">
+          <table className="csr-multi-table">
+            <thead>
+              <tr>
+                <th>ศูนย์</th>
+                <th>กล้องทั่วไป</th>
+                <th>บันทึกล่าสุด</th>
+                <th>กล้องด่าน</th>
+                <th>บันทึกล่าสุด</th>
+              </tr>
+            </thead>
+            <tbody>
+              {centers.map(center => (
+                <tr key={center.id}>
+                  <td>{center.name}</td>
+                  {renderStatus(center.general, 'general')}
+                  {renderStatus(center.checkpoint, 'checkpoint')}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  )
+}
+
 
 function CameraStatusReportCenter({
   profile,
@@ -4505,6 +4636,12 @@ const boxGroups = useMemo(() => {
         </div>
         </div>
       </section>
+
+      <CctvSubmissionStatusOverview
+        reportDate={reportDate}
+        shift={shift}
+        revision={reloadIndex}
+      />
 
     </div>
   )

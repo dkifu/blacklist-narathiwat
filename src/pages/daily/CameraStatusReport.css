@@ -4477,13 +4477,40 @@ thead tr:first-child th:nth-child(3) {
   vertical-align: middle;
 }
 
-/* ข้อความกำกับ SLA ไม่ขึ้นบรรทัดใหม่ */
+
+/* ข้อความกำกับ SLA ขึ้นบรรทัดใหม่ ตัวเล็ก */
 .csr-root .csr-repair-work-table td small {
-  display: inline;
-  margin: 0 0 0 4px;
+  display: block;
+  margin: 3px 0 0;
   font-size: 9px;
+  line-height: 1.2;
   white-space: nowrap;
 }
+
+
+
+
+/* SLA WARNING - COMPACT ROW HEIGHT */
+.csr-root .csr-repair-work-table td.csr-sla-soon,
+.csr-root .csr-repair-work-table td.csr-sla-overdue {
+  font-size: 10.5px;
+  line-height: 1.2;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.csr-root .csr-repair-work-table td.csr-sla-soon small,
+.csr-root .csr-repair-work-table td.csr-sla-overdue small {
+  display: block;
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+
+
+
 
 
 /* =========================================
@@ -5472,4 +5499,9 @@ thead tr:first-child th:nth-child(3) {
 
 .csr-modern-report .csr-fault-number.is-ok {
   color: #12d7a9 !important;
+}
+
+/* ตารางติดตามสถานะสำหรับศูนย์ทั่วไป */
+.csr-root .csr-center-submissions {
+  margin-top: 18px;
 }
