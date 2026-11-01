@@ -21,6 +21,17 @@ const path = require('node:path')
 const { execFile } = require('node:child_process')
 
 // ==========================================
+// FACE/LPR SIGNED CHALLENGE MODULE
+// Stage 23-19: opt-in, disabled by default
+// ==========================================
+
+const {
+  buildSignedChallengeRequest,
+} = require('./face-lpr/agent-challenge-auth.cjs')
+
+const FACE_LPR_ENABLED = false
+
+// ==========================================
 // PERSISTENT USER DATA DIRECTORY
 // ใช้โฟลเดอร์เดิมทั้งรุ่นพัฒนาและรุ่นติดตั้ง
 // ==========================================
@@ -235,6 +246,72 @@ async function heartbeatApi(body) {
 
   return data
 }
+
+// ==========================================
+  // FACE/LPR SIGNED CHALLENGE - STAGE 23-19
+  // Disabled by default; no automatic requests
+  // ==========================================
+
+  const FACE_LPR_URL =
+    'https://supabase.melonman.uk/functions/v1/agent-face-lpr'
+
+  async function requestFaceLprChallenge() {
+    if (!FACE_LPR_ENABLED) {
+      throw new Error('Face/LPR feature disabled')
+    }
+
+    if (!deviceIdentity) {
+      throw new Error('Device identity unavailable')
+    }
+
+    const privateKey = safeStorage.decryptString(
+      Buffer.from(deviceIdentity.privateKeyProtected, 'base64')
+    )
+
+    const signedRequest = await buildSignedChallengeRequest({
+      deviceId: deviceIdentity.id,
+      agentVersion: app.getVersion(),
+      signBytes: bytes => sign(null, bytes, privateKey),
+    })
+
+    const response = await fetch(FACE_LPR_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(signedRequest),
+      signal: AbortSignal.timeout(12000),
+    })
+
+    const result = await response.json().catch(() => null)
+
+    if (!response.ok || !result?.success) {
+      throw new Error(
+        `Face/LPR challenge request failed: HTTP ${response.status}`
+      )
+    }
+
+        const uuidPattern =
+      /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i
+
+    if (
+      result.deviceId !== deviceIdentity.id ||
+      typeof result.challengeId !== 'string' ||
+      !uuidPattern.test(result.challengeId) ||
+      typeof result.nonce !== 'string' ||
+      !/^[0-9a-f]{64}$/.test(result.nonce) ||
+      typeof result.expiresAt !== 'string' ||
+      !Number.isFinite(Date.parse(result.expiresAt)) ||
+      Date.parse(result.expiresAt) <= Date.now() ||
+      result.protocol !== 'CCTV-AGENT-FACE-LPR-V1' ||
+      result.eventSubmissionEnabled !== false
+    ) {
+      throw new Error('Invalid Face/LPR challenge response')
+    }
+
+    return result
+  }
+
 
 async function sendDeviceHeartbeat() {
   if (heartbeatBusy || !deviceIdentity) {

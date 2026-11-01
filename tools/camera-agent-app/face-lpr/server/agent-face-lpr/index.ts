@@ -3,16 +3,20 @@ import {
   MAX_REQUEST_BYTES,
   RequestError,
   generateNonce,
-  parseChallengeDeviceId,
 } from './challenge-core.ts';
 import {
   EventSignatureError,
   decodeCanonicalEventPayload,
   verifyFaceLprEventSignature,
 } from './event-signature-core.ts';
+import {
+  ChallengeAuthError,
+  parseSignedChallengeRequest,
+  verifySignedChallengeRequest,
+} from './challenge-auth-core.ts';
 
 /**
- * Stage 23.16 server wiring; intentionally FAIL-CLOSED.
+ * Stage 23.19 server wiring; intentionally FAIL-CLOSED.
  * Changing this flag is a SEPARATE deployment decision after offline and
  * negative authorization tests, NVR access checks, and Agent-side signing.
  * Does not touch agent-heartbeat, existing Ping Agent, updater, or NVR settings.
@@ -38,7 +42,7 @@ function json(data: unknown, status = 200): Response {
     headers: {
       'Cache-Control': 'no-store',
       'X-Content-Type-Options': 'nosniff',
-      'X-Face-LPR-Stage': '23.16',
+      'X-Face-LPR-Stage': '23.19',
     },
   });
 }
@@ -202,15 +206,39 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
     if (obj.action !== 'challenge') throw new RequestError(400, 'Invalid request');
     if (byteLength > MAX_REQUEST_BYTES) throw new RequestError(413, 'Request too large');
-    const deviceId = parseChallengeDeviceId(body);
+    let signedRequest;
+    try { signedRequest = parseSignedChallengeRequest(body); }
+    catch (error) {
+      if (error instanceof ChallengeAuthError) throw new RequestError(400, 'Invalid signed challenge request');
+      throw error;
+    }
+    const deviceId = signedRequest.deviceId;
     const admin = createAdmin();
-    // The RPC serializes per-device challenge issuance (max 3 pending at once).
-    const { data, error } = await admin.rpc('face_lpr_issue_event_challenge', {
+    const { data: device, error: deviceError } = await admin
+      .from('client_devices').select('id,public_key,status,center_id,linked_at')
+      .eq('id', deviceId).maybeSingle();
+    if (deviceError) throw new RequestError(503, 'Service unavailable');
+    if (!device || device.status !== 'active' || device.center_id == null ||
+        device.linked_at == null || !device.public_key) {
+      throw new RequestError(403, 'Device not authorized');
+    }
+    let valid = false;
+    try {
+      valid = await verifySignedChallengeRequest(signedRequest, device.public_key);
+    } catch (error) {
+      if (!(error instanceof ChallengeAuthError)) throw error;
+    }
+    if (!valid) throw new RequestError(403, 'Device not authorized');
+    // DB enforces permission, 3-pending limit and per-device request nonce uniqueness atomically.
+    const { data, error } = await admin.rpc('face_lpr_issue_authenticated_event_challenge', {
       p_device_id: deviceId,
-      p_nonce: generateNonce(),
+      p_event_nonce: generateNonce(),
+      p_request_nonce: signedRequest.requestNonce,
+      p_issued_at: signedRequest.issuedAt,
     });
     if (error) {
       if (error.code === '42501') throw new RequestError(403, 'Device not authorized');
+      if (error.code === '22023') throw new RequestError(403, 'Device not authorized');
       if (error.code === 'P0001' && error.message === 'Challenge rate limit reached') {
         throw new RequestError(429, 'Challenge rate limit reached');
       }

@@ -21,7 +21,8 @@
       }
     ],
     "files": [
-      "main.cjs"
+      "main.cjs",
+      "face-lpr/agent-challenge-auth.cjs"
     ],
     "win": {
       "target": "nsis"
