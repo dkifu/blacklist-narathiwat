@@ -1,0 +1,515 @@
+
+/* ==========================================
+   TCC DASHBOARD — STATUS TOOLBAR
+   ========================================== */
+
+.tcc-dashboard-host {
+  width: 100%;
+  min-width: 0;
+  font-family: 'Noto Sans Thai', sans-serif;
+}
+
+/* แถบสถานะ */
+.tcc-dashboard-host .tcc-status-toolbar {
+  box-sizing: border-box;
+  width: 100%;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+}
+
+/* ชื่อหัวข้อ */
+.tcc-dashboard-host .tcc-status-toolbar strong {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* ข้อความ */
+.tcc-dashboard-host .tcc-status-toolbar span {
+  font-size: 12px;
+}
+
+/* Label */
+.tcc-dashboard-host .tcc-status-toolbar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #c8d7e9;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* เลือกวันที่ / เลือกศูนย์ */
+.tcc-dashboard-host .tcc-status-toolbar input,
+.tcc-dashboard-host .tcc-status-toolbar select {
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid #35465f;
+  border-radius: 9px;
+  background: #19273b;
+  color: #ffffff;
+  font: 600 12px 'Noto Sans Thai', sans-serif;
+  outline: none;
+  color-scheme: dark;
+}
+
+.tcc-dashboard-host .tcc-status-toolbar select {
+  min-width: 175px;
+  cursor: pointer;
+}
+
+.tcc-dashboard-host .tcc-status-toolbar input:focus,
+.tcc-dashboard-host .tcc-status-toolbar select:focus {
+  border-color: #5893ff;
+  box-shadow: 0 0 0 3px rgba(88, 147, 255, .12);
+}
+
+/* ปุ่มตรวจสอบ */
+.tcc-dashboard-host .tcc-status-toolbar button {
+  min-height: 38px;
+  padding: 7px 15px;
+  border: 1px solid #36517a;
+  border-radius: 9px;
+  background: #193965;
+  color: #eaf2ff;
+  font: 700 12px 'Noto Sans Thai', sans-serif;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+
+.tcc-dashboard-host .tcc-status-toolbar button:hover:not(:disabled) {
+  background: #2455a2;
+  border-color: #568bdf;
+}
+
+.tcc-dashboard-host .tcc-status-toolbar button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* สถานะแต่ละศูนย์ */
+.tcc-dashboard-host .tcc-status-toolbar span.tcc-center-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 5px 11px;
+  border: 1px solid #334358;
+  border-radius: 8px;
+  background: #1b2839;
+  color: #d5e1ef;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tcc-dashboard-host .tcc-status-toolbar .tcc-center-status.is-saved {
+  border-color: #226a4a;
+  background: #103a2c;
+  color: #83e6b1;
+}
+
+.tcc-dashboard-host .tcc-status-toolbar .tcc-center-status.is-pending {
+  border-color: #68502a;
+  background: #362a18;
+  color: #ffcf83;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .tcc-dashboard-host .tcc-status-toolbar {
+    padding: 12px;
+  }
+
+  .tcc-dashboard-host .tcc-status-toolbar label {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .tcc-dashboard-host .tcc-status-toolbar select,
+  .tcc-dashboard-host .tcc-status-toolbar input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+
+
+/* ==========================================
+   TCC SINGLE PAGE — TABS & HISTORY
+   ========================================== */
+
+.tcc-view-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.tcc-view-tabs button {
+  padding: 11px 20px;
+  border: 1px solid #35455a;
+  border-radius: 9px;
+  background: #162236;
+  color: #c3d0e3;
+  font: 700 13px 'Noto Sans Thai', sans-serif;
+  cursor: pointer;
+}
+
+.tcc-view-tabs button.active {
+  background: #245fc1;
+  border-color: #4387ed;
+  color: white;
+}
+
+.tcc-select-center-hint {
+  color: #d5e1f3;
+  padding: 20px;
+  text-align: center;
+}
+
+.tcc-history-inline {
+  padding: 20px;
+  border: 1px solid #34455f;
+  border-radius: 13px;
+  background: #111925;
+  color: #eaf0fa;
+}
+
+.tcc-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.tcc-history-head h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.tcc-history-head p,
+.tcc-history-note,
+.tcc-history-period {
+  font-size: 12px;
+  color: #aabbd3;
+}
+
+.tcc-history-head > span {
+  padding: 6px 12px;
+  border: 1px solid #456286;
+  border-radius: 18px;
+  font-size: 12px;
+}
+
+.tcc-history-filter {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tcc-history-filter label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #c3d2e7;
+}
+
+.tcc-history-filter input,
+.tcc-history-filter select {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #3d516b;
+  border-radius: 8px;
+  background: #1b2a40;
+  color: #fff;
+  color-scheme: dark;
+  font: inherit;
+}
+
+.tcc-history-filter button {
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 1px solid #356fcd;
+  border-radius: 8px;
+  background: #245db5;
+  color: #fff;
+  font: 700 12px 'Noto Sans Thai', sans-serif;
+  cursor: pointer;
+}
+
+.tcc-history-filter button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.tcc-history-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.tcc-history-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid #34455f;
+  border-radius: 10px;
+  background: #1b2a3d;
+}
+
+.tcc-history-stat span {
+  font-size: 12px;
+  color: #b5c6db;
+}
+
+.tcc-history-stat strong {
+  font-size: 24px;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.tcc-history-stat small {
+  font-size: 11px;
+  color: #95abc5;
+}
+
+.tcc-history-inline h4 {
+  margin: 24px 0 12px;
+  font-size: 14px;
+}
+
+.tcc-history-scroll {
+  overflow-x: auto;
+  border: 1px solid #35455f;
+  border-radius: 10px;
+}
+
+.tcc-history-scroll table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.tcc-history-scroll th,
+.tcc-history-scroll td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #34455f;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tcc-history-scroll th:first-child,
+.tcc-history-scroll td:first-child {
+  text-align: left;
+}
+
+.tcc-history-scroll th {
+  background: #1d3452;
+  color: #eaf0ff;
+}
+
+.tcc-history-scroll tr:last-child td {
+  border-bottom: none;
+}
+
+.tcc-history-error {
+  color: #ff9898;
+  font-size: 12px;
+}
+
+.tcc-history-placeholder {
+  padding: 25px;
+  text-align: center;
+  color: #9fafc6;
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .tcc-history-inline {
+    padding: 13px;
+  }
+
+  .tcc-history-filter label {
+    width: 100%;
+  }
+
+  .tcc-history-filter button {
+    width: 100%;
+  }
+
+  .tcc-history-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tcc-view-tabs button {
+    flex: 1;
+  }
+}
+
+@media (max-width: 420px) {
+  .tcc-history-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* TCC Excel Export */
+
+.tcc-history-filter .tcc-export-btn {
+  background: #167347;
+  border-color: #218b59;
+  color: #ffffff;
+}
+
+.tcc-history-filter .tcc-export-btn:hover:not(:disabled) {
+  background: #115c38;
+}
+
+.tcc-history-filter .tcc-export-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+
+/* TCC History: Sidebar + Dashboard Preview */
+
+.tcc-history-workspace {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  width: 100%;
+}
+
+.tcc-history-sidebar {
+  min-width: 0;
+  padding: 16px;
+  background: #162235;
+  border: 1px solid #30425d;
+  border-radius: 12px;
+}
+
+.tcc-history-sidebar .tcc-history-filter {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.tcc-history-sidebar .tcc-history-filter label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tcc-history-sidebar .tcc-history-filter button {
+  width: 100%;
+  justify-content: center;
+}
+
+.tcc-history-sidebar-stats {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #30425d;
+}
+
+.tcc-history-sidebar-stats h4 {
+  margin: 0 0 12px;
+}
+
+.tcc-history-sidebar-stat {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid #30425d;
+}
+
+.tcc-history-sidebar-stat span {
+  font-size: 12px;
+  color: #a9bad5;
+}
+
+.tcc-history-sidebar-stat strong {
+  font-size: 18px;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.tcc-history-sidebar-stat small {
+  grid-column: 1 / -1;
+  color: #90a4c3;
+}
+
+.tcc-history-preview-main {
+  min-width: 0;
+}
+
+.tcc-history-preview-stage {
+  padding: 16px;
+  min-height: 250px;
+  background: #09152e;
+  border: 1px solid #30425d;
+  border-radius: 12px;
+}
+
+.tcc-history-preview-main .tcc-history-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+  .tcc-history-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* TCC_MONTHLY_IN_FILE_V14_20261106 */
+.tcc-monthly-view{padding:20px;border:1px solid #33465e;border-radius:13px;background:#111925;color:#eaf0fa;min-width:0}
+.tcc-monthly-header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:18px;margin-bottom:20px}
+.tcc-monthly-header h3{margin:0 0 6px;font-size:18px;font-weight:800}
+.tcc-monthly-header p{margin:0;color:#acbfd8;font-size:12px}
+.tcc-monthly-filters{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+.tcc-monthly-filters label{display:flex;flex-direction:column;gap:6px;color:#bcd0e8;font-size:12px}
+.tcc-monthly-filters input,.tcc-monthly-filters select{min-height:40px;border:1px solid #3b5374;border-radius:9px;background:#1b2c43;color:#fff;padding:8px 12px;font:inherit;color-scheme:dark}
+.tcc-monthly-filters select{min-width:210px}
+.tcc-monthly-loading{font-size:13px;color:#a9c1df}
+.tcc-monthly-highlights{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.tcc-monthly-highlights>div{display:flex;flex-direction:column;gap:3px;background:#1a2d45;border:1px solid #334967;border-radius:10px;padding:14px}
+.tcc-monthly-highlights span{font-size:11px;color:#acc4df}
+.tcc-monthly-highlights strong{font-size:23px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums}
+.tcc-monthly-highlights small{font-size:11px;color:#90aed0}
+.tcc-monthly-scroll{overflow-x:auto;border:1px solid #324764;border-radius:10px;margin:12px 0 10px}
+.tcc-monthly-scroll table{border-collapse:collapse;width:100%;min-width:900px;font-size:12px}
+.tcc-monthly-scroll th,.tcc-monthly-scroll td{padding:10px 12px;border-bottom:1px solid #273953;text-align:right;white-space:nowrap}
+.tcc-monthly-scroll th:first-child,.tcc-monthly-scroll td:first-child{text-align:left}
+.tcc-monthly-scroll thead{background:#213b5c;color:#f1f7ff}
+.tcc-monthly-scroll tbody tr:nth-child(2n){background:rgba(76,120,178,.06)}
+.tcc-monthly-scroll tbody tr:hover{background:rgba(90,150,225,.11)}
+.tcc-monthly-scroll tfoot{background:#1a3452;color:#fff;font-weight:800}
+.tcc-month-date,.tcc-month-name{font-weight:700;color:#d8e9ff}
+.tcc-month-total{font-weight:800;color:#d6eaff}
+.tcc-month-pill{display:inline-flex;justify-content:center;align-items:center;min-width:70px;padding:4px 9px;border:1px solid;border-radius:999px;font-size:11px;font-weight:800}
+.tcc-month-pill.is-done{color:#99f5c7;background:#0d3d2a;border-color:#23875a}
+.tcc-month-pill.is-partial{color:#ffe3a7;background:#4b3618;border-color:#ad7a2f}
+.tcc-month-pill.is-none{color:#9aafc9;background:#18283b;border-color:#3a4c65}
+.tcc-monthly-view h4{margin:26px 0 10px;font-size:14px}
+@media(max-width:900px){.tcc-monthly-highlights{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.tcc-monthly-view{padding:12px}.tcc-monthly-filters,.tcc-monthly-filters label,.tcc-monthly-filters input,.tcc-monthly-filters select{width:100%}.tcc-monthly-highlights strong{font-size:19px}.tcc-view-tabs{flex-wrap:wrap}}
+
+/* TCC_MONTHLY_TABLE_V15_DATA_DATE_ONLY_20261106: one date + amount columns */
+.tcc-monthly-scroll table{min-width:1030px}
+.tcc-monthly-scroll .tcc-month-date,.tcc-monthly-scroll .tcc-month-total{
+  font-variant-numeric:tabular-nums}
+
+/* TCC_MONTHLY_ALERT_COUNTS_V16_20261106: show two numeric alert columns */
+.tcc-monthly-scroll table { min-width: 1180px; }
+.tcc-monthly-scroll .tcc-month-alert-count {
+  font-variant-numeric: tabular-nums;
+  color: #d4e9ff;
+}

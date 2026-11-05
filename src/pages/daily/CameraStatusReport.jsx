@@ -1951,7 +1951,7 @@ const boxGroups = useMemo(() => {
   ========================================= */
 
   async function downloadTemplate() {
-    const { default: ExcelJS } = await import('exceljs')
+    const { default: ExcelJS } = await import('exceljs-community')
     const wb = new ExcelJS.Workbook()
 
     for (const item of NETWORKS) {
@@ -2044,7 +2044,7 @@ const boxGroups = useMemo(() => {
     const completedNetworks = []
 
     try {
-      const { default: ExcelJS } = await import('exceljs')
+      const { default: ExcelJS } = await import('exceljs-community')
       const wb = new ExcelJS.Workbook()
 
       await wb.xlsx.load(await file.arrayBuffer())

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import ExcelJS from 'exceljs'
+import ExcelJS from 'exceljs-community'
 import { createPortal } from 'react-dom'
 import './UsageYearlyTable.css'
 

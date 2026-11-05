@@ -21,6 +21,7 @@ import UsageStatisticsReport from './daily/UsageStatisticsReport'
 import CctvAiReport from './daily/CctvAiReport'
 import CameraStatusReport from './daily/CameraStatusReport'
 import CctvRepairOrders from './daily/CctvRepairOrders'
+import TccDashboardFrame from './daily/TccDashboardFrame'
 import './DailyReport.css'
 
 /* =========================================
@@ -265,12 +266,7 @@ function DailyReport({ profile }) {
 
           </div>
 
-          <iframe
-            className="daily-hub-tcc-frame"
-            src={`${import.meta.env.BASE_URL}TCC_Dashboard_Report.html`}
-            title="รายงาน Dashboard ด่านตรวจ"
-            loading="lazy"
-          />
+          <TccDashboardFrame profile={profile} />
 
         </div>
       )
