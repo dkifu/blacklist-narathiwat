@@ -115,6 +115,9 @@ input,select{color-scheme:inherit}
 .photo .tip{font-size:var(--fs-caption);color:var(--text-secondary);margin-bottom:var(--space-2)}
 .photo .btns2{display:flex;gap:var(--space-2);flex-wrap:wrap}
 @media (max-width:480px){.srow .r2{grid-template-columns:1fr 1fr}.srow .r2>button,.srow .r2>span{grid-column:1/-1}.two{grid-template-columns:1fr}}
+/* VSS05_DAILY_V1_20261106 */
+.vss05-daily-status{padding:9px 12px;margin:10px 0;border-radius:8px;background:var(--surface-sunken);border:1px solid var(--border-hairline);color:var(--text-secondary);font-size:12px}
+button:disabled{opacity:.5;cursor:not-allowed;pointer-events:none}
 </style>
 </head>
 <body>
@@ -137,6 +140,8 @@ input,select{color-scheme:inherit}
   <div class="grid">
     <div class="card">
       <div class="top-actions">
+        <!-- VSS05_DAILY_V1_20261106 -->
+        <button type="button" class="primary" id="btnSaveDaily" disabled>บันทึกข้อมูลรายวัน</button>
         <button class="primary" id="btnSave"><svg class="i"><use href="#icon-download"/></svg>บันทึกเป็นรูป PNG</button>
         <button id="btnCopy"><svg class="i"><use href="#icon-copy"/></svg>คัดลอกรูป</button>
         
@@ -144,6 +149,7 @@ input,select{color-scheme:inherit}
         <label class="filebtn"><svg class="i"><use href="#icon-image"/></svg>โลโก้ขวา<input type="file" id="logoR" accept="image/*"></label>
       </div>
       <div class="msg" id="msg"></div>
+      <div id="vss05DailyStatus" class="vss05-daily-status" role="status">กำลังเชื่อมต่อข้อมูล...</div>
       <div class="warn" id="warn"></div>
 
       <div id="paneForm" class="formscroll">
@@ -547,6 +553,7 @@ function schedule(){ clearTimeout(timer); timer=setTimeout(render,250); }
 
 function blobNow(){ return new Promise(r=>cv.toBlob(r,'image/png')); }
 $('btnSave').onclick = async ()=>{
+  if(!vss05CanExport()){say('กรุณาบันทึกข้อมูลรายวันให้เรียบร้อยก่อน');return;}
   render();
   const blob = await blobNow();
   const name = `phuket-eyes-report-${new Date().toISOString().slice(0,10)}.png`;
@@ -560,6 +567,7 @@ $('btnSave').onclick = async ()=>{
   }
 };
 $('btnCopy').onclick = async ()=>{
+  if(!vss05CanExport()){say('กรุณาบันทึกข้อมูลรายวันให้เรียบร้อยก่อน');return;}
   try{
     const blob = await blobNow();
     await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
@@ -721,7 +729,7 @@ function buildFromState(){
   const mk=(list,kind)=>({count:null,items:list.map(it=>({
     title: kind==='face' ? (it.name.trim()||'(ยังไม่กรอกชื่อ)')
                          : 'ป้ายทะเบียนเลขที่ '+([it.plate.trim()||'-',it.prov.trim()].filter(Boolean).join(' ')),
-    owner:it.owner.trim(), type:it.type.trim(), img:it._im||null,
+    owner:((it.originCenterName ? it.originCenterName + ' · ' : '') + (it.owner||'')).trim(), type:it.type.trim(), img:it._im||null,
     result:(it.result||'').trim(), arrest:(it.arrest||'').trim(),
     sightings:sortedSights(it.s).map(x=>({place:x.place.trim(),time:sightRaw(x)}))
   }))});
@@ -738,7 +746,7 @@ function formWarnings(){
   if(miss) w.push(`ยังกรอกไม่ครบ ${miss} ช่อง (ช่องที่ขอบสีแดง) – รูปจะแสดงเป็น “-” ในช่องนั้น`);
   const a=`${S.start.d}T${S.start.t}`, b=`${S.end.d}T${S.end.t}`;
   if(a>b) w.push('ช่วงเวลารายงานไม่ถูกต้อง: เวลาเริ่มต้นอยู่หลังเวลาสิ้นสุด');
-  if(S.end.d && S.end.d!==S.reportDate) w.push(`วันที่รายงาน (${thaiDate(S.reportDate)}) ไม่ตรงกับวันสิ้นสุดช่วงเวลา (${thaiDate(S.end.d)})`);
+  if(S.reportDate && (S.start.d!==addDays(S.reportDate,-1)||S.end.d!==addDays(S.reportDate,-1)||S.start.t!=='00:00'||S.end.t!=='23:59')) w.push('ช่วงสถิติต้องเป็นวันก่อนวันที่รายงาน 00:00-23:59');
   const seen={};
   [['ป้ายทะเบียน',S.lpr],['บุคคล',S.face]].forEach(([lab,list])=>list.forEach((it,i)=>{
     const key=(lab+'|'+(it.plate||it.name||'')+'|'+(it.prov||'')).replace(/\s+/g,'').toLowerCase();
@@ -762,6 +770,7 @@ function h(tag,props={},...kids){
   return e;
 }
 function changed(){
+  vss05MarkDirty();
   invalidateVss05();
   saveDraft();
   schedule();
@@ -787,6 +796,7 @@ function armed(btn,fn){
   return btn;
 }
 function rebuild(){
+  vss05MarkDirty();
   invalidateVss05();
 
   const sc = $('paneForm');
@@ -830,7 +840,7 @@ async function setItemImage(it,file){
   try{
     const url=await downsize(file);
     const im=new Image();
-    im.onload=()=>{ it._url=url; it._im=im; rebuild(); say('ใส่รูปแล้ว'); };
+    im.onload=()=>{it._url=url;it._im=im;it._pendingImage=true;rebuild();say('ใส่รูปแล้ว');};
     im.src=url;
   }catch(e){ say('อ่านรูปไม่ได้ ลองใช้รูปอื่น'); }
 }
@@ -845,8 +855,8 @@ function photoBox(it,kind){
   const fi=h('input',{type:'file',accept:'image/*'});
   fi.onchange=()=>{ if(fi.files[0]) setItemImage(it,fi.files[0]); };
   const pick=h('label',{class:'filebtn small'},it._url?'เปลี่ยนรูป':'เลือกไฟล์รูป',fi);
-  const rm = it._url ? h('button',{class:'small',text:'ลบรูป'}) : null;
-  if(rm) rm.onclick=()=>{ delete it._url; delete it._im; rebuild(); };
+  const rm = (it._url || it.image_path) ? h('button',{class:'small',text:'ลบรูป'}) : null;
+  if(rm) rm.onclick=()=>{delete it._url;delete it._im;delete it.image_path;it._pendingImage=false;rebuild();};
   const box=h('div',{class:'photo',tabindex:'0',title:'คลิกที่กรอบนี้แล้วกด Ctrl+V เพื่อวางรูป'},
     thumb,
     h('div',{class:'side'},
@@ -894,10 +904,16 @@ function section(kind,title,list){
 function buildForm(){
   reqEls=[];
   const root=$('form'); root.innerHTML='';
-  const rd=inp(S,'reportDate',{type:'date',req:true});
+  const rd=h('input',{type:'date',required:'required'}); rd.value=S.reportDate; reqEls.push(rd);
   
 rd.addEventListener('change', () => {
-  if (!S.reportDate) return;
+  const nextDate=rd.value;
+  if(!nextDate){rd.value=S.reportDate;return;}
+  if(vss05Dirty && (S.face.length||S.lpr.length) &&
+     !window.confirm('มีรายการที่ยังไม่ได้บันทึก หากเปลี่ยนวันที่จะโหลดรายงานของวันใหม่ ต้องการดำเนินการหรือไม่?')) {
+    rd.value=S.reportDate; return;
+  }
+  S.reportDate=nextDate;
 
   const yesterday = addDays(S.reportDate, -1);
 
@@ -907,7 +923,8 @@ rd.addEventListener('change', () => {
   S.end.d = yesterday;
   S.end.t = '23:59';
 
-  rebuild();
+  vss05ResetForDate(nextDate);
+  vss05Refresh();
 });
 
   const info=h('div',{class:'sec sec-info'},h('h3',{},h('span',{},ico('calendar'),'ข้อมูลรายงาน')),
@@ -919,8 +936,17 @@ rd.addEventListener('change', () => {
     h('div',{class:'three'},
       fld('ถึงวันที่',inp(S.end,'d',{type:'date',req:true})),
       fld('เวลา',inp(S.end,'t',{type:'time',req:true}))));
+  info.querySelectorAll('input[type="date"],input[type="time"]').forEach(el=>{
+    if(el!==rd) el.disabled=true;
+  });
   const reset=armed(h('button',{text:'เริ่มรายงานใหม่ (ล้างทั้งหมด)'}),()=>{ S=newState(); rebuild(); });
   root.append(titleSection(),info,section('face','ระบบตรวจจับใบหน้า (Face ID)',S.face),section('lpr','ระบบตรวจจับป้ายทะเบียน (LPR)',S.lpr),h('div',{class:'btns'},reset));
+  if(vss05Ctx?.central){
+    root.querySelectorAll('input,button').forEach(el=>{
+      if(el===rd || el.closest('.sec-title')) return;
+      el.disabled=true;
+    });
+  }
 }
 
 /* ---------- หัวรายงาน (แก้ได้ และจำไว้ในเครื่อง) ---------- */
@@ -940,7 +966,7 @@ function titleSection(){
     : ti('l3','บรรทัดที่ 3 (คำรอง)','เช่น SMART SAFETY CITY'); }
 }
 function initForm(){
-  S=loadDraft()||newState();
+  S=newState(); // Do not reuse a draft from another center/date
   fillLists(); buildForm(); render();
 }
 
@@ -981,26 +1007,30 @@ window.addEventListener('message', async (event) => {
     return;
   }
 
+  if(vss05Ctx?.central){
+    say('ศชต. ต้องใช้ข้อมูลที่ศูนย์ทั้ง 6 บันทึกไว้ ไม่รับการนำเข้า Excel ในหน้านี้');
+    return;
+  }
+  if(vss05Dirty && (S.face.length||S.lpr.length) &&
+     !window.confirm('การนำเข้าจะทับรายการที่กำลังแก้ไขในฟอร์ม ยืนยันหรือไม่?')) return;
+  vss05Req += 1; // discard any older load reply
+  vss05Loading=false;
+  vss05Saved=false;
+  vss05Complete=false;
+
   const data = message.payload || {};
 
   const incomingLpr = Array.isArray(data.lpr)
     ? data.lpr
     : [];
 
-  // สร้างข้อมูลรายงานใหม่
+  // Preserve the selected date for historical submissions; statistics are always D-1.
+  const targetReportDate = S?.reportDate || data.reportDate || isoOf(new Date());
+  const targetStatisticsDate = addDays(targetReportDate,-1);
   S = {
-    reportDate:
-      data.reportDate || isoOf(new Date()),
-
-    start: {
-      d: data.start?.d || data.reportDate || isoOf(new Date()),
-      t: data.start?.t || ''
-    },
-
-    end: {
-      d: data.end?.d || data.reportDate || isoOf(new Date()),
-      t: data.end?.t || ''
-    },
+    reportDate: targetReportDate,
+    start: {d:targetStatisticsDate,t:'00:00'},
+    end: {d:targetStatisticsDate,t:'23:59'},
 
     face: [],
 
@@ -1051,6 +1081,7 @@ window.addEventListener('message', async (event) => {
         image.onload = () => {
           S.lpr[index]._url = imageDataUrl;
           S.lpr[index]._im = image;
+          S.lpr[index]._pendingImage = true;
           resolve();
         };
 
@@ -1214,6 +1245,189 @@ window.addEventListener('message', (event) => {
 
 });
 
+
+/* VSS05_DAILY_V1_20261106 — private daily report persistence */
+let vss05Ctx = null, vss05Saved = false, vss05Dirty = true, vss05Complete = false;
+let vss05Loading = false, vss05Saving = false, vss05ImageError = false;
+let vss05Revision = 0, vss05Req = 0, vss05LastReportDate = '';
+
+function vss05CanExport() {
+  return !!(vss05Ctx && !vss05Loading && !vss05Saving && !vss05Dirty &&
+    vss05Saved && !vss05ImageError && (!vss05Ctx.central || vss05Complete));
+}
+function vss05SetUi(message) {
+  const status = $('vss05DailyStatus');
+  if(status && message !== undefined) status.textContent = message;
+  $('btnSave').disabled = !vss05CanExport();
+  $('btnCopy').disabled = !vss05CanExport();
+  const save = $('btnSaveDaily');
+  if(save) save.disabled = (!vss05Ctx || !vss05Ctx.centerId || vss05Ctx.central || vss05Loading || vss05Saving);
+  const reportDay=$('form')?.querySelector('.sec-info input[type="date"]');
+  if(reportDay) reportDay.disabled=!!(vss05Loading || vss05Saving);
+}
+function vss05MarkDirty() {
+  vss05Dirty = true;
+  vss05Saved = false;
+  vss05Complete = false;
+  vss05SetUi('ข้อมูลมีการเปลี่ยนแปลง กรุณาบันทึกก่อนส่งออกภาพ');
+}
+function vss05Msg(type,payload={}) {
+  if(window.parent===window) return;
+  window.parent.postMessage({type,...payload},window.location.origin);
+}
+function vss05ResetForDate(date) {
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(String(date||'')) ? date : isoOf(new Date());
+  S = newState(); S.reportDate = d;
+  S.start = {d:addDays(d,-1),t:'00:00'};
+  S.end = {d:addDays(d,-1),t:'23:59'};
+  vss05Revision = 0; vss05Saved = false; vss05Dirty = true; vss05Complete = false;
+  vss05ImageError = false; vss05LastReportDate = d;
+  buildForm(); render();
+  vss05SetUi('กำลังอ่านข้อมูลรายงานวันที่ '+d+'...');
+}
+function vss05Refresh() {
+  if(!vss05Ctx || !S?.reportDate) return;
+  vss05LastReportDate = S.reportDate;
+  vss05Loading = true; vss05Saved = false; vss05Dirty = true;
+  vss05ImageError = false; vss05Revision = 0;
+  vss05Req += 1;
+  vss05SetUi('กำลังโหลดข้อมูลประจำวันที่ '+S.reportDate+'...');
+  vss05Msg('VSS05_DAILY_GET_REQUEST',{requestId:vss05Req,reportDate:S.reportDate});
+}
+function vss05CleanItem(item,kind) {
+  const keep = kind === 'face' ? ['name','owner','type','result','arrest','vss05Key']
+    : ['plate','prov','owner','type','result','arrest','vss05Key'];
+  const out = {};
+  for(const field of keep) out[field] = String(item[field]||'');
+  out.s = (Array.isArray(item.s)?item.s:[]).map(x=>({
+    place:String(x.place||''),d:String(x.d||''),t:String(x.t||'')
+  }));
+  out.image_path = String(item.image_path||'');
+  if(item._pendingImage && typeof item._url==='string' && item._url.startsWith('data:image/'))
+    out.image_data = item._url;
+  return out;
+}
+function vss05SaveDaily() {
+  if(!vss05Ctx || vss05Ctx.central || vss05Saving || vss05Loading) return;
+  const missing = reqEls.filter(el=>el.isConnected && !el.disabled && !el.value.trim());
+  if(missing.length) { say('กรุณากรอกข้อมูลเหตุการณ์ให้ครบก่อนบันทึก'); missing[0].focus(); return; }
+  if(formWarnings().length) { say('กรุณาตรวจสอบคำเตือนข้อมูลวันที่หรือรายการซ้ำก่อนบันทึก'); return; }
+  if(!window.confirm('บันทึกรายงาน VSS05 วันที่ '+S.reportDate+' ลงฐานข้อมูลกลางหรือไม่?')) return;
+  vss05Saving = true;
+  vss05SetUi('กำลังอัปโหลดรูปและบันทึกรายงาน...');
+  const payload = {
+    face:S.face.map(it=>vss05CleanItem(it,'face')),
+    lpr:S.lpr.map(it=>vss05CleanItem(it,'lpr')),
+    inspector_id:String(vss05Ctx.inspectorId||''),
+    inspector_name:String(vss05Ctx.inspectorName||'')
+  };
+  vss05Msg('VSS05_DAILY_SAVE_REQUEST',{
+    requestId:++vss05Req,reportDate:S.reportDate,
+    expectedRevision:vss05Revision,payload
+  });
+}
+$('btnSaveDaily').addEventListener('click',vss05SaveDaily);
+async function vss05LoadImage(item) {
+  const url = item.imageDataUrl || '';
+  if(!url) return;
+  await new Promise(resolve=>{
+    const image = new Image();
+    image.onload = ()=>{item._url=url;item._im=image;resolve();};
+    image.onerror = ()=>{vss05ImageError=true;resolve();};
+    image.src=url;
+  });
+  delete item.imageDataUrl;
+  item._pendingImage=false;
+}
+window.addEventListener('message',async event=>{
+  if(event.origin!==window.location.origin || event.source!==window.parent) return;
+  const msg=event.data||{};
+  if(msg.type==='VSS05_DAILY_CONTEXT') {
+    const incoming={central:!!msg.central,centerId:msg.centerId||null,
+      inspectorId:msg.inspectorId||'',inspectorName:msg.inspectorName||''};
+    if(vss05Ctx && vss05Ctx.central===incoming.central &&
+       vss05Ctx.centerId===incoming.centerId) {
+      // Do not clear inspector restored from a saved report when the toolbar
+      // is still loading its list. A newly selected inspector still updates it.
+      if(!incoming.inspectorId && vss05Ctx.inspectorId){
+        incoming.inspectorId=vss05Ctx.inspectorId;
+        incoming.inspectorName=vss05Ctx.inspectorName;
+      }
+      const inspectorChanged=vss05Ctx.inspectorId!==incoming.inspectorId ||
+        vss05Ctx.inspectorName!==incoming.inspectorName;
+      vss05Ctx=incoming;
+      if(inspectorChanged && vss05Saved && !vss05Ctx.central) vss05MarkDirty();
+      return;
+    }
+    vss05Ctx=incoming;
+    vss05Req += 1;
+    vss05ResetForDate(isoOf(new Date()));
+    vss05Refresh();
+    return;
+  }
+  if(msg.type==='VSS05_DAILY_LOAD_RESULT') {
+    if(msg.requestId!==vss05Req || msg.reportDate!==vss05LastReportDate) return;
+    vss05Loading=false;
+    if(msg.error){vss05SetUi('โหลดข้อมูลไม่สำเร็จ: '+msg.error);return;}
+    const result=msg.result||{};
+    const records=Array.isArray(result.records)?result.records:[];
+    const face=[],lpr=[];
+    for(const rec of records) for(const [k,dest] of [['face',face],['lpr',lpr]]) {
+      const items=Array.isArray(rec.payload?.[k])?rec.payload[k]:[];
+      for(const item of items){
+        const c={...item,s:(item.s||[]).map(s=>({...s}))};
+        if(vss05Ctx?.central) c.originCenterName=rec.center_name||'';
+        dest.push(c);
+      }
+    }
+    S={...newState(),reportDate:msg.reportDate,
+      start:{d:addDays(msg.reportDate,-1),t:'00:00'},
+      end:{d:addDays(msg.reportDate,-1),t:'23:59'},face,lpr};
+    vss05ImageError=!!msg.imageError;
+    await Promise.all([...S.face,...S.lpr].map(vss05LoadImage));
+    if(msg.requestId!==vss05Req) return;
+    if(!vss05Ctx?.central && records[0]){
+      if(!vss05Ctx.inspectorId) vss05Ctx.inspectorId=String(records[0].payload?.inspector_id||'');
+      if(!vss05Ctx.inspectorName) vss05Ctx.inspectorName=String(records[0].payload?.inspector_name||'');
+    }
+    vss05Revision=(!vss05Ctx?.central && records[0])?Number(records[0].revision||0):0;
+    vss05Saved=!!(vss05Ctx?.central?records.length:records[0]);
+    vss05Dirty=!vss05Saved;
+    vss05Complete=!!result.complete;
+    buildForm(); render();
+    const n=Number(result.saved_count)||0;
+    const expected=Number(result.expected_count)||(vss05Ctx?.central?6:1);
+    let label=vss05Ctx?.central ? `ศชต.: บันทึกแล้ว ${n}/${expected} ศูนย์` :
+      (vss05Saved?'โหลดรายงานที่บันทึกไว้แล้ว':'ยังไม่มีข้อมูลบันทึกของวันนี้');
+    if(vss05ImageError) label+=' • มีรูปประกอบที่โหลดไม่สำเร็จ';
+    vss05SetUi(label);
+    return;
+  }
+  if(msg.type==='VSS05_DAILY_SAVE_RESULT') {
+    if(msg.requestId!==vss05Req || msg.reportDate!==vss05LastReportDate) return;
+    vss05Saving=false;
+    if(msg.error){vss05SetUi('บันทึกไม่สำเร็จ: '+msg.error);return;}
+    for(const kind of ['face','lpr']) {
+      const list=S[kind],saved=msg.payload?.[kind]||[];
+      list.forEach((it,i)=>{
+        if(saved[i]) it.image_path=saved[i].image_path||'';
+        it._pendingImage=false;
+      });
+    }
+    vss05Revision=Number(msg.revision)||0;
+    vss05Saved=true;vss05Dirty=false;vss05Complete=true;
+    // VSS05_IMAGE_CLEANUP_V2_20261106
+    vss05SetUi('✓ บันทึกรายงานเรียบร้อยแล้ว ส่งออกภาพหรือคัดลอกรูปได้' +
+      (msg.cleanupWarning ? ' • '+msg.cleanupWarning : ''));
+  }
+});
+
+// The host checks role and sends the center context back.
+vss05SetUi('รอเชื่อมต่อกับระบบหลัก...');
+vss05Msg('VSS05_DAILY_READY');
+
+// Recheck central submissions while keeping the currently selected report date.
+setInterval(()=>{if(vss05Ctx?.central && !document.hidden && !vss05Loading) vss05Refresh();},60000);
 
 /* เริ่มต้น */
 initForm();

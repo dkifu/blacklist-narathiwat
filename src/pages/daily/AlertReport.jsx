@@ -1461,7 +1461,234 @@ useEffect(() => {
 
 
 
-  const handleDownload = () => {
+    /* VSS05_DAILY_V1_20261106 — separate from existing XLSX conversion. */
+  const vss05LiveRef = useRef({selectedInspector,inspectors,centers})
+  vss05LiveRef.current = {selectedInspector,inspectors,centers}
+  useEffect(() => {
+    let alive = true
+    const frame = () => reportFrameRef.current?.contentWindow
+    const isCentral = String(selectedCenterId) === '10'
+    const center = isCentral ? null : Number(selectedCenterId)
+    const validCenter = isCentral || [1,2,4,7,8,9].includes(center)
+    const dateOk = d => /^\d{4}-\d{2}-\d{2}$/.test(String(d||'')) &&
+      !Number.isNaN(new Date(`${d}T12:00:00`).getTime())
+    const context = () => {
+      const current=vss05LiveRef.current
+      frame()?.postMessage({
+        type: 'VSS05_DAILY_CONTEXT', central: isCentral,
+        centerId: validCenter ? center : null,
+        inspectorId: current.selectedInspector || '',
+        inspectorName: current.inspectors.find(
+          p=>String(p.id)===String(current.selectedInspector)
+        )?.name || ''
+      }, window.location.origin)
+    }
+    const blobOf = async data => {
+      if (typeof data !== 'string' || !/^data:image\/(jpeg|png|webp);base64,/.test(data))
+        throw new Error('ภาพต้องเป็น JPEG, PNG หรือ WebP เท่านั้น')
+      const blob=await fetch(data).then(r=>r.blob())
+      if(!blob.size || blob.size>1048576) throw new Error('รูปต้องมีขนาดไม่เกิน 1MB')
+      return blob
+    }
+    // VSS05_IMAGE_CLEANUP_V2_20261106
+    const imageRefs = payload => {
+      const paths = new Set()
+      for (const kind of ['face','lpr']) {
+        const entries = Array.isArray(payload?.[kind]) ? payload[kind] : []
+        for (const item of entries) {
+          const value = item?.image_path
+          if (typeof value === 'string' && value) paths.add(value)
+        }
+      }
+      return paths
+    }
+    const safeScopedImage = (path, centerId, reportDate) => {
+      const prefix = `${centerId}/${reportDate}/`
+      return typeof path === 'string' && path.startsWith(prefix) &&
+        /^[0-9a-f-]{36}\.(?:jpg|jpeg|png|webp)$/i.test(path.slice(prefix.length))
+    }
+    const loadImages = async reports => {
+      const copy=JSON.parse(JSON.stringify(reports||[]))
+      const todo=[]
+      for(const rec of copy) for(const kind of ['face','lpr'])
+        for(const item of rec.payload?.[kind]||[]) if(item.image_path) todo.push(item)
+      let failures=0
+      for(let i=0;i<todo.length;i+=6){
+        await Promise.all(todo.slice(i,i+6).map(async item=>{
+          const {data,error}=await supabase.storage.from('vss05-daily-assets').download(item.image_path)
+          if(error || !data){failures+=1;return}
+          try{item.imageDataUrl=await blobToDataUrl(data)}catch{failures+=1}
+        }))
+      }
+      return {records:copy,imageError:failures>0}
+    }
+    const onDailyMessage=async event=>{
+      if(!alive || event.origin!==window.location.origin || event.source!==frame()) return
+      const msg=event.data
+      if(!msg || !String(msg.type||'').startsWith('VSS05_DAILY_')) return
+      if(msg.type==='VSS05_DAILY_READY'){context();return}
+      if(msg.type==='VSS05_DAILY_GET_REQUEST'){
+        if(!validCenter || !dateOk(msg.reportDate)){
+          frame()?.postMessage({type:'VSS05_DAILY_LOAD_RESULT',
+            requestId:msg.requestId,reportDate:msg.reportDate,
+            error:'กรุณาเลือกศูนย์และวันที่รายงานให้ถูกต้อง'},event.origin)
+          return
+        }
+        const requestId=msg.requestId,reportDate=msg.reportDate
+        try{
+          const {data,error}=await supabase.rpc(
+            isCentral ? 'vss05_daily_central' : 'vss05_daily_get',
+            isCentral ? {p_report_date:reportDate} :
+              {p_center_id:center,p_report_date:reportDate}
+          )
+          if(error) throw error
+          const rawRecords=isCentral
+            ? (Array.isArray(data?.reports) ? data.reports : [])
+            : (data?.record ? [data.record] : [])
+          const namedRecords=rawRecords.map(rec=>({
+            ...rec,
+            center_name: vss05LiveRef.current.centers.find(
+              c=>Number(c.id)===Number(rec.center_id))?.name ||
+              `ศูนย์ ${rec.center_id}`
+          }))
+          const images=await loadImages(namedRecords)
+          if(!alive || event.source!==frame()) return
+          frame()?.postMessage({
+            type:'VSS05_DAILY_LOAD_RESULT',requestId,reportDate,
+            result:{
+              records:images.records,
+              saved_count:isCentral ? Number(data?.saved_count || 0) : (data?.found ? 1 : 0),
+              expected_count:isCentral ? 6 : 1,
+              complete:isCentral ? data?.complete===true : data?.found===true
+            },imageError:images.imageError
+          },event.origin)
+        }catch(err){
+          if(alive && event.source===frame()) frame()?.postMessage({
+            type:'VSS05_DAILY_LOAD_RESULT',requestId,reportDate,
+            error:err?.message||'โหลดข้อมูลไม่สำเร็จ'
+          },event.origin)
+        }
+        return
+      }
+      if(msg.type==='VSS05_DAILY_SAVE_REQUEST'){
+        if(!validCenter || isCentral || !dateOk(msg.reportDate)){
+          frame()?.postMessage({type:'VSS05_DAILY_SAVE_RESULT',
+            requestId:msg.requestId,reportDate:msg.reportDate,
+            error:'ไม่มีสิทธิ์บันทึก หรือศูนย์/วันที่ไม่ถูกต้อง'},event.origin)
+          return
+        }
+        const requestId=msg.requestId,reportDate=msg.reportDate
+        const freshUploads=[]
+        let saveRpcStarted=false
+        try{
+          // Read current saved revision BEFORE uploading. If another editor changed
+          // this day, stop early rather than leaving unnecessary files in Storage.
+          const {data:oldData,error:oldError}=await supabase.rpc('vss05_daily_get',{
+            p_center_id:center,p_report_date:reportDate
+          })
+          if(oldError) throw oldError
+          const oldRecord=oldData?.record || null
+          if(Number(oldRecord?.revision||0)!==Number(msg.expectedRevision||0))
+            throw new Error('ข้อมูลรายงานถูกแก้ไขจากหน้าจออื่น กรุณาโหลดใหม่ก่อนบันทึก')
+          const oldImageRefs=imageRefs(oldRecord?.payload)
+          if(!msg.payload || !Array.isArray(msg.payload.face) || !Array.isArray(msg.payload.lpr))
+            throw new Error('รูปแบบรายงานไม่ถูกต้อง')
+          const clean={...msg.payload}
+          for(const kind of ['face','lpr']){
+            clean[kind]=[]
+            for(const entry of msg.payload[kind]){
+              const item={...entry}
+              delete item.image_data
+              if(entry.image_data){
+                const blob=await blobOf(entry.image_data)
+                const ext=blob.type==='image/png'?'png':blob.type==='image/webp'?'webp':'jpg'
+                const filePath=`${center}/${reportDate}/${crypto.randomUUID()}.${ext}`
+                const {error:uploadError}=await supabase.storage.from('vss05-daily-assets')
+                  .upload(filePath,blob,{contentType:blob.type,upsert:false})
+                if(uploadError) throw uploadError
+                freshUploads.push(filePath)
+                item.image_path=filePath
+              }
+              item.image_path=String(item.image_path||'')
+              clean[kind].push(item)
+            }
+          }
+          // Once the save RPC starts, do not roll back new files based on a
+          // network error: the DB might have committed despite a lost response.
+          saveRpcStarted=true
+          const {data,error}=await supabase.rpc('vss05_daily_save',{
+            p_center_id:center,p_report_date:reportDate,p_payload:clean,
+            p_expected_revision:Number(msg.expectedRevision||0)
+          })
+          if(error) throw error
+
+          // DB save confirmed. Re-read the persisted payload before removing
+          // anything, and NEVER delete a still-referenced or out-of-scope path.
+          // A cleanup failure is nonfatal: the new report is already saved.
+          let cleanupWarning=''
+          const obsoleteCandidates=[...oldImageRefs].filter(
+            path=>safeScopedImage(path,center,reportDate) && !imageRefs(clean).has(path)
+          )
+          if(obsoleteCandidates.length){
+            try{
+              const {data:verified,error:verifyError}=await supabase.rpc(
+                'vss05_daily_get',{p_center_id:center,p_report_date:reportDate}
+              )
+              if(verifyError || Number(verified?.record?.revision)!==Number(data.revision)){
+                cleanupWarning='ไม่สามารถตรวจยืนยันรุ่นข้อมูลเพื่อเก็บกวาดรูปเก่าได้'
+              }else{
+                const persistedRefs=imageRefs(verified.record?.payload)
+                const obsolete=obsoleteCandidates.filter(path=>!persistedRefs.has(path))
+                for(let i=0;i<obsolete.length;i+=50){
+                  const {error:removeError}=await supabase.storage
+                    .from('vss05-daily-assets').remove(obsolete.slice(i,i+50))
+                  if(removeError) throw removeError
+                }
+              }
+            }catch(e){
+              console.warn('VSS05 old image cleanup failed:',e)
+              cleanupWarning='บันทึกสำเร็จ แต่ยังลบไฟล์รูปเก่าบางรายการไม่ได้'
+            }
+          }
+          if(!alive || event.source!==frame()) return
+          frame()?.postMessage({type:'VSS05_DAILY_SAVE_RESULT',requestId,reportDate,
+            revision:data.revision,payload:clean,cleanupWarning},event.origin)
+        }catch(err){
+          // Safe rollback only when the save RPC was NEVER attempted.
+          // On an ambiguous network failure after RPC start, leave uploads
+          // in place and reconcile later instead of risking broken images.
+          if(!saveRpcStarted && freshUploads.length){
+            try{
+              const {error:cleanupError}=await supabase.storage
+                .from('vss05-daily-assets').remove(freshUploads)
+              if(cleanupError) console.warn('VSS05 upload rollback:',cleanupError)
+            }catch(cleanupError){console.warn('VSS05 upload rollback:',cleanupError)}
+          }
+          if(alive && event.source===frame()) frame()?.postMessage({
+            type:'VSS05_DAILY_SAVE_RESULT',requestId,reportDate,
+            error:err?.message||'บันทึกไม่สำเร็จ'
+          },event.origin)
+        }
+      }
+    }
+    window.addEventListener('message',onDailyMessage)
+    context()
+    return ()=>{alive=false;window.removeEventListener('message',onDailyMessage)}
+  },[selectedCenterId])
+
+
+  useEffect(() => {
+    const frame=reportFrameRef.current?.contentWindow
+    if(!frame) return
+    const isCentral=String(selectedCenterId)==='10'
+    frame.postMessage({
+      type:'VSS05_DAILY_CONTEXT', central:isCentral,
+      centerId:isCentral ? null : Number(selectedCenterId)||null,
+      inspectorId:selectedInspector||'',
+      inspectorName:inspectors.find(p=>String(p.id)===String(selectedInspector))?.name||''
+    },window.location.origin)
+  },[selectedCenterId,selectedInspector,inspectors])
+const handleDownload = () => {
 
     if (!convertedFile?.blob || !isVss05Confirmed) {
       return
