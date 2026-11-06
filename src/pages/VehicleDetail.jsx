@@ -546,27 +546,30 @@ function VehicleDetail({
   const buildVehicleTemplateBlob =
     async () => {
 
-    if (!vehicleImageUrl) {
-      throw new Error(
-        'ไม่พบภาพต้นฉบับของรถ'
-      )
+    if (!vehicle?.image_path) {
+      throw new Error('ไม่พบที่เก็บภาพต้นฉบับของรถ')
     }
 
     if (document.fonts?.ready) {
       await document.fonts.ready
     }
 
-    const response =
-      await fetch(vehicleImageUrl)
+    // โหลด Blob ผ่าน Supabase SDK แทน fetch() Signed URL
+    // เพื่อใช้ Authorization ของผู้ที่เข้าสู่ระบบ
+    const { data: originalBlob, error: downloadError } =
+      await supabase.storage
+        .from('vehicle-images')
+        .download(vehicle.image_path)
 
-    if (!response.ok) {
+    if (downloadError) {
       throw new Error(
-        'ไม่สามารถโหลดภาพต้นฉบับได้'
+        `ดาวน์โหลดภาพต้นฉบับจาก Storage ไม่สำเร็จ: ${downloadError.message}`
       )
     }
 
-    const originalBlob =
-      await response.blob()
+    if (!originalBlob) {
+      throw new Error('Storage ไม่ส่งข้อมูลภาพต้นฉบับกลับมา')
+    }
 
     const image =
       await createImageBitmap(
@@ -1351,6 +1354,8 @@ function VehicleDetail({
   const handleCreateTemplate =
     async () => {
 
+    let currentStep = 'สร้างภาพ Template'
+
     try {
       setCreatingTemplate(true)
       setMessage('')
@@ -1359,6 +1364,7 @@ function VehicleDetail({
       const templateBlob =
         await buildVehicleTemplateBlob()
 
+      currentStep = 'สร้าง Thumbnail'
       // สร้าง Thumbnail จาก Template
       const thumbnailBlob =
         await createThumbnailBlobFromBlob(
@@ -1379,6 +1385,7 @@ function VehicleDetail({
       const oldThumbnailPath =
         vehicle.thumbnail_path
 
+      currentStep = 'อัปโหลด Template / Thumbnail'
       // Upload Template + Thumbnail พร้อมกัน
       const [
         templateUpload,
@@ -1443,6 +1450,7 @@ function VehicleDetail({
         )
       }
 
+      currentStep = 'บันทึกข้อมูล Template ลงฐานข้อมูล'
       // เปลี่ยนทั้ง Template และ Thumbnail
       // ใน Database พร้อมกัน
       const {
@@ -1474,6 +1482,7 @@ function VehicleDetail({
         throw updateError
       }
 
+      currentStep = 'จัดการไฟล์เก่า'
       // DB เปลี่ยนสำเร็จแล้ว
       // ค่อยลบ Template / Thumbnail เก่า
       const oldPaths = [
@@ -1502,6 +1511,7 @@ function VehicleDetail({
         }
       }
 
+      currentStep = 'โหลดข้อมูลรถอีกครั้ง'
       await loadVehicle()
 
       setMessageType('success')
@@ -1513,14 +1523,14 @@ function VehicleDetail({
     } catch (error) {
 
       console.error(
-        'สร้าง Template ไม่สำเร็จ:',
+        `สร้าง Template ไม่สำเร็จในขั้นตอน: ${currentStep}`,
         error
       )
 
       setMessageType('error')
 
       setMessage(
-        `สร้าง Template ไม่สำเร็จ: ${
+        `สร้าง Template ไม่สำเร็จ (${currentStep}): ${
           error?.message ||
           'เกิดข้อผิดพลาด'
         }`
@@ -1554,10 +1564,8 @@ function VehicleDetail({
       setDeletingTemplate(true)
       setMessage('')
 
-      if (!vehicleImageUrl) {
-        throw new Error(
-          'ไม่พบภาพ Original ของรถ'
-        )
+      if (!vehicle?.image_path) {
+        throw new Error('ไม่พบที่เก็บภาพ Original ของรถ')
       }
 
       const oldTemplatePath =
@@ -1566,18 +1574,21 @@ function VehicleDetail({
       const oldThumbnailPath =
         vehicle.thumbnail_path
 
-      // โหลดภาพ Original
-      const response =
-        await fetch(vehicleImageUrl)
+      // ใช้ SDK โหลดภาพ Original พร้อมสิทธิ์ของผู้ล็อกอิน
+      const { data: originalBlob, error: downloadError } =
+        await supabase.storage
+          .from('vehicle-images')
+          .download(vehicle.image_path)
 
-      if (!response.ok) {
+      if (downloadError) {
         throw new Error(
-          'ไม่สามารถโหลดภาพ Original ได้'
+          `ดาวน์โหลดภาพ Original จาก Storage ไม่สำเร็จ: ${downloadError.message}`
         )
       }
 
-      const originalBlob =
-        await response.blob()
+      if (!originalBlob) {
+        throw new Error('Storage ไม่ส่งข้อมูลภาพ Original กลับมา')
+      }
 
       // สร้าง Thumbnail จาก Original
       const thumbnailBlob =
