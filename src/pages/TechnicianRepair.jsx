@@ -58,7 +58,7 @@ const EQUIPMENT = [
   'ใช้งานได้จริง',
 ]
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 10
 const EMPTY_CENTER_IDS = []
 
 const INITIAL_FILTERS = {
