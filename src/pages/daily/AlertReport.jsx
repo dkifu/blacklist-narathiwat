@@ -197,9 +197,13 @@ const parseTemplateDateTime = (value) => {
 
 function AlertReport({ profile }) {
 
+  // VSS05_TEMP_TAB_20261108 — แยกข้อมูลจริงกับแบบฟอร์มชั่วคราว
+  const [activeReportTab, setActiveReportTab] = useState('official')
+
   const fileInputRef = useRef(null)
 
   const reportFrameRef = useRef(null)
+  const tempReportFrameRef = useRef(null)
 
   const [selectedFile, setSelectedFile] =
     useState(null)
@@ -753,8 +757,7 @@ function AlertReport({ profile }) {
   (payload) => {
 
     const frame =
-      reportFrameRef.current
-
+      (activeReportTab === 'temporary' ? tempReportFrameRef.current : reportFrameRef.current)
     if (!frame) {
       return
     }
@@ -1253,7 +1256,7 @@ function AlertReport({ profile }) {
 const handleVss05Confirm = () => {
   if (!convertedFile) return
 
-  reportFrameRef.current?.contentWindow?.postMessage(
+  (activeReportTab === 'temporary' ? tempReportFrameRef.current : reportFrameRef.current)?.contentWindow?.postMessage(
     {
       type: 'REQUEST_VSS05_CONFIRMATION',
     },
@@ -1273,7 +1276,7 @@ useEffect(() => {
     // รับเฉพาะ iframe รายงานในเว็บไซต์เดียวกัน
     if (
       event.origin !== window.location.origin ||
-      event.source !== reportFrameRef.current?.contentWindow
+      event.source !== (activeReportTab === 'temporary' ? tempReportFrameRef.current : reportFrameRef.current)?.contentWindow
     ) {
       return
     }
@@ -1456,7 +1459,7 @@ useEffect(() => {
     )
   }
 
-}, [convertedFile])
+}, [convertedFile, activeReportTab])
 
 
 
@@ -1734,11 +1737,32 @@ const handleDownload = () => {
 
     <div className="alert-report-page">
 
+      {/* VSS05_TEMP_TAB_20261108: เมนูสลับโหมดภายในหน้าเดิม */}
+      <div className="vss05-report-tabs" role="tablist" aria-label="เลือกโหมดรายงาน">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeReportTab === 'official'}
+          className={activeReportTab === 'official' ? 'active' : ''}
+          onClick={() => { setActiveReportTab('official'); setConvertedFile(null); setIsVss05Confirmed(false) }}
+        >
+          รายงานประจำวัน (บันทึกข้อมูล)
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeReportTab === 'temporary'}
+          className={activeReportTab === 'temporary' ? 'active' : ''}
+          onClick={() => { setActiveReportTab('temporary'); setConvertedFile(null); setIsVss05Confirmed(false) }}
+        >
+          รายงานชั่วคราว (สภ. / ไม่บันทึก)
+        </button>
+      </div>
 
+      {/* VSS05_SHARED_UPLOAD_V6_20261108: บาร์อัปโหลดใช้ร่วมกัน แต่แปลงลง iframe ของแท็บที่เลือก */}
       {/* =========================================
           VSS05 TOOLBAR
       ========================================== */}
-
       <section className="vss05-toolbar">
 
         <div className="vss05-toolbar-head">
@@ -2098,7 +2122,8 @@ const handleDownload = () => {
 
       </section>
 
-
+      {/* รายงานจริงยังคง iframe เดิมไว้ ไม่สลับทิ้งเมื่อกดแท็บชั่วคราว */}
+      <div style={{ display: activeReportTab === 'official' ? 'block' : 'none' }}>
       {/* =========================================
           PHUKET EYES เดิม
       ========================================== */}
@@ -2109,6 +2134,22 @@ const handleDownload = () => {
         src={reportUrl}
         title="VSS05 รายงานการแจ้งเตือน"
       />
+
+      </div>
+
+      {/* โหมดชั่วคราวใช้ไฟล์ HTML ตัวเดิม แต่เปิดด้วย query mode=temp */}
+      <div style={{ display: activeReportTab === 'temporary' ? 'block' : 'none' }}>
+        <div className="vss05-temp-notice" role="status">
+          <strong>แบบฟอร์มชั่วคราวสำหรับ สภ.</strong>
+          <span>แก้ไขข้อมูลและคัดลอกรูปเพื่อส่งต่อได้ทันที ไม่มีการบันทึกลงฐานข้อมูลหรือเก็บแบบร่างในเครื่อง รีเฟรชหน้าแล้วข้อมูลจะหาย</span>
+        </div>
+        <iframe
+          className="alert-report-frame"
+          ref={tempReportFrameRef}
+          src={`${reportUrl}?mode=temp`}
+          title="รายงานชั่วคราวสำหรับ สภ. — ไม่บันทึกข้อมูล"
+        />
+      </div>
 
     </div>
 

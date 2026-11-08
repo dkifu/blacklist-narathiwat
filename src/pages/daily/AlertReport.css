@@ -537,3 +537,50 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* VSS05_TEMP_TAB_20261108 — แท็บรายงานจริง / ชั่วคราว */
+.vss05-report-tabs {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #2d3d56;
+  padding-bottom: 10px;
+}
+.vss05-report-tabs button {
+  appearance: none;
+  border: 1px solid #35445d;
+  border-radius: 9px;
+  background: #121e2e;
+  color: #a9b9d0;
+  padding: 11px 17px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.vss05-report-tabs button:hover { border-color: #6884aa; color: #fff; }
+.vss05-report-tabs button.active {
+  background: #1e4f9e;
+  color: #fff;
+  border-color: #407dde;
+}
+.vss05-temp-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  border: 1px solid #71612b;
+  border-radius: 10px;
+  padding: 12px 15px;
+  background: #292512;
+  color: #e9e2be;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.vss05-temp-notice strong { color: #fff3b8; font-size: 14px; }
+@media (max-width: 700px) {
+  .vss05-report-tabs { display: grid; grid-template-columns: 1fr; }
+  .vss05-report-tabs button { width: 100%; }
+}
