@@ -10,6 +10,7 @@ const TEAM_CENTERS = {
   takbai: [1, 7, 8],
   pattani: [2, 4, 9],
 }
+const REPORT_CENTER_IDS = [1, 2, 4, 7, 8, 9]
 
 const CENTER_NAMES = {
   1: 'ศูนย์นราธิวาส',
@@ -59,6 +60,118 @@ const EQUIPMENT = [
 ]
 
 const PAGE_SIZE = 10
+
+// รายงาน Log Book (ใช้ข้อมูลจริงจากใบแจ้งซ่อมเดิม)
+// ไม่รวมรายการประเภทพิเศษเป็นประเภทอุปกรณ์ใหม่ และไม่สร้างตารางฐานข้อมูลเพิ่ม
+const REPORT_PAGE_SIZE = 10
+const REPORT_FETCH_SIZE = 500
+const REPORT_UNITS_BATCH = 100
+const REPORT_THAI_MONTHS = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+]
+
+const reportInitialFilters = () => {
+  const today = new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10)
+  return {
+    period: 'month', day: today, month: today.slice(0, 7),
+    year: String(Number(today.slice(0, 4)) + 543), from: today, to: today,
+    center: '', status: 'all',
+  }
+}
+
+const reportNextDay = value => {
+  const [y, m, d] = value.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10)
+}
+
+const reportDateBounds = filters => {
+  let first = ''
+  let last = ''
+  if (filters.period === 'day') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(filters.day)) {
+      throw new Error('กรุณาเลือกวันที่แจ้งซ่อม')
+    }
+    first = filters.day
+    last = reportNextDay(first)
+  } else if (filters.period === 'month') {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(filters.month)) {
+      throw new Error('กรุณาเลือกเดือน')
+    }
+    first = `${filters.month}-01`
+    const [y, m] = filters.month.split('-').map(Number)
+    last = new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10)
+  } else if (filters.period === 'year') {
+    const adYear = Number(filters.year) - 543
+    if (!/^\d{4}$/.test(String(filters.year)) || adYear < 2000 || adYear > 9998) {
+      throw new Error('กรุณาระบุปี พ.ศ. ให้ถูกต้อง')
+    }
+    first = `${adYear}-01-01`
+    last = `${adYear + 1}-01-01`
+  } else {
+    if (!filters.from || !filters.to || filters.from > filters.to) {
+      throw new Error('กรุณาเลือกวันเริ่มต้นและสิ้นสุดให้ถูกต้อง')
+    }
+    first = filters.from
+    last = reportNextDay(filters.to)
+  }
+  return {
+    start: `${first}T00:00:00+07:00`,
+    end: `${last}T00:00:00+07:00`,
+  }
+}
+
+const reportPeriodTitle = f => {
+  if (f.period === 'day') return `ประจำวันที่ ${f.day}`
+  if (f.period === 'month') {
+    const [year, month] = f.month.split('-').map(Number)
+    return `ประจำเดือน${REPORT_THAI_MONTHS[month - 1] || ''} ${year + 543}`
+  }
+  if (f.period === 'year') return `ประจำปี ${f.year}`
+  return `ตั้งแต่ ${f.from} ถึง ${f.to}`
+}
+
+const reportInt = x => {
+  const n = Number(x)
+  return Number.isSafeInteger(n) && n > 0 ? n : 0
+}
+
+const reportEquipmentCounts = (order, name) => {
+  // ก่อนช่างปิดงาน ยังไม่ทราบผลตรวจ จึงไม่แสดงเป็นเลข 0
+  if (order.status !== 'closed' || !Array.isArray(order.equipment_items)) {
+    return { damaged: null, stuck: null }
+  }
+  let damaged = 0
+  let stuck = 0
+  for (const item of order.equipment_items) {
+    if (item?.name !== name) continue
+    if (item.is_damaged) damaged += reportInt(item.failed_count)
+    // ช่องนี้คือ 'จำนวนค้าง/Reset' ตามนิยามของฟอร์มช่าง ไม่ใช่จำนวนอุปกรณ์เฉพาะตัว
+    if (item.is_stuck) stuck += reportInt(item.reset_count)
+  }
+  return { damaged, stuck }
+}
+
+const reportEquipmentTotals = rows => {
+  const totals = EQUIPMENT.map(name => ({ name, damaged: 0, stuck: 0 }))
+  rows.forEach(order => {
+    totals.forEach(item => {
+      const counts = reportEquipmentCounts(order, item.name)
+      item.damaged += counts.damaged || 0
+      item.stuck += counts.stuck || 0
+    })
+  })
+  return totals
+}
+
+const reportSafeExcelText = value => {
+  const s = String(value ?? '')
+  // ป้องกันข้อความจากฐานข้อมูลถูก Excel ตีความเป็นสูตร
+  return /^[\s]*[=+\-@]/.test(s) ? `'${s}` : s
+}
+
+const reportCellDate = value => value ? formatDate(value) : '—'
+
 const EMPTY_CENTER_IDS = []
 
 const INITIAL_FILTERS = {
@@ -360,6 +473,428 @@ export default function TechnicianRepair({ profile }) {
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+
+
+  // หน้ารายงานใช้ข้อมูลที่อ่านได้ตาม RLS ของผู้ใช้ปัจจุบันเท่านั้น
+  const [repairView, setRepairView] = useState('orders')
+  const [reportFilters, setReportFilters] = useState(reportInitialFilters)
+  const [reportRows, setReportRows] = useState([])
+  const [reportBusy, setReportBusy] = useState(false)
+  const [reportError, setReportError] = useState('')
+  const [reportExportBusy, setReportExportBusy] = useState(false)
+  const [reportPage, setReportPage] = useState(0)
+  const [reportRefresh, setReportRefresh] = useState(0)
+
+  const reportChangeFilter = (key, value) => {
+    setReportFilters(old => ({ ...old, [key]: value }))
+    setReportPage(0)
+  }
+
+  useEffect(() => {
+    if (repairView !== 'report' || !authorized) return
+    let live = true
+    setReportBusy(true)
+    setReportError('')
+    setReportRows([])
+    setReportPage(0)
+
+    async function fetchReport() {
+      try {
+        const bounds = reportDateBounds(reportFilters)
+        const found = []
+        let offset = 0
+        while (true) {
+          let query = supabase
+            .from('cctv_repair_orders')
+            .select(`
+              id, ticket_no, center_id, center_name_snapshot, team_code,
+              submitted_at, outage_date, outage_time, status, repair_completed_at,
+              repair_problem_found, repair_fix_method, repair_down_count,
+              repair_usable_count, repair_unusable_count, technician_names,
+              repair_sla_exceeded, equipment_items
+            `)
+            .neq('status', 'draft')
+            .gte('submitted_at', bounds.start)
+            .lt('submitted_at', bounds.end)
+
+          // กรองศูนย์ตามสิทธิ์แบบเดียวกับหน้าใบงานเดิม (RLS ยังคุมฝั่งฐานข้อมูล)
+          // กำหนดขอบเขตข้อมูลตามบัญชี
+          if (isTechnician) {
+            query = query.in('center_id', scopeIds)
+          } else if (isCentral || isManager) {
+            query = query.in('center_id', REPORT_CENTER_IDS)
+          } else if (isCenter) {
+            query = query.eq('center_id', Number(profile.center_id))
+          }
+
+          // กรองศูนย์เพิ่มเติมภายในขอบเขตที่ได้รับอนุญาต
+          if (!isCenter && !isCentral && reportFilters.center) {
+            const selectedCenter = Number(reportFilters.center)
+
+            if (
+              !REPORT_CENTER_IDS.includes(selectedCenter) ||
+              (isTechnician && !scopeIds.includes(selectedCenter))
+            ) {
+              throw new Error('ไม่มีสิทธิ์ดูรายงานของศูนย์ที่เลือก')
+            }
+
+            query = query.eq('center_id', selectedCenter)
+          }
+          if (reportFilters.status === 'open') {
+            query = query.in('status', OPEN_STATUSES)
+          } else if (['closed', 'cancelled'].includes(reportFilters.status)) {
+            query = query.eq('status', reportFilters.status)
+          }
+          const { data, error: err } = await query
+            .order('submitted_at', { ascending: true, nullsFirst: false })
+            .order('id', { ascending: true })
+            .range(offset, offset + REPORT_FETCH_SIZE - 1)
+          if (err) throw err
+          if (!live) return
+          const pageRows = data || []
+          found.push(...pageRows)
+          if (pageRows.length < REPORT_FETCH_SIZE) break
+          offset += REPORT_FETCH_SIZE
+        }
+
+        // ดึงจุด / Service Box ตามใบงานที่ผ่านการกรองแล้วเท่านั้น
+        const unitsByOrder = new Map()
+        const ids = found.map(o => o.id)
+        for (let i = 0; i < ids.length; i += REPORT_UNITS_BATCH) {
+          const chunk = ids.slice(i, i + REPORT_UNITS_BATCH)
+          const { data, error: err } = await supabase
+            .from('cctv_repair_order_units')
+            .select('order_id, unit_label, down_camera_count')
+            .in('order_id', chunk)
+          if (err) throw err
+          if (!live) return
+          for (const unit of (data || [])) {
+            const previous = unitsByOrder.get(unit.order_id) || []
+            previous.push(unit)
+            unitsByOrder.set(unit.order_id, previous)
+          }
+        }
+        const merged = found.map(o => ({
+          ...o,
+          reportUnits: unitsByOrder.get(o.id) || [],
+        }))
+        if (live) setReportRows(merged)
+      } catch (err) {
+        if (live) {
+          setReportRows([])
+          setReportError(err.message || 'โหลดรายงานไม่สำเร็จ')
+        }
+      } finally {
+        if (live) setReportBusy(false)
+      }
+    }
+    fetchReport()
+    return () => { live = false }
+  }, [
+    repairView,
+    reportFilters,
+    reportRefresh,
+    authorized,
+    isTechnician,
+    isCenter,
+    isCentral,
+    isManager,
+    scopeIds,
+    profile?.center_id,
+  ])
+
+  const reportTotals = useMemo(() => {
+    const closed = reportRows.filter(x => x.status === 'closed')
+    const equipment = reportEquipmentTotals(reportRows)
+    return {
+      count: reportRows.length,
+      closed: closed.length,
+      open: reportRows.filter(x => OPEN_STATUSES.includes(x.status)).length,
+      late: closed.filter(x => x.repair_sla_exceeded === true).length,
+      damaged: equipment.reduce((s, x) => s + x.damaged, 0),
+      stuck: equipment.reduce((s, x) => s + x.stuck, 0),
+      equipment,
+    }
+  }, [reportRows])
+
+/* REPAIR_LOGBOOK_EXCEL_V2 */
+/* REPAIR_LOGBOOK_EXCEL_WIDTHS_V3 */
+  const exportRepairLogBook = async () => {
+    if (reportBusy || reportExportBusy || reportError || reportRows.length === 0) return
+    setReportExportBusy(true)
+    setReportError('')
+    try {
+      const excelModule = await import('exceljs-community')
+      const ExcelJS = excelModule.default || excelModule
+      const workbook = new ExcelJS.Workbook()
+      workbook.creator = 'CCTV Repair Workspace'
+      workbook.created = new Date()
+      const sheet = workbook.addWorksheet('Log Book แจ้งซ่อม', {
+        pageSetup: { paperSize: 8, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+      })
+      const baseHeaders = [
+        ['ลำดับ', 6], ['เลขใบงาน', 15], ['ศูนย์', 18], ['วันที่แจ้ง', 18],
+        ['วันที่กล้องดับ', 18], ['กำหนด SLA 72 ชม.', 18], ['สถานะ', 13], ['วันที่ซ่อมเสร็จ', 18],
+        ['ช่างผู้ปฏิบัติงาน', 19], ['กล้องดับ (ตัว)', 11], ['ใช้งานได้ (ตัว)', 12], ['ยังใช้ไม่ได้ (ตัว)', 14],
+        ['ผล SLA', 13],
+      ]
+      const baseCount = baseHeaders.length
+      const totalCols = baseCount + EQUIPMENT.length * 2
+      const dark = '20334D'
+      const blue = '254A6F'
+      // หัวอุปกรณ์แต่ละประเภทใช้โทนสีประจำกลุ่ม; light / alt เป็นสีแถวข้อมูล
+      const equipmentPalette = [
+        ['2B638E', 'E5F1FA', 'F2F8FD'], // Camera
+        ['675392', 'EEE8F8', 'F7F3FC'], // Switch
+        ['976B2E', 'FFF0D6', 'FFF8EA'], // Power supply 12-24V
+        ['2B7779', 'DEF3F0', 'EFF9F7'], // Media Converter
+        ['9A5479', 'F8E4EF', 'FDF2F8'], // Power supply 5V
+        ['A66336', 'FCEBD9', 'FFF5E9'], // สาย LAN
+        ['4F7E48', 'E7F3E2', 'F4FAF1'], // ไฟฟ้า AC
+        ['536DA2', 'E4EBFA', 'F3F6FE'], // Fiber optic
+        ['74599D', 'EDE6F8', 'F7F2FC'], // SFP
+        ['3F6E86', 'E3EFF4', 'F2F8FA'], // NVR
+        ['796B3B', 'F1EDDE', 'F9F7EF'], // Computer
+        ['865E68', 'F4E6E9', 'FBF3F5'], // Service Box (อุปกรณ์)
+        ['3B7C68', 'E1F2EB', 'F1F9F5'], // มุมกล้อง
+        ['6C6B94', 'EBEAF6', 'F7F6FB'], // ใช้งานได้จริง
+      ]
+      const thinBorder = { style: 'hair', color: { argb: 'FFD2DCE8' } }
+      /* REPAIR_LOGBOOK_LAYOUT_V6 */
+      // สีเส้นตารางชัดกว่าของเดิม ขอบคู่คอลัมน์หนา / ภายในคู่เป็นเส้นบาง
+      // เส้นตารางอุปกรณ์สีขาวตามไฟล์ตัวอย่าง (ไม่ใช้เส้นเทา/น้ำเงินแบบ V6)
+      const reportGridLine = { style: 'thin', color: { argb: 'FFFFFFFF' } }
+      const reportPairLine = { style: 'thin', color: { argb: 'FFFFFFFF' } }
+      const reportEquipmentBorder = col => ({
+        top: reportGridLine,
+        bottom: reportGridLine,
+        left: (col - baseCount) % 2 === 1 ? reportPairLine : reportGridLine,
+        right: (col - baseCount) % 2 === 0 ? reportPairLine : reportGridLine,
+      })
+      const bg = (argb) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${argb}` } })
+      sheet.mergeCells(1, 1, 1, totalCols)
+      sheet.getCell(1, 1).value = 'LOG BOOK รายงานสรุปการแจ้งซ่อม CCTV'
+      sheet.getCell(1, 1).font = { name: 'Tahoma', size: 18, bold: true, color: { argb: 'FFFFFFFF' } }
+      sheet.getCell(1, 1).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
+      sheet.getRow(1).height = 36
+      sheet.getCell(1, 1).fill = bg(dark)
+
+      const getCenterName = id =>
+        centers.find(c => Number(c.id) === Number(id))?.name ||
+        CENTER_NAMES[id] ||
+        'ไม่ระบุศูนย์'
+
+      let centreName = ''
+
+      if (isCenter) {
+        centreName = getCenterName(profile.center_id)
+      } else if (isCentral) {
+        centreName = 'ศชต. (รวม 6 ศูนย์)'
+      } else if (isTechnician) {
+        centreName = TEAMS[team] || 'ทีมช่าง'
+
+        if (reportFilters.center) {
+          centreName += ` - ${getCenterName(reportFilters.center)}`
+        }
+      } else if (reportFilters.center) {
+        centreName = getCenterName(reportFilters.center)
+      } else {
+        centreName = 'รวม 6 ศูนย์'
+      }
+      const statusName = { all: 'ทุกสถานะ', open: 'ยังไม่ปิด', closed: 'ปิดแล้ว', cancelled: 'ยกเลิก' }[reportFilters.status]
+      sheet.mergeCells(2, 1, 2, totalCols)
+      sheet.getCell(2, 1).value = reportSafeExcelText(`${reportPeriodTitle(reportFilters)}  |  ${centreName}  |  ${statusName}  |  ออกรายงาน ${formatDate(new Date())}`)
+      sheet.getCell(2, 1).font = { name: 'Tahoma', size: 11, color: { argb: 'FF27425F' } }
+      sheet.getCell(2, 1).alignment = { vertical: 'middle', indent: 1 }
+      sheet.getRow(2).height = 26
+      sheet.getCell(2, 1).fill = bg('EDF4FA')
+
+      // สรุป 6 KPI ให้อยู่บริเวณซ้ายบน (A3:L4) ไม่กินความกว้างทั้งชีต
+      const topSummary = [
+        { label: 'ใบงานทั้งหมด', value: reportTotals.count, color: 'E7F0FA', ink: '244D74' },
+        { label: 'ปิดงานแล้ว', value: reportTotals.closed, color: 'DDF4E8', ink: '176447' },
+        { label: 'ยังไม่ปิด', value: reportTotals.open, color: 'FFF1D8', ink: '84591C' },
+        { label: 'เกิน SLA', value: reportTotals.late, color: 'FBE3E7', ink: '943047' },
+        { label: 'อุปกรณ์เสีย', value: reportTotals.damaged, color: 'E9E5F9', ink: '594A93' },
+        { label: 'ค้าง / Reset', value: reportTotals.stuck, color: 'DFF2F2', ink: '216D74' },
+      ]
+      topSummary.forEach((item, i) => {
+        const rowNumber = 3 + Math.floor(i / 3)
+        const firstColumn = 1 + (i % 3) * 4
+        sheet.mergeCells(rowNumber, firstColumn, rowNumber, firstColumn + 3)
+        const cell = sheet.getCell(rowNumber, firstColumn)
+        cell.value = `${item.label}  :  ${Number(item.value).toLocaleString('th-TH')}`
+        cell.fill = bg(item.color)
+        cell.font = { name: 'Tahoma', size: 13, bold: true, color: { argb: `FF${item.ink}` } }
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+        cell.border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder }
+      })
+      sheet.getRow(3).height = 34
+      sheet.getRow(4).height = 34
+
+      sheet.mergeCells(5, 1, 5, baseCount)
+      const primaryGroup = sheet.getCell(5, 1)
+      primaryGroup.value = 'รายละเอียดใบแจ้งซ่อม'
+      primaryGroup.fill = bg(blue)
+      primaryGroup.font = { name: 'Tahoma', bold: true, color: { argb: 'FFFFFFFF' } }
+      primaryGroup.alignment = { horizontal: 'center', vertical: 'middle' }
+      /* REPAIR_LOGBOOK_TOTALS_TOP_V4 */
+      /* REPAIR_LOGBOOK_TOTALS_SPLIT_V5 */
+      /* REPAIR_LOGBOOK_TEMPLATE_WHITE_V7 */
+      // จัดอุปกรณ์ให้อยู่แถวเดียวกับ KPI ฝั่งซ้าย ตามไฟล์ Excel ที่แก้เป็นตัวอย่าง
+      // แถว 3: ชื่ออุปกรณ์ / แถว 4: ยอดรวม / แถว 5: เสีย-ค้าง / แถว 6: ยอดแยก
+      EQUIPMENT.forEach((name, i) => {
+        const firstCol = baseCount + i * 2 + 1
+        sheet.mergeCells(3, firstCol, 3, firstCol + 1)
+        const cell = sheet.getCell(3, firstCol)
+        cell.value = name
+        cell.fill = bg(equipmentPalette[i % equipmentPalette.length][0])
+        cell.font = { name: 'Tahoma', size: 10, bold: true, color: { argb: 'FFFFFFFF' } }
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
+        cell.border = { left: reportPairLine, right: reportPairLine, bottom: reportGridLine }
+      })
+
+      const totalsRow = sheet.getRow(4)
+      reportTotals.equipment.forEach((item, i) => {
+        const col = baseCount + i * 2 + 1
+        sheet.mergeCells(4, col, 4, col + 1)
+        const cell = totalsRow.getCell(col)
+        cell.value = item.damaged + item.stuck
+        cell.fill = bg(equipmentPalette[i % equipmentPalette.length][0])
+        cell.font = { name: 'Tahoma', size: 12, bold: true, color: { argb: 'FFFFFFFF' } }
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+        cell.border = { top: reportGridLine, bottom: reportGridLine,
+          left: reportPairLine, right: reportPairLine }
+      })
+      // แถว 3/4 เป็นความสูงเดียวกับ KPI ฝั่งซ้ายที่กำหนดไว้ก่อนหน้านี้
+
+      // หัวข้อรายละเอียดด้านซ้ายอยู่แถว 5; ฝั่งขวาเป็นหัวเสีย/ค้าง
+      sheet.getRow(5).height = 38
+      const equipmentHeaderNames = EQUIPMENT.flatMap(() => ['เสีย', 'ค้าง/\nReset'])
+      equipmentHeaderNames.forEach((name, index) => {
+        const col = baseCount + index + 1
+        const cell = sheet.getRow(5).getCell(col)
+        const group = equipmentPalette[Math.floor(index / 2) % equipmentPalette.length]
+        cell.value = name
+        cell.font = { name: 'Tahoma', size: 10, bold: true,
+          color: { argb: `FF${group[0]}` } }
+        cell.fill = bg(group[1])
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+        cell.border = reportEquipmentBorder(col)
+      })
+
+      // แถว 6 ซ้ายเป็นหัวข้อมูลใบงาน; แถว 6 ขวาเก็บยอดเสีย/ค้างแยก
+      const baseHeaderNames = baseHeaders.map(x => x[0])
+      sheet.getRow(6).values = baseHeaderNames
+      sheet.getRow(6).height = 48
+      baseHeaderNames.forEach((_, index) => {
+        const cell = sheet.getRow(6).getCell(index + 1)
+        cell.font = { name: 'Tahoma', size: 10, bold: true,
+          color: { argb: 'FFFFFFFF' } }
+        cell.fill = bg(blue)
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+        cell.border = { top: thinBorder, bottom: thinBorder,
+          left: thinBorder, right: thinBorder }
+      })
+      baseHeaders.forEach((x, i) => { sheet.getColumn(i + 1).width = x[1] })
+      // ลดคอลัมน์อุปกรณ์ที่เป็นตัวเลขให้กระชับ แยกตามชนิดย่อย
+      // เสีย (ชิ้น) = 8 / ค้าง-Reset = 11
+      // ทุกคอลัมน์อุปกรณ์กว้างเท่ากัน
+      for (let i = baseCount + 1; i <= totalCols; i++) {
+        sheet.getColumn(i).width = 8
+      }
+
+      // แถว 6 (คอลัมน์ขวา): ยอดเสีย / ค้าง-Reset แยกในแนวเดียวกับหัวตารางซ้าย
+      const splitTotalsRow = sheet.getRow(6)
+      reportTotals.equipment.forEach((item, i) => {
+        const firstCol = baseCount + i * 2 + 1
+        const colors = equipmentPalette[i % equipmentPalette.length]
+        ;[item.damaged, item.stuck].forEach((value, j) => {
+          const col = firstCol + j
+          const cell = splitTotalsRow.getCell(col)
+          cell.value = value
+          cell.fill = bg(colors[1])
+          cell.font = { name: 'Tahoma', size: 11, bold: true,
+            color: { argb: `FF${colors[0]}` } }
+          cell.alignment = { horizontal: 'center', vertical: 'middle' }
+          cell.border = reportEquipmentBorder(col)
+        })
+      })
+      splitTotalsRow.height = 48
+
+      reportRows.forEach((order, rowIndex) => {
+        const outage = bangkokDate(order.outage_date, order.outage_time)
+        const deadline = outage ? new Date(outage.getTime() + 72 * 3600000) : null
+        
+
+
+        const downFromUnits = order.reportUnits.reduce((s, x) => s + (Number(x.down_camera_count) || 0), 0)
+        const completed = order.status === 'closed'
+        const values = [
+          rowIndex + 1,
+          reportSafeExcelText(ticketLabel(order)),
+          reportSafeExcelText(order.center_name_snapshot || CENTER_NAMES[order.center_id] || ''),
+          reportCellDate(order.submitted_at),
+          outage ? formatDate(outage) : '—',
+          deadline ? formatDate(deadline) : '—',
+          reportSafeExcelText(STATUS[order.status] || order.status),
+          completed ? reportCellDate(order.repair_completed_at) : 'รอผลซ่อม',
+          completed ? reportSafeExcelText(order.technician_names || '') : '',
+          
+          completed ? (order.repair_down_count ?? downFromUnits) : (downFromUnits || ''),
+          completed ? (order.repair_usable_count ?? '') : '',
+          completed ? (order.repair_unusable_count ?? '') : '',
+          completed ? (order.repair_sla_exceeded ? 'เกิน SLA' : 'ภายใน SLA') : 'รอผลซ่อม',
+          ...EQUIPMENT.flatMap(name => {
+            const counts = reportEquipmentCounts(order, name)
+            return [counts.damaged ? counts.damaged : '', counts.stuck ? counts.stuck : '']
+          }),
+        ]
+        const row = sheet.addRow(values)
+        row.height = 29
+        row.alignment = { vertical: 'middle' }
+        row.eachCell({ includeEmpty: true }, (cell, col) => {
+          cell.font = { name: 'Tahoma', size: 10, color: { argb: 'FF243A50' } }
+          const equipmentIndex = col > baseCount ? Math.floor((col - baseCount - 1) / 2) : -1
+          const palette = equipmentIndex >= 0 ? equipmentPalette[equipmentIndex % equipmentPalette.length] : null
+          cell.fill = bg(palette ? palette[rowIndex % 2 ? 2 : 1] : (rowIndex % 2 ? 'F2F6FA' : 'FFFFFF'))
+          cell.border = col > baseCount
+            ? reportEquipmentBorder(col)
+            : { bottom: thinBorder, right: thinBorder }
+          cell.alignment = { vertical: 'middle', horizontal: col > baseCount ? 'center' : 'left', wrapText: false }
+        })
+        const statusCell = row.getCell(7)
+        statusCell.font = { name: 'Tahoma', size: 10, bold: true, color: { argb: completed ? 'FF16754E' : order.status === 'cancelled' ? 'FFA13030' : 'FF996315' } }
+        if (completed && order.repair_sla_exceeded) {
+          row.getCell(baseCount).font = { name: 'Tahoma', size: 10, bold: true, color: { argb: 'FFC12338' } }
+        }
+      })
+      sheet.autoFilter = { from: { row: 6, column: 1 }, to: { row: 6, column: totalCols } }
+      sheet.headerFooter.oddFooter = 'CCTV Repair Log Book | หน้า &P / &N'
+      sheet.pageSetup.printTitlesRow = '1:6'
+      sheet.pageSetup.printArea = `A1:${sheet.getColumn(totalCols).letter}${6 + reportRows.length}`
+
+      const binary = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([binary], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const safePeriod = reportFilters.period === 'custom'
+        ? `${reportFilters.from}_${reportFilters.to}`
+        : (reportFilters[reportFilters.period] || 'report')
+      link.href = url
+      link.download = `CCTV_Repair_LogBook_${safePeriod}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1500)
+    } catch (err) {
+      setReportError(`สร้าง Excel ไม่สำเร็จ: ${err.message || 'ไม่ทราบสาเหตุ'}`)
+    } finally {
+      setReportExportBusy(false)
+    }
+  }
 
   const changeFilter = (key, value) => {
     setFilters(old => ({
@@ -1379,7 +1914,7 @@ const openSavedPrint = async (order) => {
               CCTV REPAIR WORKSPACE
             </div>
 
-            <h2>งานซ่อม</h2>
+            <h2>{repairView === 'report' ? 'รายงานสรุปการแจ้งซ่อม' : 'งานซ่อม'}</h2>
 
             <p>
               {isTechnician
@@ -1395,12 +1930,182 @@ const openSavedPrint = async (order) => {
           <button
             type="button"
             className="tech-refresh"
-            disabled={busyList}
-            onClick={loadOrders}
+            disabled={repairView === 'report' ? reportBusy : busyList}
+            onClick={repairView === 'report' ? () => setReportRefresh(x => x + 1) : loadOrders}
           >
-            รีเฟรชใบงาน
+            {repairView === 'report' ? 'รีเฟรชรายงาน' : 'รีเฟรชใบงาน'}
           </button>
         </div>
+
+        <nav className="tech-view-tabs" aria-label="เลือกมุมมองงานซ่อม">
+          <button type="button" className={repairView === 'orders' ? 'is-active' : ''}
+            onClick={() => setRepairView('orders')}>รายการใบแจ้งซ่อม</button>
+          <button type="button" className={repairView === 'report' ? 'is-active' : ''}
+            onClick={() => setRepairView('report')}>รายงานสรุปการแจ้งซ่อม</button>
+        </nav>
+
+        {repairView === 'report' ? (
+          <section className="tech-panel tech-report-panel">
+            <div className="tech-report-topline">
+              <div>
+                <h3>Log Book รายงานสรุปการแจ้งซ่อม</h3>
+                <p className="tech-muted">เลือกช่วงตามวันที่แจ้งซ่อม · แสดงข้อมูลเท่าที่บัญชีมีสิทธิ์อ่าน</p>
+              </div>
+              <button type="button" className="tech-report-export"
+                disabled={reportBusy || reportExportBusy || Boolean(reportError) || !reportRows.length}
+                onClick={exportRepairLogBook}>
+                {reportExportBusy ? 'กำลังสร้างไฟล์...' : 'Export Excel (1 Sheet)'}
+              </button>
+            </div>
+
+            <div className="tech-report-filters">
+              <label>รูปแบบช่วงเวลา
+                <select value={reportFilters.period} onChange={e => reportChangeFilter('period', e.target.value)}>
+                  <option value="day">รายวัน</option>
+                  <option value="month">รายเดือน</option>
+                  <option value="year">รายปี</option>
+                  <option value="custom">กำหนดเอง</option>
+                </select>
+              </label>
+              {reportFilters.period === 'day' && (
+                <label>วันที่แจ้งซ่อม
+                  <input type="date" value={reportFilters.day} onChange={e => reportChangeFilter('day', e.target.value)}/>
+                </label>
+              )}
+              {reportFilters.period === 'month' && (
+                <label>เดือน
+                  <input type="month" value={reportFilters.month} onChange={e => reportChangeFilter('month', e.target.value)}/>
+                </label>
+              )}
+              {reportFilters.period === 'year' && (
+                <label>ปี พ.ศ.
+                  <input type="number" min="2543" max="9999" value={reportFilters.year}
+                    onChange={e => reportChangeFilter('year', e.target.value)}/>
+                </label>
+              )}
+              {reportFilters.period === 'custom' && (
+                <>
+                  <label>เริ่มต้น
+                    <input type="date" value={reportFilters.from} onChange={e => reportChangeFilter('from', e.target.value)}/>
+                  </label>
+                  <label>สิ้นสุด
+                    <input type="date" value={reportFilters.to} onChange={e => reportChangeFilter('to', e.target.value)}/>
+                  </label>
+                </>
+              )}
+              {!isCenter && !isCentral && (
+                <label>ศูนย์
+                  <select value={reportFilters.center} onChange={e => reportChangeFilter('center', e.target.value)}>
+                    <option value="">{isTechnician ? 'ศูนย์ที่รับผิดชอบทั้งหมด' : 'ทุกศูนย์ตามสิทธิ์'}</option>
+                    {centers.filter(c => [1, 2, 4, 7, 8, 9].includes(Number(c.id))).map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <label>สถานะ
+                <select value={reportFilters.status} onChange={e => reportChangeFilter('status', e.target.value)}>
+                  <option value="all">ทุกสถานะ</option>
+                  <option value="open">ยังไม่ปิด</option>
+                  <option value="closed">ปิดงานแล้ว</option>
+                  <option value="cancelled">ยกเลิกแล้ว</option>
+                </select>
+              </label>
+            </div>
+
+            <p className="tech-report-period">{reportPeriodTitle(reportFilters)}</p>
+            {reportBusy && <p className="tech-muted">กำลังรวบรวมใบงานและข้อมูลจุดซ่อม...</p>}
+            {reportError && <p className="tech-error" role="alert">{reportError}</p>}
+
+            <div className="tech-report-kpis">
+              {[
+                ['ใบแจ้งซ่อม', reportTotals.count],
+                ['ปิดงานแล้ว', reportTotals.closed],
+                ['ยังไม่ปิด', reportTotals.open],
+                ['ปิดเกิน SLA', reportTotals.late],
+                ['อุปกรณ์เสีย', reportTotals.damaged],
+                ['ค้าง / Reset', reportTotals.stuck],
+              ].map(([label, value]) => (
+                <div className="tech-report-kpi" key={label}>
+                  <small>{label}</small><strong>{reportBusy ? '—' : value.toLocaleString('th-TH')}</strong>
+                </div>
+              ))}
+            </div>
+
+            
+
+            <div className="tech-report-list-title">
+              <h4 className="tech-report-subhead">ทะเบียนใบแจ้งซ่อม</h4>
+              <small className="tech-muted">{reportRows.length} ใบงาน · แสดงหน้าละ {REPORT_PAGE_SIZE}</small>
+            </div>
+            <div className="tech-report-table-wrap">
+              <table className="tech-report-table">
+                <thead><tr>
+                  <th>เลขใบงาน</th><th>วันแจ้ง</th><th>ศูนย์ / จุดแจ้งซ่อม</th>
+                  <th>สถานะ</th><th>วันปิดงาน</th><th>SLA</th>
+                  <th>อุปกรณ์เสีย</th><th>ค้าง / Reset</th><th>ข้อมูลเพิ่มเติม</th>
+                </tr></thead>
+                <tbody>
+                  {!reportBusy && reportRows.length === 0 && (
+                    <tr><td colSpan={9}>ไม่พบใบงานตามเงื่อนไขที่เลือก</td></tr>
+                  )}
+                  {reportRows.slice(reportPage * REPORT_PAGE_SIZE, (reportPage + 1) * REPORT_PAGE_SIZE).map(order => {
+                    const pieces = EQUIPMENT.map(name => ({ name, ...reportEquipmentCounts(order, name) }))
+                    const damaged = pieces.reduce((n, p) => n + (p.damaged || 0), 0)
+                    const stuck = pieces.reduce((n, p) => n + (p.stuck || 0), 0)
+                    const closed = order.status === 'closed'
+                    const boxNames = [...new Set(order.reportUnits.map(u => u.unit_label).filter(Boolean))].join(', ')
+                    
+                    return (
+                      <tr key={order.id}>
+                        <td><strong>{ticketLabel(order)}</strong></td>
+                        <td>{reportCellDate(order.submitted_at)}</td>
+                        
+                        <td>
+                          {order.center_name_snapshot || CENTER_NAMES[order.center_id] || '—'}
+
+                          <small
+                            className="tech-report-boxnames"
+                            title={boxNames || 'ยังไม่ระบุจุด'}
+                          >
+                            {boxNames || 'ยังไม่ระบุจุด'}
+                          </small>
+                        </td>
+
+                        <td><span className={`tech-report-status ${closed ? 'is-done' : order.status === 'cancelled' ? 'is-cancelled' : 'is-open'}`}>
+                          {STATUS[order.status] || order.status}</span></td>
+                        <td>{closed ? reportCellDate(order.repair_completed_at) : '—'}</td>
+                        <td>{closed ? (order.repair_sla_exceeded ? 'เกิน SLA' : 'ภายใน SLA') : 'รอผลซ่อม'}</td>
+                        <td className="tech-report-num">{closed ? damaged : '—'}</td>
+                        <td className="tech-report-num">{closed ? stuck : '—'}</td>
+                        <td><details className="tech-report-more">
+                          <summary>ดูรายละเอียด</summary>
+                          <div><b>ปัญหา:</b> {closed ? (order.repair_problem_found || '—') : 'รอผลซ่อม'}</div>
+                          <div><b>วิธีแก้:</b> {closed ? (order.repair_fix_method || '—') : 'รอผลซ่อม'}</div>
+                          <div><b>ผู้ปฏิบัติงาน:</b> {closed ? (order.technician_names || '—') : '—'}</div>
+                          {pieces.filter(p => (p.damaged || 0) + (p.stuck || 0) > 0).map(p => (
+                            <div key={p.name}>{p.name}: เสีย {p.damaged} / ค้าง-Reset {p.stuck}</div>
+                          ))}
+                        </details></td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="tech-report-footer">
+              <p className="tech-muted">หมายเหตุ: รายการยังไม่ปิดงานไม่มีผลตรวจอุปกรณ์ · “ค้าง/Reset” ใช้จำนวนตามที่ช่างบันทึกไว้</p>
+              <nav className="tech-pagination" aria-label="แบ่งหน้ารายงาน">
+                <button type="button" disabled={reportBusy || reportPage === 0}
+                  onClick={() => setReportPage(p => Math.max(0, p - 1))}>ก่อนหน้า</button>
+                <span>หน้า {reportPage + 1} / {Math.max(1, Math.ceil(reportRows.length / REPORT_PAGE_SIZE))}</span>
+                <button type="button" disabled={reportBusy || (reportPage + 1) * REPORT_PAGE_SIZE >= reportRows.length}
+                  onClick={() => setReportPage(p => p + 1)}>ถัดไป</button>
+              </nav>
+            </div>
+          </section>
+        ) : (
+          <>
 
         <div className="tech-stats">
           <div className="tech-panel">
@@ -2023,6 +2728,8 @@ const openSavedPrint = async (order) => {
             )}
           </section>
         </div>
+          </>
+        )}
       </main>
 
       

@@ -1080,3 +1080,70 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ===== LOG BOOK สรุปการแจ้งซ่อม (ภายในหน้าเดิม) ===== */
+.tech-view-tabs { display: flex; gap: 9px; margin-bottom: 16px; flex-wrap: wrap; }
+.tech-view-tabs button { border: 1px solid #405875; background: #172336; color: #bad0e6; padding: 11px 18px; border-radius: 9px; font-weight: 700; cursor: pointer; }
+.tech-view-tabs button.is-active { border-color: #75a7eb; color: #fff; background: #25476d; }
+.tech-report-panel { padding: 20px; }
+.tech-report-topline, .tech-report-list-title, .tech-report-footer { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+.tech-report-topline h3 { font-size: 20px; margin: 0 0 5px; }
+.tech-report-export { border: 1px solid #2aa878; color: white; background: #147b5b; padding: 11px 16px; border-radius: 9px; font-weight: 700; cursor: pointer; }
+.tech-report-export:disabled { opacity: .5; cursor: not-allowed; }
+.tech-report-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+.tech-report-filters label { display: flex; flex-direction: column; gap: 6px; color: #c5d7eb; font-size: 12px; font-weight: 700; }
+.tech-report-filters select, .tech-report-filters input { width: 100%; min-width: 0; padding: 10px; min-height: 40px; color: #f3f7ff; background: #1a2a3e; border: 1px solid #3b5370; border-radius: 8px; color-scheme: dark; font: inherit; }
+.tech-report-period { margin: 5px 0 13px; color: #e4edfc; font-size: 13px; font-weight: 700; }
+.tech-report-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; }
+.tech-report-kpi { background: #162a40; border: 1px solid #375270; border-radius: 10px; padding: 13px 12px; }
+.tech-report-kpi small { display: block; color: #acc0d8; font-size: 11px; }
+.tech-report-kpi strong { display: block; color: #fff; font-size: 25px; margin-top: 7px; }
+.tech-report-subhead { margin: 22px 0 10px !important; color: #edf5ff; }
+.tech-report-equipment { display: flex; flex-wrap: wrap; gap: 8px; }
+.tech-report-equipment-item { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 9px 12px; background: #17263b; border: 1px solid #344c66; border-radius: 8px; font-size: 11px; }
+.tech-report-equipment-item b { color: #fff; }
+.tech-report-equipment-item span { color: #b5c8df; }
+.tech-report-equipment-item span strong { color: #fff; }
+.tech-report-table-wrap { overflow: auto; max-width: 100%; border: 1px solid #35516e; border-radius: 10px; }
+.tech-report-table { width: 100%; min-width: 1120px; border-collapse: collapse; font-size: 11px; }
+.tech-report-table th { text-align: left; background: #254468; color: #eff7ff; padding: 12px 10px; position: sticky; top: 0; white-space: nowrap; }
+.tech-report-table td { padding: 11px 10px; border-top: 1px solid #30445d; vertical-align: top; color: #d9e8f9; }
+.tech-report-table tbody tr:nth-child(even) { background: #17263a; }
+.tech-report-table td small { display: block; color: #95acc6; margin-top: 4px; }
+.tech-report-table .tech-report-num { font-weight: 700; text-align: center; }
+.tech-report-status { display: inline-block; white-space: nowrap; font-size: 10px; padding: 5px 7px; border-radius: 6px; }
+.tech-report-status.is-done { color: #adf4d1; background: #174636; }
+.tech-report-status.is-open { color: #ffe2a9; background: #49381d; }
+.tech-report-status.is-cancelled { color: #ffc4cc; background: #542536; }
+.tech-report-more { min-width: 175px; max-width: 310px; }
+.tech-report-more summary { color: #80b8ff; cursor: pointer; font-weight: 700; }
+.tech-report-more div { margin-top: 7px; line-height: 1.5; overflow-wrap: anywhere; }
+.tech-report-footer { margin-top: 12px; }
+.tech-report-footer .tech-pagination { margin: 0; }
+@media (max-width: 1200px) {
+  .tech-report-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tech-report-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .tech-report-panel { padding: 12px; }
+  .tech-report-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tech-report-filters { grid-template-columns: 1fr; }
+  .tech-report-export { width: 100%; }
+  .tech-report-table { min-width: 1040px; }
+}
+
+/* รายงานแจ้งซ่อม: ชื่อตู้แสดง 1 บรรทัด + Tooltip */
+
+.tech-report-table td .tech-report-boxnames {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  color: #95acc6;
+  margin-top: 4px;
+  cursor: help;
+}
