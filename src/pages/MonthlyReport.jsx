@@ -140,6 +140,64 @@ async function getSavedMonthlySectionIds(report, rows) {
       .map(row => Number(row.section_no))
   )
 
+
+  // หัวข้อ 03 ตรวจข้อมูลที่ดึงมาอัตโนมัติ
+  if (report?.center_id != null && !ids.has(3)) {
+    try {
+      const reportYear = Number(report.report_year)
+      const calendarYear =
+        reportYear >= 2400 ? reportYear - 543 : reportYear
+
+      const now = new Date()
+      const completedMonths =
+        calendarYear < now.getFullYear()
+          ? 12
+          : calendarYear === now.getFullYear()
+            ? now.getMonth()
+            : 0
+
+      if (Number.isInteger(calendarYear) && completedMonths > 0) {
+        const startDate = `${calendarYear}-01-01`
+        const endDate = completedMonths === 12
+          ? `${calendarYear + 1}-01-01`
+          : `${calendarYear}-${String(completedMonths + 1).padStart(2, '0')}-01`
+
+        const types = ['unrest', 'accident', 'crime', 'lpr_ai']
+
+        const [daily, monthly] = await Promise.all([
+          supabase
+            .from('usage_daily_stats')
+            .select('incident_type')
+            .eq('center_id', report.center_id)
+            .gte('usage_date', startDate)
+            .lt('usage_date', endDate)
+            .in('incident_type', types)
+            .limit(1),
+
+          supabase
+            .from('usage_monthly_stats')
+            .select('incident_type')
+            .eq('center_id', report.center_id)
+            .gte('month_start', startDate)
+            .lt('month_start', endDate)
+            .in('incident_type', types)
+            .not('event_count', 'is', null)
+            .limit(1),
+        ])
+
+        if (daily.error) throw daily.error
+        if (monthly.error) throw monthly.error
+
+        if (daily.data?.length || monthly.data?.length) {
+          ids.add(3)
+        }
+      }
+    } catch (error) {
+      console.warn('Section 03 status lookup failed:', error)
+    }
+  }
+
+
   // หัวข้อ 04 ใช้ข้อมูลรายปี
   if (report?.center_id != null) {
     try {
