@@ -112,62 +112,114 @@ const formatExcelValue = (value) => {
 }
 
 
+
+
 const normalizeExcelTime = (value) => {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ''
-  ) {
+  if (value === null || value === undefined || value === '') {
     return ''
   }
 
   const pad2 = (number) =>
     String(number).padStart(2, '0')
 
-  // กรณีเป็น JavaScript Date
+  const toTime = (hours, minutes) => {
+    if (
+      !Number.isInteger(hours) ||
+      !Number.isInteger(minutes) ||
+      hours < 0 || hours > 23 ||
+      minutes < 0 || minutes > 59
+    ) {
+      return null
+    }
+
+    return `${pad2(hours)}:${pad2(minutes)}`
+  }
+
+  // กรณี JavaScript Date
   if (value instanceof Date) {
-    if (Number.isNaN(value.getTime())) {
-      return ''
-    }
+    if (Number.isNaN(value.getTime())) return ''
 
-    return `${pad2(value.getHours())}:${pad2(value.getMinutes())}`
+    return toTime(
+      value.getHours(),
+      value.getMinutes()
+    ) || ''
   }
 
-  const text = String(value).trim()
+  // กรณี Excel เก็บเวลาเป็นตัวเลขจริง
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    // 0.25 = 06:00, 0.5 = 12:00
+    if (value >= 0 && value < 1) {
+      const totalMinutes =
+        Math.round(value * 1440) % 1440
 
-  // กรณี Excel เก็บเวลาเป็นตัวเลข
-  // เช่น 0.7916666667 = 19:00
-  if (/^\d+(\.\d+)?$/.test(text)) {
-    const parsed = XLSX.SSF.parse_date_code(
-      Number(text)
-    )
+      return toTime(
+        Math.floor(totalMinutes / 60),
+        totalMinutes % 60
+      ) || ''
+    }
 
-    if (parsed) {
-      return `${pad2(parsed.H)}:${pad2(parsed.M)}`
+    // Excel Serial ที่มีวันที่และเวลาร่วมกัน
+    if (value >= 1000 && !Number.isInteger(value)) {
+      const fractionalDay =
+        value - Math.floor(value)
+
+      const totalMinutes =
+        Math.round(fractionalDay * 1440) % 1440
+
+      return toTime(
+        Math.floor(totalMinutes / 60),
+        totalMinutes % 60
+      ) || ''
     }
   }
 
-  // กรณีเป็นข้อความ HH:mm หรือ HH:mm:ss
+  // จัดการข้อความที่ผู้ใช้พิมพ์
+  const original = String(value).trim()
+
+  // ลบ "น." และช่องว่าง
+  const text = original
+    .replace(/\s*น\s*\.?\s*$/u, '')
+    .replace(/\s+/g, '')
+
+  // เช่น 6, 06, 19
+  if (/^\d{1,2}$/.test(text)) {
+    return toTime(Number(text), 0) || original
+  }
+
+  // รองรับ 6.00, 06.00, 6:00, 06:00
+  // รวมถึง 6.5, 06:30:15
   const match = text.match(
-    /^(\d{1,2}):(\d{2})(?::\d{2})?$/
+    /^(\d{1,2})([.:])(\d{1,2})(?::(\d{2}))?$/
   )
 
   if (match) {
     const hours = Number(match[1])
-    const minutes = Number(match[2])
 
-    if (
-      hours >= 0 &&
-      hours <= 23 &&
-      minutes >= 0 &&
-      minutes <= 59
-    ) {
-      return `${pad2(hours)}:${pad2(minutes)}`
+    // Excel General อาจเปลี่ยน 6.50 เป็น 6.5
+    const minuteText =
+      match[2] === '.' && match[3].length === 1
+        ? match[3] + '0'
+        : match[3]
+
+    const minutes = Number(minuteText)
+
+    const seconds =
+      match[4] === undefined
+        ? 0
+        : Number(match[4])
+
+    if (seconds >= 0 && seconds <= 59) {
+      return toTime(hours, minutes) || original
     }
   }
 
-  return text
+  // ข้อมูลไม่ถูกต้อง คงค่าต้นฉบับ
+  return original
 }
+
+
+
+ 
 
 
 const normalizeEventDate = (value) => {
@@ -1766,6 +1818,41 @@ const Section02Editor = forwardRef(
       XLSX.utils.aoa_to_sheet(
         worksheetData
       )
+    
+    
+    // =========================
+    // EXCEL TEMPLATE TIME FORMAT
+    // Column C = เวลา
+    // Column H = เวลาเกิดเหตุ
+    // =========================
+
+    // เตรียมพื้นที่กรอกข้อมูล 2,000 แถว
+    const MAX_TEMPLATE_ROWS = 2000
+
+    for (
+      let row = 2;
+      row <= MAX_TEMPLATE_ROWS + 1;
+      row++
+    ) {
+      // Column C : เวลา
+      worksheet[`C${row}`] = {
+        t: 's',
+        v: '',
+        z: '@',
+      }
+
+      // Column H : เวลาเกิดเหตุ
+      worksheet[`H${row}`] = {
+        t: 's',
+        v: '',
+        z: '@',
+      }
+    }
+
+    // ขยายขอบเขต Worksheet
+    worksheet['!ref'] =
+      `A1:L${MAX_TEMPLATE_ROWS + 1}`
+  
 
     worksheet['!cols'] = [
       { wch: 8 },   // ลำดับ
