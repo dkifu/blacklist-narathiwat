@@ -340,6 +340,9 @@ export default forwardRef(function Section06Editor({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   const [saving, setSaving] = useState(false)
+  const [copyingPreviousMonth, setCopyingPreviousMonth] = useState(false)
+  const copySelectionRef = useRef('')
+  copySelectionRef.current = `${report?.id}|${report?.center_id}|${center?.id}|${month}|${year}`
   const [exporting, setExporting] = useState(0)
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('')
@@ -387,7 +390,7 @@ export default forwardRef(function Section06Editor({
   const nightTotal = nightNormal + nightAbnormal
 
   const disabled =
-    loading || saving || !!loadError
+    loading || saving || copyingPreviousMonth || !!loadError
 
   // ========================================
   // LOAD FROM SUPABASE
@@ -543,6 +546,86 @@ export default forwardRef(function Section06Editor({
   // ========================================
   // SAVE BOTH PAGES
   // ========================================
+
+  const copyPreviousMonth = async () => {
+    // นำเข้าข้อมูลลงฟอร์มเท่านั้น ผู้ใช้ยังต้องกดบันทึกเอง
+    if (!canEdit || !validReport || disabled) return
+    const selectionAtStart = copySelectionRef.current
+
+    const currentMonth = Number(report.report_month)
+    const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1
+    const previousYear = Number(report.report_year) - (currentMonth === 1 ? 1 : 0)
+    const previousLabel = `${MONTHS[previousMonth - 1]} ${previousYear}`
+    const currentLabel = `${MONTHS[currentMonth - 1]} ${report.report_year}`
+
+    setCopyingPreviousMonth(true)
+    setMessage('')
+    setMessageType('')
+
+    try {
+      // ล็อกศูนย์จาก report ปัจจุบัน ห้ามใช้รายงานของศูนย์อื่น
+      const { data: previousReport, error: reportError } = await supabase
+        .from('monthly_reports')
+        .select('id')
+        .eq('center_id', report.center_id)
+        .eq('report_month', previousMonth)
+        .eq('report_year', previousYear)
+        .maybeSingle()
+
+      if (copySelectionRef.current !== selectionAtStart) return
+      if (reportError) throw reportError
+      if (!previousReport) {
+        throw new Error(`ไม่พบรายงานเดือน${previousLabel} ของ${center?.name || 'ศูนย์นี้'}`)
+      }
+
+      const { data: previousSection, error: sectionError } = await supabase
+        .from('monthly_report_sections')
+        .select('content')
+        .eq('report_id', previousReport.id)
+        .eq('section_no', 6)
+        .maybeSingle()
+
+      if (copySelectionRef.current !== selectionAtStart) return
+      if (sectionError) throw sectionError
+      if (previousSection?.content?.version !== 1) {
+        throw new Error(`เดือน${previousLabel} ยังไม่มีข้อมูลหัวข้อ 06 ที่บันทึกไว้`)
+      }
+
+      // ถ้ารายงานปัจจุบันมีข้อมูลแล้ว ถามก่อนแทนค่าทั้งสองหน้า
+      if ((hasUnsavedChanges || hasStoredData) && !window.confirm(
+        `ดึงข้อมูลหัวข้อ 06 เดือน${previousLabel} มาแทนข้อมูลในฟอร์มเดือน${currentLabel} ทั้ง 2 หน้า?\n` +
+        'ข้อมูลที่แก้ในฟอร์มจะถูกแทนที่ แต่ฐานข้อมูลยังไม่เปลี่ยนจนกว่าจะกดบันทึก'
+      )) return
+      if (copySelectionRef.current !== selectionAtStart) return
+
+      const stored = previousSection.content
+      setData({
+        normal: number(stored.normal),
+        issues: Object.fromEntries(
+          PROBLEMS.map(item => [item.key, number(stored.issues?.[item.key])])
+        ),
+        parameter: {
+          dayNormal: number(stored.parameter?.dayNormal),
+          dayAbnormal: number(stored.parameter?.dayAbnormal),
+          nightNormal: number(stored.parameter?.nightNormal),
+          nightAbnormal: number(stored.parameter?.nightAbnormal),
+        },
+      })
+      setHasUnsavedChanges(true)
+      setMessageType('success')
+      setMessage(
+        `ดึงข้อมูลหัวข้อ 06 จากเดือน${previousLabel} ของศูนย์นี้แล้ว · ` +
+        'ตรวจสอบข้อมูลทั้ง 2 หน้า แล้วกดบันทึกข้อมูล'
+      )
+    } catch (error) {
+      if (copySelectionRef.current !== selectionAtStart) return
+      console.error('Section 06 copy previous month:', error)
+      setMessageType('error')
+      setMessage(error.message || 'ไม่สามารถดึงข้อมูลเดือนที่แล้วได้')
+    } finally {
+      setCopyingPreviousMonth(false)
+    }
+  }
 
   const save = async () => {
     if (!canEdit || !validReport || disabled) return
@@ -792,6 +875,19 @@ export default forwardRef(function Section06Editor({
           </div>
 
           <div className="section06-panel-body">
+            <div className="section06-copy-box">
+              <button
+                className="section06-copy-previous"
+                type="button"
+                onClick={copyPreviousMonth}
+                disabled={disabled || !validReport}
+              >
+                {copyingPreviousMonth
+                  ? 'กำลังดึงข้อมูลเดือนที่แล้ว...'
+                  : '↶ ดึงข้อมูลจากเดือนที่แล้ว'}
+              </button>
+              <small>เฉพาะศูนย์นี้ · ครบทั้ง 2 หน้า · ต้องกดบันทึกเอง</small>
+            </div>
             {activePage === 1 && (
               <>
                 <h4>หน้า 1 · สถานะมุมภาพ</h4>
