@@ -652,6 +652,7 @@ function MonthlyReport({ profile }) {
   const savedSectionIdSet =
     new Set(savedSectionIds)
   if (currentReport?.id != null) {
+    savedSectionIdSet.add(1)
     savedSectionIdSet.add(8)
   }
   // ========================================

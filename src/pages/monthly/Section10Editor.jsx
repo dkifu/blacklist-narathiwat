@@ -87,6 +87,8 @@ const normalizeVehicle = v => ({
   ...v,
 
   plate: normalizePlate(v?.plate),
+  time: formattedTime(v?.time),
+  officerTime: formattedTime(v?.officerTime),
 
   // อ่านข้อมูลเดิมที่เคยบันทึกก่อนเปลี่ยนเทมเพลตได้ โดยไม่ลบข้อมูลเก่า
   location: safe(v?.location ?? v?.checkpoint),
@@ -230,19 +232,67 @@ function dateBE(value) {
 
 
 
+// SECTION10_TIME_DOT_V1: รับเวลาได้หลายรูปแบบ แสดงเป็น HH.MM น. เสมอ
 function formattedTime(value) {
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return `${String(value.getHours()).padStart(2,'0')}:${String(value.getMinutes()).padStart(2,'0')} น.`
+  if (value == null || value === '') return ''
+
+  const pad = n => String(n).padStart(2, '0')
+  const output = (hours, minutes) => {
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes) ||
+        hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null
+    return `${pad(hours)}.${pad(minutes)} น.`
   }
-  const text = safe(value)
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return ''
+    return output(value.getHours(), value.getMinutes()) || ''
+  }
+
+  // Excel เก็บเวลาที่เลือกชนิด Time เป็นเศษส่วนของ 1 วัน
+  // เช่น 0.25 = 06:00, 0.75 = 18:00
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value < 1) {
+    const totalMinutes = Math.round(value * 1440) % 1440
+    return output(Math.floor(totalMinutes / 60), totalMinutes % 60) || ''
+  }
+
+  const original = safe(value)
+  const text = original
+    .normalize('NFKC')
+    .replace(/[๐-๙]/g, digit => String(digit.charCodeAt(0) - 0x0E50))
+    .replace(/\s+/g, '')
+    .replace(/น\.?$/u, '')
+
   if (!text) return ''
-  if (typeof value === 'number' && value >= 0 && value < 1) {
-    const minute = Math.round(value * 1440) % 1440
-    return `${String(Math.floor(minute/60)).padStart(2,'0')}:${String(minute%60).padStart(2,'0')} น.`
+
+  // เช่น 6, 06, 17, 6:00, 06.00, 17:21, 17:21:00
+  const matched = text.match(/^(\d{1,2})(?:([.:])(\d{1,2})(?::\d{1,2})?)?$/)
+  if (matched) {
+    const hours = Number(matched[1])
+    let minutes = 0
+    if (matched[3] !== undefined) {
+      // ตัวเลข 6.50 ใน Excel General จะกลายเป็น 6.5:
+      // ต้องอ่านเป็น 06.50 ไม่ใช่ 06.05
+      if (matched[2] === '.' && typeof value === 'number') {
+        minutes = Math.round((value - Math.trunc(value)) * 100)
+      } else if (matched[2] === '.' && matched[3].length === 1) {
+        minutes = Number(matched[3]) * 10
+      } else {
+        minutes = Number(matched[3])
+      }
+    }
+    return output(hours, minutes) || original
   }
-  const match = text.match(/^(\d{1,2})[.:](\d{2})(?::\d{2})?/)
-  return match ? `${match[1].padStart(2,'0')}:${match[2]} น.` : text
+
+  // เผื่อผู้ใช้พิมพ์ 600 หรือ 0600 ในช่องชนิด Text
+  const compact = text.match(/^(\d{3,4})$/)
+  if (compact) {
+    return output(Number(compact[1].slice(0, -2)), Number(compact[1].slice(-2))) || original
+  }
+
+  // ไม่สร้างเวลาผิดจากค่าที่ไม่รู้จัก เช่น 25:99
+  return original
 }
+
 async function compressImage(file) {
   if (!['image/jpeg','image/png','image/webp'].includes(file.type)) throw new Error('รูปต้องเป็น JPG, PNG หรือ WEBP')
   if (file.size > 15 * 1024 * 1024) throw new Error('ไฟล์ภาพต้องไม่เกิน 15 MB')
@@ -701,9 +751,19 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
   const downloadTemplate=()=>{
     const workbook=XLSX.utils.book_new()
     // ทั้งเทมเพลตและตารางหน้าแรกใช้ FIELD_CONFIG ชุดเดียวกัน
-    const rows=[HEADERS,...displayRows.map(v => FIELDS.map(key=>v[key] ?? ''))]
+    const rows=[HEADERS,...displayRows.map(v => FIELDS.map(key => ['time', 'officerTime'].includes(key) ? formattedTime(v[key]) : (v[key] ?? '')))]
     const sheet=XLSX.utils.aoa_to_sheet(rows)
     sheet['!cols']=FIELD_CONFIG.map(field=>({wch:field.width}))
+    // เตรียมช่อง B และ K ให้เป็น Text สำหรับรายการรถสูงสุด 150 คัน
+    // ผู้ใช้พิมพ์เวลาได้ทั้ง 6, 6.00, 6:00 และแบบมี "น."
+    const preparedRows = Math.max(rows.length, 151)
+    for (let row = 2; row <= preparedRows; row++) {
+      for (const column of ['B', 'K']) {
+        const address = `${column}${row}`
+        sheet[address] = { ...(sheet[address] || { t: 's', v: '' }), z: '@' }
+      }
+    }
+    sheet['!ref'] = `A1:L${preparedRows}`
     sheet['!freeze']={xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft',state:'frozen'}
     sheet['!autofilter']={ref:`A1:L${Math.max(2,rows.length)}`}
     XLSX.utils.book_append_sheet(workbook,sheet,'รายการรถ')

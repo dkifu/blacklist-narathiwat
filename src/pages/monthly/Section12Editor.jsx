@@ -79,6 +79,69 @@ const normalizeAnnual = rows =>
 
 const safeText = value => String(value ?? '').trim()
 
+// SECTION12_TIME_DOT_V1 — ใช้รูปแบบ HH.MM น. สำหรับเวลา Face ID ทุกจุด
+const formattedCaseTime = value => {
+  if (value == null || value === '') return ''
+  const original = safeText(value)
+  const pad = number => String(number).padStart(2, '0')
+  const makeTime = (hours, minutes) => (
+    Number.isInteger(hours) && Number.isInteger(minutes) &&
+    hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59
+      ? `${pad(hours)}.${pad(minutes)} น.`
+      : null
+  )
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return original
+    return makeTime(value.getHours(), value.getMinutes()) || original
+  }
+
+  // Excel Time เก็บเป็นเศษส่วนของวัน: 0.25 = 06:00, 0.75 = 18:00
+  if (typeof value === 'number' && Number.isFinite(value) &&
+      value >= 0 && value < 1) {
+    const totalMinutes = Math.round(value * 1440) % 1440
+    return makeTime(Math.floor(totalMinutes / 60), totalMinutes % 60) || original
+  }
+
+  const text = original.normalize('NFKC')
+    .replace(/[๐-๙]/g, digit => String(digit.charCodeAt(0) - 0x0E50))
+    .replace(/\s+/g, '')
+    .replace(/น\.?$/u, '')
+
+  if (!text) return ''
+
+  // เช่น 6 / 06 / 6.00 / 6:00 / 06.00น. / 14.47น. / 17:21:00
+  const match = text.match(/^(\d{1,2})(?:([.:])(\d{1,2})(?::\d{1,2})?)?$/)
+  if (match) {
+    const hours = Number(match[1])
+    let minutes = 0
+    if (match[3] !== undefined) {
+      if (match[2] === '.' && typeof value === 'number') {
+        // Excel General ตัด 0 ท้าย เช่น 6.50 ถูกเก็บเป็น 6.5
+        minutes = Math.round((value - Math.trunc(value)) * 100)
+      } else if (match[2] === '.' && match[3].length === 1) {
+        minutes = Number(match[3]) * 10
+      } else {
+        minutes = Number(match[3])
+      }
+    }
+    return makeTime(hours, minutes) || original
+  }
+
+  // เพิ่มเติม: 600, 0600, 1721 (หากพิมพ์เป็น Text)
+  const compact = text.match(/^(\d{3,4})$/)
+  if (compact) {
+    return makeTime(
+      Number(compact[1].slice(0, -2)),
+      Number(compact[1].slice(-2))
+    ) || original
+  }
+
+  // ค่าที่ผิดรูปแบบจะไม่ถูกเดา/แก้เป็นเวลาที่ไม่ตรงต้นฉบับ
+  return original
+}
+
+
 const normalizeResult = value => {
   const text = safeText(value).toLowerCase()
 
@@ -726,7 +789,7 @@ function PageAnnual({
 function FaceCaseCard({ item, index }) {
   const dateTime = [
     item.date,
-    item.time,
+    formattedCaseTime(item.time),
   ].filter(Boolean).join(' ')
 
   const location = item.checkpoint || ''
@@ -1199,6 +1262,7 @@ export default forwardRef(function Section12Editor({
             ? current.content.cases.map(c => ({
               ...EMPTY_CASE(),
               ...c,
+              time: formattedCaseTime(c.time),
               result: normalizeResult(c.result),
             }))
             : []
@@ -1390,7 +1454,7 @@ export default forwardRef(function Section12Editor({
       headers,
       ...cases.map(c => [
         c.date,
-        c.time,
+        formattedCaseTime(c.time),
         c.checkpoint,
         c.district,
         c.target,
@@ -1405,7 +1469,17 @@ export default forwardRef(function Section12Editor({
       30, 36, 20, 42,
     ].map(wch => ({ wch }))
 
-    
+    // กำหนดคอลัมน์ B (เวลา) ใน Template เป็น Text สูงสุด 100 เคส
+    // ให้พิมพ์ 6, 6.00, 6:00 หรือ 06.00 น. โดย Excel ไม่เปลี่ยนชนิดเอง
+    const preparedRows = Math.max(101, cases.length + 1)
+    for (let row = 2; row <= preparedRows; row++) {
+      const address = `B${row}`
+      caseSheet[address] = {
+        ...(caseSheet[address] || { t: 's', v: '' }),
+        z: '@',
+      }
+    }
+    caseSheet['!ref'] = `A1:H${preparedRows}`
 
     XLSX.utils.book_append_sheet(
       book,
@@ -1490,9 +1564,16 @@ export default forwardRef(function Section12Editor({
           {
             header: 1,
             defval: '',
-            raw: false,
+            raw: false, // วัน/ข้อความยังอ่านแบบเดิม ไม่เปลี่ยนการแปลวันที่
           }
         )
+
+      // อ่านค่าเวลาแบบ raw แยกต่างหากเพื่อรองรับ Excel Time (เช่น 0.25)
+      // โดยไม่กระทบชนิดข้อมูลวันที่และคอลัมน์อื่น ๆ
+      const rawTimeCases = XLSX.utils.sheet_to_json(
+        book.Sheets['รายการเคส'],
+        { header: 1, defval: '', raw: true }
+      )
 
       // ========================================
     // CHECK EXCEL CASE COLUMNS
@@ -1535,7 +1616,7 @@ export default forwardRef(function Section12Editor({
 
     const caseKey = c => [
       safeText(c.date),
-      safeText(c.time),
+      formattedCaseTime(c.time),
       safeText(c.checkpoint),
       safeText(c.target),
     ].join('|')
@@ -1562,14 +1643,14 @@ export default forwardRef(function Section12Editor({
     // IMPORT CASES TO SELECTED REPORT MONTH
     // ========================================
 
-    for (const row of rawCases.slice(1)) {
+    for (const [rowIndex, row] of rawCases.slice(1).entries()) {
       if (row.every(cell => !safeText(cell))) {
         continue
       }
 
       const importedCase = {
         date: safeText(row[offset + 0]),
-        time: safeText(row[offset + 1]),
+        time: formattedCaseTime(rawTimeCases[rowIndex + 1]?.[offset + 1] ?? row[offset + 1]),
         checkpoint: safeText(row[offset + 2]),
         district: safeText(row[offset + 3]),
         target: safeText(row[offset + 4]),
@@ -1696,6 +1777,7 @@ export default forwardRef(function Section12Editor({
         annual: normalizeAnnual(annual),
         cases: cases.map(c => ({
           ...c,
+          time: formattedCaseTime(c.time),
           result: normalizeResult(c.result),
         })),
         alertStatEdits: nextLocalAlertEdits,
@@ -2198,6 +2280,14 @@ export default forwardRef(function Section12Editor({
                                 e.target.value
                               )
                             }
+                            onBlur={e => {
+                              if (key !== 'time') return
+                              const normalized = formattedCaseTime(e.target.value)
+                              if (normalized !== e.target.value) {
+                                editCase(c.id, 'time', normalized)
+                              }
+                            }}
+                            placeholder={key === 'time' ? '06.00 น.' : ''}
                           />
                         </label>
                       ))}
