@@ -145,6 +145,7 @@ const Section01Editor = forwardRef(
   const coverWrapRef = useRef(null)
 
   const pageRef = useRef(null)
+  const headerTitleRef = useRef(null)
 
   const [coverScale, setCoverScale] =
     useState(null)  
@@ -789,6 +790,53 @@ const Section01Editor = forwardRef(
         }
 
         }, [canEdit, sectionLoading])
+
+        // AUTO FIT HEADER TITLE — บรรทัดเดียว
+        useEffect(() => {
+          const el = headerTitleRef.current
+          if (!el) return
+
+          let cancelled = false
+
+          const fitTitle = () => {
+            if (cancelled) return
+
+            const MAX_SIZE = 28
+            const MIN_SIZE = 5
+
+            // เริ่มวัดจากขนาดปกติ
+            el.style.fontSize = `${MAX_SIZE}px`
+
+            const availableWidth = el.clientWidth - 4
+            const textWidth = el.scrollWidth
+
+            if (availableWidth <= 0 || textWidth <= 0) return
+
+            const size = Math.min(
+              MAX_SIZE,
+              (MAX_SIZE * availableWidth) / textWidth
+            )
+
+            el.style.fontSize =
+              `${Math.max(MIN_SIZE, Math.floor(size * 10) / 10)}px`
+          }
+
+          fitTitle()
+
+          const observer = new ResizeObserver(fitTitle)
+          observer.observe(el.parentElement)
+
+          document.fonts?.ready.then(fitTitle)
+
+          return () => {
+            cancelled = true
+            observer.disconnect()
+          }
+        }, [
+          form.headerNameTh,
+          form.stationName,
+          sectionLoading,
+        ])
 
   const changeField =
     (field, value) => {
@@ -2023,7 +2071,7 @@ const Section01Editor = forwardRef(
 
                     <div className="cover-brand-copy">
 
-                        <strong>
+                        <strong ref={headerTitleRef}>
                             {form.headerNameTh ||
                             form.stationName ||
                             'สถานีตำรวจ'}

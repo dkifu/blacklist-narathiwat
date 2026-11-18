@@ -1579,15 +1579,27 @@
   object-fit: contain;
 }
 
+.cover-brand {
+  min-width: 0;
+}
+
 .cover-brand-copy {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 
 .cover-brand-copy strong {
+  display: block;
+  width: 100%;
+  min-width: 0;
+
   font-size: 28px;
   font-weight: 900;
   line-height: 1.15;
+
+  white-space: nowrap;
 }
 
 .cover-brand-copy span {
@@ -2579,3 +2591,41 @@
   visibility: hidden;
 }
 
+/* =========================================
+   HEADER TITLE — EXPAND BEFORE SHRINK
+========================================= */
+
+/* ขยายพื้นที่ชื่อจนถึงก่อน MONTHLY REPORT */
+.cover-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 32px;
+}
+
+/* ให้โลโก้คงขนาดเดิม ไม่ขยายตามพื้นที่ */
+.cover-brand {
+  min-width: 0;
+  gap: 26px;
+}
+
+.cover-brand-logo {
+  width: 68px;
+  height: 68px;
+  flex: 0 0 68px;
+}
+
+/* พื้นที่ข้อความขยายจนถึงขีดจำกัด */
+.cover-brand-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.cover-brand-copy strong {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+}
+
+/* จัด MONTHLY REPORT ไว้ด้านขวา */
+.cover-header-meta {
+  transform: translateY(5px);
+}
