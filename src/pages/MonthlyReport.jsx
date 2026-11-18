@@ -4,6 +4,7 @@ import {
   useState,
 } from 'react'
 import { jsPDF } from 'jspdf'
+import { flushSync } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import './MonthlyReport.css'
 import Section01Editor from './monthly/Section01Editor'
@@ -18,6 +19,7 @@ import Section09Editor from './monthly/Section09Editor'
 import Section10Editor from './monthly/Section10Editor'
 import Section11Editor from './monthly/Section11Editor'
 import Section12Editor from './monthly/Section12Editor'
+import SctCombinedSection from './monthly/SctCombinedSection'
 const MONTHS = [
   { value: 1, label: 'มกราคม' },
   { value: 2, label: 'กุมภาพันธ์' },
@@ -90,10 +92,32 @@ const REPORT_SECTIONS = [
   },
   {
     id: 12,
-    title: 'สรุปการแจ้งเตือนการตรวจจับใบหน้าตามหมายจับ',
-    detail: 'สรุป Face Detection และการแจ้งเตือนตามหมายจับ',
+    title: 'สรุปการแจ้งเตือนการตรวจจับใบหน้า',
+    detail: 'สรุป Face Detection และการแจ้งเตือน',
   },
 ]
+// Reporting centers included in the ศชต. consolidated monthly report.
+const SCT_CENTER_ID = 10
+const SCT_SOURCE_CENTER_IDS = new Set([1, 2, 4, 7, 8, 9])
+// SCT_STATUS_ALL_CENTERS_V2 — six fixed sources for the public completeness board.
+// Fallback names allow center accounts (whose center selector is restricted)
+// to see every center's status WITHOUT expanding their report access.
+const SCT_STATUS_CENTERS = [
+  { id: 1, name: 'ศูนย์นราธิวาส' },
+  { id: 2, name: 'ศูนย์ปัตตานี' },
+  { id: 4, name: 'ศูนย์หาดใหญ่' },
+  { id: 7, name: 'ศูนย์ตากใบ' },
+  { id: 8, name: 'ศูนย์สุไหง-โกลก' },
+  { id: 9, name: 'ศูนย์เบตง' },
+]
+const SCT_REQUIRED_SECTIONS = REPORT_SECTIONS.filter(section => section.id !== 1)
+const isSctCenter = center =>
+  Number(center?.id) === SCT_CENTER_ID ||
+  /ศชต\.|ศูนย์ปฏิบัติการสำนักงานตำรวจแห่งชาติส่วนหน้า/u.test(center?.name || '')
+const sctHasSection = (item, id) =>
+  !!item?.report && (id === 8 || item.savedIds.includes(id))
+const sctSectionLabel = (id) => String(id).padStart(2, '0')
+
 // ==========================================
 // CHECK SAVED SECTION STATUS
 // ==========================================
@@ -347,6 +371,13 @@ function MonthlyReport({ profile }) {
     useState('')
   const [centers, setCenters] =
     useState([])
+  const [sctEntries, setSctEntries] = useState([])
+  const [sctLoading, setSctLoading] = useState(false)
+  const [sctError, setSctError] = useState('')
+  const [sctRefresh, setSctRefresh] = useState(0)
+  const [sctExpandedId, setSctExpandedId] = useState(null)
+  const [sctDetailCenterId, setSctDetailCenterId] = useState(null)
+  const [pdfExportCenterId, setPdfExportCenterId] = useState(null)
   const [selectedCenterId, setSelectedCenterId] =
     useState('')
   const [month, setMonth] = useState(
@@ -364,6 +395,8 @@ function MonthlyReport({ profile }) {
   const isSupervisor = role === 'supervisor'
   const isOperator = role === 'operator'
   const isCenter = role === 'center'
+  const isSctMode = Number(selectedCenterId) === SCT_CENTER_ID ||
+    isSctCenter(centers.find(center => String(center.id) === String(selectedCenterId)))
   // ========================================
   // EFFECTS
   // ========================================
@@ -371,6 +404,7 @@ function MonthlyReport({ profile }) {
     loadCenters()
   }, [profile?.id, profile?.center_id])
   useEffect(() => {
+    setSctDetailCenterId(null)
     setEditorOpen(false)
     setEditMode(false)
     setReportHasContent(false)
@@ -383,8 +417,63 @@ function MonthlyReport({ profile }) {
       setCurrentReport(null)
       return
     }
+    if (isSctMode) setEditorOpen(true)
     loadMonthlyReport()
   }, [selectedCenterId, month, year])
+
+  // The consolidated report is computed from the six source-center reports.
+  // Never insert or modify their source rows when viewing as ศชต.
+  useEffect(() => {
+    let active = true
+    if (!selectedCenterId) {
+      setSctEntries([])
+      setSctError('')
+      setSctLoading(false)
+      return () => { active = false }
+    }
+    const fetchSct = async () => {
+      setSctLoading(true)
+      setSctError('')
+      setSctEntries([])
+      const reportingCenters = SCT_STATUS_CENTERS.map(source =>
+        centers.find(center => Number(center.id) === source.id) || source
+      )
+      try {
+        const { data: reports, error } = await supabase
+          .from('monthly_reports')
+          .select('id,center_id,report_month,report_year,status')
+          .in('center_id', reportingCenters.map(c => c.id))
+          .eq('report_month', Number(month))
+          .eq('report_year', Number(year))
+        if (error) throw error
+        const reportsByCenter = new Map((reports || []).map(r => [Number(r.center_id), r]))
+        const entries = await Promise.all(reportingCenters.map(async center => {
+          const report = reportsByCenter.get(Number(center.id)) || null
+          if (!report) return { center, report: null, savedIds: [], error: '' }
+          try {
+            const { data: flags, error: flagError } = await supabase.rpc(
+              'monthly_report_get_section_flags', { p_report_id: report.id }
+            )
+            if (flagError) throw flagError
+            const savedIds = await getSavedMonthlySectionIds(report, flags || [])
+            return { center, report, savedIds, error: '' }
+          } catch (error) {
+            return { center, report, savedIds: [], error: error.message || 'ตรวจสอบหัวข้อไม่ได้' }
+          }
+        }))
+        if (active) setSctEntries(entries)
+      } catch (error) {
+        if (active) {
+          setSctEntries([])
+          setSctError(error.message || 'ไม่สามารถตรวจสอบรายงานรวมของศชต.ได้')
+        }
+      } finally {
+        if (active) setSctLoading(false)
+      }
+    }
+    fetchSct()
+    return () => { active = false }
+  }, [selectedCenterId, centers, month, year, sctRefresh])
   // ========================================
   // LOAD CENTERS
   // ========================================
@@ -395,7 +484,7 @@ function MonthlyReport({ profile }) {
       .select('id, name, code, active')
       .eq('active', true)
       .order('name')
-    if (isCenter && profile?.center_id) {
+    if (isCenter && profile?.center_id && Number(profile.center_id) !== SCT_CENTER_ID) {
       query = query.eq('id', profile.center_id)
     }
     const { data, error } = await query
@@ -457,7 +546,7 @@ function MonthlyReport({ profile }) {
     }
     if (!data) {
       setCurrentReport(null)
-      setEditorOpen(false)
+      setEditorOpen(isSctMode)
       setEditMode(false)
       setReportHasContent(false)
       setReportLoading(false)
@@ -544,6 +633,7 @@ function MonthlyReport({ profile }) {
       reportId: currentReport.id,
       ids,
     })
+    setSctRefresh(previous => previous + 1)
   }
 
 
@@ -655,6 +745,53 @@ function MonthlyReport({ profile }) {
     savedSectionIdSet.add(1)
     savedSectionIdSet.add(8)
   }
+  if (isSctMode) {
+    for (const item of SCT_REQUIRED_SECTIONS) {
+      if (sctEntries.some(entry => sctHasSection(entry, item.id))) {
+        savedSectionIdSet.add(item.id)
+      }
+    }
+  }
+  const sctDetailEntry = sctEntries.find(entry =>
+    String(entry.center.id) === String(sctDetailCenterId)
+  )
+  const combinedView = isSctMode && selectedSection !== 1 && !sctDetailCenterId
+  const displayReport = isSctMode && selectedSection !== 1
+    ? sctDetailEntry?.report || null : currentReport
+  const displayCenter = isSctMode && selectedSection !== 1
+    ? sctDetailEntry?.center || null : selectedCenter
+  const canEditSection = canEdit && (!isSctMode || selectedSection === 1)
+  const exportEntry = sctEntries.find(entry =>
+    String(entry.center.id) === String(pdfExportCenterId)
+  )
+  const exportReport = isSctMode && pdfExportCenterId !== null
+    ? exportEntry?.report || null : currentReport
+  const exportCenter = isSctMode && pdfExportCenterId !== null
+    ? exportEntry?.center || null : selectedCenter
+  const sctCompletedCount = sctEntries.filter(entry =>
+    !entry.error && entry.report &&
+    SCT_REQUIRED_SECTIONS.every(item => sctHasSection(entry, item.id))
+  ).length
+  // SCT_STATUS_ALL_CENTERS_V2: show a compact 6/6 progress pill.
+  // Never treat loading or permission errors as zero-completeness.
+  const sctSectionProgress = sectionId => {
+    const total = SCT_STATUS_CENTERS.length
+    if (sctLoading) {
+      return { label: `…/${total}`, state: 'pending', title: 'กำลังตรวจสอบ' }
+    }
+    if (sctError || sctEntries.some(entry => entry.error)) {
+      return { label: `?/${total}`, state: 'unknown', title: 'ไม่สามารถตรวจสอบบางศูนย์ได้' }
+    }
+    if (sctEntries.length !== total) {
+      return { label: `…/${total}`, state: 'pending', title: 'กำลังเตรียมข้อมูล' }
+    }
+    const count = sctEntries.filter(entry => sctHasSection(entry, sectionId)).length
+    return {
+      label: `${count}/${total}`,
+      state: count === total ? 'complete' : 'missing',
+      title: count === total ? 'ครบทุกศูนย์' : `ยังขาด ${total - count} ศูนย์`,
+    }
+  }
   // ========================================
   // PDF PRESETS
   // ========================================
@@ -740,71 +877,116 @@ function MonthlyReport({ profile }) {
       const sectionExporters = [
         {
           sectionNo: 1,
-          exporter: section01ExportRef.current,
+          exporter: section01ExportRef,
         },
         {
           sectionNo: 2,
-          exporter: section02ExportRef.current,
+          exporter: section02ExportRef,
         },
         {
           sectionNo: 3,
-          exporter: section03ExportRef.current,
+          exporter: section03ExportRef,
         },
         {
           sectionNo: 4,
-          exporter: section04ExportRef.current,
+          exporter: section04ExportRef,
         },
         {
           sectionNo: 5,
-          exporter: section05ExportRef.current,
+          exporter: section05ExportRef,
         },
         {
           sectionNo: 6,
-          exporter: section06ExportRef.current,
+          exporter: section06ExportRef,
         },
         {
           sectionNo: 7,
-          exporter: section07ExportRef.current,
+          exporter: section07ExportRef,
         },
         {
           sectionNo: 8,
-          exporter: section08ExportRef.current,
+          exporter: section08ExportRef,
         },
         {
           sectionNo: 9,
-          exporter: section09ExportRef.current,
+          exporter: section09ExportRef,
         },
         {
           sectionNo: 10,
-          exporter: section10ExportRef.current,
+          exporter: section10ExportRef,
         },
         {
           sectionNo: 11,
-          exporter: section11ExportRef.current,
+          exporter: section11ExportRef,
         },
         {
           sectionNo: 12,
-          exporter: section12ExportRef.current,
+          exporter: section12ExportRef,
         },
       ]
       sectionExporters.sort(
         (a, b) => a.sectionNo - b.sectionNo
       )
-      for (const item of sectionExporters) {
-        if (
-          !requestedSections.has(item.sectionNo)
-        ) continue
-        const exporter = item.exporter
-        if (!exporter) continue
-        if (!exporter.isReady()) {
-          throw new Error(
-            `หัวข้อ ${String(item.sectionNo).padStart(2, '0')} กำลังโหลดข้อมูล`
-          )
+      const waitForExporter = async item => {
+        const deadline = Date.now() + 60000
+        while (Date.now() < deadline) {
+          const instance = item.exporter.current
+          if (instance?.isReady?.()) return instance
+          await new Promise(resolve => setTimeout(resolve, 160))
         }
-        if (!exporter.hasData()) continue
-        const pages =
-          await exporter.exportPdfPages()
-        allPages.push(...pages)
+        throw new Error(`หัวข้อ ${sctSectionLabel(item.sectionNo)} โหลดข้อมูลไม่สำเร็จหรือใช้เวลานานเกินไป`)
+      }
+      if (isSctMode) {
+        if (sctLoading || sctError ||
+          sctEntries.length !== SCT_SOURCE_CENTER_IDS.size ||
+          sctEntries.some(entry => entry.error)) {
+          throw new Error('ยังไม่สามารถอ่านข้อมูลครบทั้ง 6 ศูนย์ กรุณาตรวจสอบสถานะรายศูนย์ก่อน')
+        }
+        const bySection = new Map()
+        const append = (number, pages, sourceCenter) => {
+          if (!bySection.has(number)) bySection.set(number, [])
+          bySection.get(number).push(...pages.map(page => ({
+            ...page, sourceCenter,
+          })))
+        }
+        // Cover and appendix divider are owned by ศชต. only.
+        for (const number of [1, 8]) {
+          if (!requestedSections.has(number)) continue
+          const item = sectionExporters.find(x => x.sectionNo === number)
+          const exporter = await waitForExporter(item)
+          if (exporter.hasData()) append(number, await exporter.exportPdfPages(), selectedCenter?.code || 'SCT')
+        }
+        const requestedSourceSections = sectionExporters.filter(item =>
+          item.sectionNo !== 1 && item.sectionNo !== 8 && requestedSections.has(item.sectionNo)
+        )
+        for (const entry of sctEntries) {
+          if (!entry.report || entry.error) continue
+          flushSync(() => setPdfExportCenterId(String(entry.center.id)))
+          // Allow effects on newly mounted source editors to enter loading state.
+          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+          for (const item of requestedSourceSections) {
+            const exporter = await waitForExporter(item)
+            if (!exporter.hasData()) continue
+            const pages = await exporter.exportPdfPages()
+            append(item.sectionNo, pages, entry.center.code || String(entry.center.id))
+          }
+        }
+        for (const item of sectionExporters) {
+          if (requestedSections.has(item.sectionNo)) {
+            allPages.push(...(bySection.get(item.sectionNo) || []))
+          }
+        }
+      } else {
+        for (const item of sectionExporters) {
+          if (!requestedSections.has(item.sectionNo)) continue
+          const exporter = item.exporter.current
+          if (!exporter) continue
+          if (!exporter.isReady()) {
+            throw new Error(`หัวข้อ ${sctSectionLabel(item.sectionNo)} กำลังโหลดข้อมูล`)
+          }
+          if (!exporter.hasData()) continue
+          allPages.push(...await exporter.exportPdfPages())
+        }
       }
       if (allPages.length === 0) {
         setReportMessage(
@@ -862,6 +1044,11 @@ function MonthlyReport({ profile }) {
           undefined,
           'FAST'
         )
+        if (isSctMode && page.sourceCenter) {
+          pdf.setFontSize(7)
+          pdf.setTextColor(80, 80, 90)
+          pdf.text(String(page.sourceCenter), PDF_MARGIN, 5)
+        }
       })
       // ======================================
       // PDF FILE NAME
@@ -945,7 +1132,10 @@ function MonthlyReport({ profile }) {
         )
       pdf.save(safePdfFileName)
       setReportMessage(
-        `สร้าง PDF เรียบร้อยแล้ว ${allPages.length} หน้า`
+        `สร้าง PDF เรียบร้อยแล้ว ${allPages.length} หน้า` +
+        (isSctMode && sctEntries.some(entry => !entry.report)
+          ? ` (มี ${sctEntries.filter(entry => !entry.report).length} ศูนย์ที่ยังไม่มีรายงาน)`
+          : '')
       )
       setReportMessageType('success')
       setPdfDialogOpen(false)
@@ -960,6 +1150,7 @@ function MonthlyReport({ profile }) {
       )
       setReportMessageType('error')
     } finally {
+      setPdfExportCenterId(null)
       setExportingPdf(false)
     }
   }
@@ -976,7 +1167,7 @@ function MonthlyReport({ profile }) {
           <h2>รายงานประจำเดือน</h2>
           <p>
             จัดทำ ตรวจสอบ และรวบรวมรายงานประจำเดือน
-            แยกตามศูนย์
+            {isSctMode ? 'ศชต.รวบรวมข้อมูลจาก 6 ศูนย์บนรายงานเดิม' : 'แยกตามศูนย์'}
           </p>
         </div>
         <div className="monthly-report-header-actions">
@@ -1001,7 +1192,7 @@ function MonthlyReport({ profile }) {
             }
           >
             {canEdit
-              ? 'สามารถแก้ไขรายงานนี้'
+              ? (isSctMode ? 'แก้ไขหน้าปกศชต.ได้' : 'สามารถแก้ไขรายงานนี้')
               : 'ดูรายงานอย่างเดียว'}
           </div>
         </div>
@@ -1176,9 +1367,11 @@ function MonthlyReport({ profile }) {
                         section.id
                       )
                         ? 'รอพัฒนา'
-                        : savedSectionIdSet.has(section.id)
-                          ? 'มีข้อมูล'
-                          : 'ยังไม่มีข้อมูล'}
+                        : isSctMode && section.id !== 1
+                          ? `${sctSectionProgress(section.id).label} ศูนย์`
+                          : savedSectionIdSet.has(section.id)
+                            ? 'มีข้อมูล'
+                            : 'ยังไม่มีข้อมูล'}
                     </span>
                   </label>
                 ))}
@@ -1186,8 +1379,7 @@ function MonthlyReport({ profile }) {
               <p className="monthly-pdf-modal-hint">
                 ระบบจะส่งออกเฉพาะหัวข้อที่เลือก
                 และมีข้อมูลพร้อมส่งออกเท่านั้น
-                หัวข้อ 10 ยังไม่มีตัวสร้าง PDF
-                ในระบบปัจจุบัน
+                ระบบจะไม่บันทึกข้อมูลทับศูนย์ต้นทาง
               </p>
               {['error', 'warning'].includes(
                 reportMessageType
@@ -1317,6 +1509,80 @@ function MonthlyReport({ profile }) {
           จึงสามารถเปิดดูรายงานได้อย่างเดียว
         </div>
       )}
+      {selectedCenterId && (
+        <section className="sct-status-board">
+          <div className="sct-status-head">
+            <div>
+              <span>ตรวจสอบความครบถ้วน · รายงานทั้ง 6 ศูนย์</span>
+              <h3>
+                {sctLoading
+                  ? 'กำลังตรวจสอบข้อมูล...'
+                  : sctError || sctEntries.some(entry => entry.error)
+                    ? 'มีบางศูนย์ที่ตรวจสอบสถานะไม่ได้'
+                    : sctEntries.length !== SCT_STATUS_CENTERS.length
+                      ? 'กำลังเตรียมข้อมูลรายศูนย์'
+                      : <>
+                        <span className={`sct-overall-progress ${sctCompletedCount === SCT_STATUS_CENTERS.length ? 'complete' : 'missing'}`}>
+                          {sctCompletedCount}<em>/{SCT_STATUS_CENTERS.length}</em>
+                        </span>
+                        ศูนย์ครบทุกหัวข้อ
+                      </>}
+              </h3>
+              <p>ตรวจหัวข้อ 02–12 · หัวข้อ 08 เป็นหน้าคั่นอัตโนมัติ · เปิดเนื้อหารายงานได้ตามสิทธิ์ของบัญชี</p>
+            </div>
+            <button type="button" className="secondary-button" disabled={sctLoading}
+              onClick={() => setSctRefresh(v => v + 1)}>
+              {sctLoading ? 'กำลังตรวจสอบ...' : '↻ ตรวจสอบใหม่'}
+            </button>
+          </div>
+          {sctError && <p className="sct-status-error" role="alert">{sctError}</p>}
+          <div className="sct-center-grid">
+            {sctEntries.map(entry => {
+              const count = SCT_REQUIRED_SECTIONS.filter(item => sctHasSection(entry, item.id)).length
+              const complete = !entry.error && count === SCT_REQUIRED_SECTIONS.length
+              const expanded = String(sctExpandedId) === String(entry.center.id)
+              return <div className="sct-center-status" key={entry.center.id}>
+                <button type="button" className="sct-center-toggle"
+                  aria-expanded={expanded}
+                  onClick={() => setSctExpandedId(expanded ? null : entry.center.id)}>
+                  <strong>{entry.center.name}</strong>
+                  <span className={entry.error ? 'unknown' : complete ? 'complete' : 'missing'}>
+                    {entry.error ? 'ตรวจสอบไม่ได้' : !entry.report ? 'ยังไม่มีรายงาน'
+                      : complete ? 'ครบทุกหัวข้อ' : `ขาด ${SCT_REQUIRED_SECTIONS.length - count} หัวข้อ`}
+                  </span>
+                  <small>{expanded ? 'ซ่อนรายละเอียด ▲' : 'ดูรายละเอียด ▼'}</small>
+                </button>
+                {expanded && <div className="sct-center-details">
+                  {entry.error && <p role="alert">{entry.error}</p>}
+                  {SCT_REQUIRED_SECTIONS.map(section => <button type="button"
+                    key={section.id}
+                    disabled={!entry.report || !(isSctMode || canChooseCenter || Number(selectedCenterId) === Number(entry.center.id))}
+                    title={!isSctMode && !canChooseCenter && Number(selectedCenterId) !== Number(entry.center.id)
+                      ? 'ดูสถานะได้ แต่ไม่สามารถเปิดข้อมูลของศูนย์อื่น' : ''}
+                    className={sctHasSection(entry, section.id) ? 'ready' : 'missing'}
+                    onClick={() => {
+                      setSelectedSection(section.id)
+                      if (isSctMode) {
+                        setSctDetailCenterId(entry.center.id)
+                      } else {
+                        setSctDetailCenterId(null)
+                        if (Number(selectedCenterId) !== Number(entry.center.id)) {
+                          // Admin / supervisor / operator: follows existing center-selection permissions.
+                          setSelectedCenterId(String(entry.center.id))
+                        }
+                      }
+                      setEditorOpen(true)
+                      setEditMode(false)
+                    }}>
+                    <span>{sctSectionLabel(section.id)} {section.title}</span>
+                    <b>{sctHasSection(entry, section.id) ? 'มีข้อมูล' : 'ยังไม่ครบ'}</b>
+                  </button>)}
+                </div>}
+              </div>
+            })}
+          </div>
+        </section>
+      )}
       {/* ====================================
           SECTION LIST
          ==================================== */}
@@ -1357,11 +1623,16 @@ function MonthlyReport({ profile }) {
                 savedSectionIdSet.has(section.id)
                   ? 'has-data'
                   : '',
+                // SCT_MONTHLY_SIDEBAR_SCT_ONLY_V3 — sidebar badge only in ศชต. mode
+                isSctMode && section.id !== 1
+                  ? 'sct-progress-item'
+                  : '',
               ].filter(Boolean).join(' ')}
               onClick={() => {
                 setSelectedSection(section.id)
+                setSctDetailCenterId(null)
                 setEditMode(false)
-                if (currentReport) {
+                if (currentReport || isSctMode) {
                   setEditorOpen(true)
                 }
               }}
@@ -1379,8 +1650,15 @@ function MonthlyReport({ profile }) {
                       {section.detail}
                     </small>
                   </div>
-                  <span className="monthly-section-arrow">
-                    ›
+                  <span
+                    className={isSctMode && section.id !== 1
+                      ? `monthly-section-arrow sct-section-progress ${sctSectionProgress(section.id).state}`
+                      : 'monthly-section-arrow'}
+                    title={isSctMode && section.id !== 1
+                      ? sctSectionProgress(section.id).title : ''}>
+                    {isSctMode && section.id !== 1
+                      ? sctSectionProgress(section.id).label
+                      : '›'}
                   </span>
                 </>
               )}
@@ -1393,22 +1671,23 @@ function MonthlyReport({ profile }) {
         
           {currentReport && (pdfDialogOpen || exportingPdf) && (
             <div
+              key={`sct-export-${exportReport?.id || 'none'}`}
               className="monthly-pdf-export-host"
               aria-hidden="true"
             >
 
             <Section01Editor
               ref={section01ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
             />
             <Section02Editor
               ref={section02ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
@@ -1418,8 +1697,8 @@ function MonthlyReport({ profile }) {
                 `section03-export-${currentReport.id}-${section03ExportVersion}`
               }
               ref={section03ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
@@ -1429,8 +1708,8 @@ function MonthlyReport({ profile }) {
                 `section04-export-${currentReport.id}-${section04ExportVersion}`
               }
               ref={section04ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
@@ -1440,8 +1719,8 @@ function MonthlyReport({ profile }) {
                 `section05-export-${currentReport.id}-${section05ExportVersion}`
               }
               ref={section05ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
@@ -1451,8 +1730,8 @@ function MonthlyReport({ profile }) {
                 `section06-export-${currentReport.id}-${section06ExportVersion}`
               }
               ref={section06ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
@@ -1462,8 +1741,8 @@ function MonthlyReport({ profile }) {
                 `section07-export-${currentReport.id}-${section07ExportVersion}`
               }
               ref={section07ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
@@ -1473,8 +1752,8 @@ function MonthlyReport({ profile }) {
                 `section08-export-${currentReport.id}-${section08ExportVersion}`
               }
               ref={section08ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
@@ -1484,8 +1763,8 @@ function MonthlyReport({ profile }) {
                 `section09-export-${currentReport.id}-${section09ExportVersion}`
               }
               ref={section09ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
@@ -1493,8 +1772,8 @@ function MonthlyReport({ profile }) {
             <Section10Editor
               key={`section10-export-${currentReport.id}-${section10ExportVersion}`}
               ref={section10ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
@@ -1504,8 +1783,8 @@ function MonthlyReport({ profile }) {
                 `section11-export-${currentReport.id}-${section11ExportVersion}`
               }
               ref={section11ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
@@ -1515,8 +1794,8 @@ function MonthlyReport({ profile }) {
                 `section12-export-${currentReport.id}-${section12ExportVersion}`
               }
               ref={section12ExportRef}
-              report={currentReport}
-              center={selectedCenter}
+              report={exportReport}
+              center={exportCenter}
               month={month}
               year={year}
               canEdit={false}
@@ -1544,18 +1823,18 @@ function MonthlyReport({ profile }) {
                 type="button"
                 className="secondary-button"
                 disabled={
-                  !currentReport ||
+                  (!currentReport && !isSctMode) ||
                   reportLoading
                 }
                 onClick={() => {
-                  if (!currentReport) return
+                  if (!currentReport && !isSctMode) return
                   setEditorOpen(true)
                   setEditMode(false)
                 }}
               >
                 ดูตัวอย่าง
               </button>
-              {canEdit && (
+              {canEditSection && (
                 <button
                   type="button"
                   className="primary-button"
@@ -1610,7 +1889,7 @@ function MonthlyReport({ profile }) {
           {/* ====================================
               ACTIVE EDITOR
              ==================================== */}
-          {editorOpen && currentReport ? (
+          {editorOpen && (currentReport || isSctMode) ? (
             <div className="monthly-editor">
               <div className="monthly-editor-toolbar">
                 <div>
@@ -1621,8 +1900,16 @@ function MonthlyReport({ profile }) {
                   </span>
                   <strong>
                     {activeSection.title}
+                    {isSctMode && sctDetailCenterId && selectedSection !== 1
+                      ? ` — ${displayCenter?.name || ''}` : ''}
                   </strong>
                 </div>
+                {isSctMode && sctDetailCenterId && selectedSection !== 1 && (
+                  <button type="button" className="secondary-button"
+                    onClick={() => { setSctDetailCenterId(null); setEditMode(false) }}>
+                    ← กลับสู่ข้อมูลรวม
+                  </button>
+                )}
                 <button
                   type="button"
                   className="secondary-button"
@@ -1634,35 +1921,46 @@ function MonthlyReport({ profile }) {
                 </button>
               </div>
               <div className="monthly-editor-body">
-                {activeSection.id === 1 ? (
+                {combinedView ? (
+                  <SctCombinedSection entries={sctEntries} sectionNo={selectedSection}
+                    month={month} year={year} onViewCenter={centerId => {
+                      setSctDetailCenterId(centerId)
+                      setEditMode(false)
+                    }} />
+                ) : !displayReport ? (
+                  <div className="monthly-editor-placeholder">
+                    <h3>ยังไม่มีรายงานจากศูนย์นี้</h3>
+                    <p>เลือก “กลับสู่ข้อมูลรวม” เพื่อตรวจสอบศูนย์อื่นได้</p>
+                  </div>
+                ) : activeSection.id === 1 ? (
                   <Section01Editor
-                    report={currentReport}
-                    center={selectedCenter}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={
                       handleSectionDataChange
                     }
                   />
                 ) : activeSection.id === 2 ? (
                   <Section02Editor
-                    report={currentReport}
-                    center={selectedCenter}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={
                       handleSectionDataChange
                     }
                   />
                 ) : activeSection.id === 3 ? (
                   <Section03Editor
-                    report={currentReport}
-                    center={selectedCenter}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
                       setSection03ExportVersion(
@@ -1672,11 +1970,11 @@ function MonthlyReport({ profile }) {
                   />
                 ) : activeSection.id === 4 ? (
                   <Section04Editor
-                    report={currentReport}
-                    center={selectedCenter}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
                       setSection04ExportVersion(
@@ -1686,11 +1984,11 @@ function MonthlyReport({ profile }) {
                   />
                 ) : activeSection.id === 5 ? (
                   <Section05Editor
-                    report={currentReport}
-                    center={selectedCenter}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
                       setSection05ExportVersion(
@@ -1700,11 +1998,11 @@ function MonthlyReport({ profile }) {
                   />
                 ) : activeSection.id === 6 ? (
                   <Section06Editor
-                    report={currentReport}
-                    center={selectedCenter}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
                       setSection06ExportVersion(
@@ -1714,11 +2012,11 @@ function MonthlyReport({ profile }) {
                   />
                 ) : activeSection.id === 7 ? (
                   <Section07Editor
-                    report={currentReport}
-                    center={selectedCenter}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
                       setSection07ExportVersion(
@@ -1728,11 +2026,11 @@ function MonthlyReport({ profile }) {
                   />
                 ) : activeSection.id === 8 ? (
                   <Section08Editor
-                    report={currentReport}
-                    center={selectedCenter}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
                       setSection08ExportVersion(
@@ -1742,11 +2040,11 @@ function MonthlyReport({ profile }) {
                   />
                 ) : activeSection.id === 9 ? (
                   <Section09Editor
-                    report={currentReport}
-                    center={selectedCenter}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
                       setReportHasContent(true)
@@ -1757,12 +2055,12 @@ function MonthlyReport({ profile }) {
                   />
                 ) : activeSection.id === 10 ? (
                   <Section10Editor
-                    key={`section10-${currentReport.id}`}
-                    report={currentReport}
-                    center={selectedCenter}
+                    key={`section10-${displayReport.id}`}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
                       setSection10ExportVersion(v => v + 1)
@@ -1770,12 +2068,12 @@ function MonthlyReport({ profile }) {
                   />
                 ) : activeSection.id === 12 ? (
                   <Section12Editor
-                    key={`section12-${currentReport.id}`}
-                    report={currentReport}
-                    center={selectedCenter}
+                    key={`section12-${displayReport.id}`}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
                       setSection12ExportVersion(
@@ -1785,12 +2083,12 @@ function MonthlyReport({ profile }) {
                   />
                 ) : activeSection.id === 11 ? (
                   <Section11Editor
-                    key={`section11-${currentReport.id}`}
-                    report={currentReport}
-                    center={selectedCenter}
+                    key={`section11-${displayReport.id}`}
+                    report={displayReport}
+                    center={displayCenter}
                     month={month}
                     year={year}
-                    canEdit={canEdit && editMode}
+                    canEdit={canEditSection && editMode}
                     onDataChange={() => {
                       handleSectionDataChange()
                       setSection11ExportVersion(

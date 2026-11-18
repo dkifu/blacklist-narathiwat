@@ -1423,6 +1423,7 @@ export default forwardRef(
 
     useImperativeHandle(ref, () => ({
       isReady: () =>
+        !loading &&
         !busy &&
         !loadError &&
         !!report?.id,
