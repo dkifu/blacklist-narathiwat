@@ -22,7 +22,9 @@ import CctvAiReport from './daily/CctvAiReport'
 import CameraStatusReport from './daily/CameraStatusReport'
 import CctvRepairOrders from './daily/CctvRepairOrders'
 import TccDashboardFrame from './daily/TccDashboardFrame'
-import './DailyReport.css'
+import CctvRequests from './daily/CctvRequests'
+import CctvRequestsDashboard from './daily/CctvRequestsDashboard'
+import './DailyReport.css' // CCTV_REQUESTS_V1
 
 /* =========================================
    DAILY SHIFT GROUPS
@@ -52,7 +54,7 @@ const DAILY_SHIFTS = [
   },
 ]
 
-const DAILY_HOURS = [1, 2, 3, 4]
+const DAILY_HOURS = [1, 2, 3, 4, 8]
 
 
 function DailyReport({ profile }) {
@@ -298,44 +300,9 @@ function DailyReport({ profile }) {
             </div>
           </div>
 
-          {/* HERO */}
+          
 
-          <section className="daily-hub-hero">
-            <span className="daily-hub-eyebrow">
-              CCTV REQUESTS
-            </span>
-
-            <h1>
-              ข้อมูลใบคำร้องขอดูภาพ
-            </h1>
-
-            <p>
-              ระบบจัดการข้อมูลใบคำร้องขอดูภาพ
-              จากกล้องวงจรปิด CCTV
-            </p>
-          </section>
-
-          {/* EMPTY CONTENT */}
-
-          <section className="daily-hub-content">
-            <div className="daily-hub-section-head">
-              <div>
-                <span>REQUEST MANAGEMENT</span>
-                <h2>ข้อมูลใบคำร้องขอดูภาพ</h2>
-              </div>
-            </div>
-
-            <div className="daily-hub-empty-hour">
-              <FileText size={36} />
-
-              <h3>ยังไม่มีข้อมูล</h3>
-
-              <p>
-                พื้นที่สำหรับพัฒนาระบบจัดการ
-                ข้อมูลใบคำร้องขอดูภาพ
-              </p>
-            </div>
-          </section>
+          <CctvRequests profile={profile} />
 
         </div>
       )
@@ -529,7 +496,9 @@ function DailyReport({ profile }) {
                 </div>
               </div>
 
-              {activeHour === 1 ? (
+              {activeHour === 8 ? (
+                <CctvRequestsDashboard profile={profile} shift={activeShift} />
+              ) : activeHour === 1 ? (
 
                 <div className="daily-hub-grid">
 
