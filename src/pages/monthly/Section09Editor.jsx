@@ -494,6 +494,7 @@ const Section09Editor = forwardRef(
     year,
     canEdit = false,
     onDataChange,
+  sctAggregate,
   }, ref) {
 
     const centerId = Number(center?.id)
@@ -520,6 +521,11 @@ const Section09Editor = forwardRef(
     const selected =
       cases.find(c => c.id === selectedId) ||
       cases[0]
+
+    // V5: current case in the existing preview (not a new report page)
+    const selectedIndex = selected
+      ? cases.findIndex(item => item.id === selected.id)
+      : -1
 
     // ====================================
     // SUPABASE STORAGE
@@ -618,6 +624,15 @@ const Section09Editor = forwardRef(
 
       savedAtRef.current = null
 
+      if (sctAggregate) {
+        const aggregate = sctAggregate.sections[9]
+        const items = aggregate?.cases || []
+        setCases(items)
+        setSelectedId(items[0]?.id || null)
+        setReady(true)
+        return () => { active = false }
+      }
+
       if (!report?.id || !centerId) {
         setReady(true)
 
@@ -658,7 +673,7 @@ const Section09Editor = forwardRef(
       return () => {
         active = false
       }
-    }, [report?.id, centerId, month, year])
+    }, [report?.id, centerId, month, year, sctAggregate])
 
     // ====================================
     // LOAD CURRENT PREVIEW IMAGES
@@ -1417,6 +1432,33 @@ const Section09Editor = forwardRef(
           </aside>
         )}
 
+        <div className="s09-viewer">
+          {ready && cases.length > 0 && (
+            <nav className="s09-page-toolbar" aria-label="เปลี่ยนหน้าใบคำร้อง">
+              <div className="s09-page-caption">
+                <strong>ใบคำร้อง {selectedIndex + 1} / {cases.length}</strong>
+                <span title={selected?.title || ''}>
+                  {selected?.title || 'ไม่มีชื่อเหตุการณ์'}
+                </span>
+              </div>
+              <div className="s09-page-controls">
+                <button
+                  type="button"
+                  disabled={selectedIndex <= 0}
+                  onClick={() => setSelectedId(cases[selectedIndex - 1].id)}
+                >
+                  ‹ ก่อนหน้า
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedIndex >= cases.length - 1}
+                  onClick={() => setSelectedId(cases[selectedIndex + 1].id)}
+                >
+                  ถัดไป ›
+                </button>
+              </div>
+            </nav>
+          )}
         <section
           className="s09-preview"
           ref={previewWrapRef}
@@ -1527,6 +1569,7 @@ const Section09Editor = forwardRef(
             </div>
           )}
         </section>
+        </div>
 
         {/* Paper สำหรับ PDF Export เท่านั้น */}
         <div
@@ -1551,3 +1594,4 @@ const Section09Editor = forwardRef(
 )
 
 export default Section09Editor
+// SCT_MONTHLY_LAYOUT_FIX_V5: navigate cases in existing section 09 preview

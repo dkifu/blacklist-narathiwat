@@ -620,6 +620,7 @@ export default forwardRef(function Section05Editor({
   year,
   canEdit = false,
   onDataChange,
+  sctAggregate,
 }, ref) {
   const previewRef = useRef(null)
   const paperRef = useRef(null)
@@ -667,6 +668,18 @@ export default forwardRef(function Section05Editor({
       setRowExists(false)
       setHasStoredItems(false)
 
+      if (sctAggregate) {
+        const aggregate = sctAggregate.sections[5]
+        const mapped = new Map((aggregate?.items || []).map(item => [item.key, item]))
+        setItems(EQUIPMENT_FIELDS.map(field => ({
+          ...field, count: normalizeCount(mapped.get(field.key)?.count),
+        })))
+        setRowExists(!!aggregate?.saved)
+        setHasStoredItems(!!aggregate?.saved)
+        setLoading(false)
+        return
+      }
+
       if (!report?.id) {
         setLoading(false)
         return
@@ -704,7 +717,7 @@ export default forwardRef(function Section05Editor({
 
     loadSection05()
     return () => { active = false }
-  }, [report?.id])
+  }, [report?.id, sctAggregate])
 
   useEffect(() => {
     const element = previewRef.current

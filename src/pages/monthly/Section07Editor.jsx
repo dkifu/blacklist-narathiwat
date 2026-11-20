@@ -562,6 +562,7 @@ export default forwardRef(function Section07Editor({
   year,
   canEdit = false,
   onDataChange,
+  sctAggregate,
 }, ref) {
   const previewRef = useRef(null)
   const pdfInputRef = useRef(null)
@@ -654,6 +655,16 @@ export default forwardRef(function Section07Editor({
       setHasUnsavedChanges(false)
       setMessage('')
 
+      if (sctAggregate) {
+        const aggregate = sctAggregate.sections[7]
+        setSlides(aggregate?.slides || [])
+        setHasStoredData(!!aggregate?.saved)
+        setRowExists(!!aggregate?.saved)
+        setSourceName('รายงานรวม 6 ศูนย์')
+        setLoading(false)
+        return
+      }
+
       if (!report?.id) {
         setLoading(false)
         return
@@ -706,7 +717,7 @@ export default forwardRef(function Section07Editor({
     return () => {
       active = false
     }
-  }, [report?.id])
+  }, [report?.id, sctAggregate])
 
   // ========================================
   // RESPONSIVE PREVIEW

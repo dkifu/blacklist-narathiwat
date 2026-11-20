@@ -975,6 +975,7 @@ export default forwardRef(function Section12Editor({
   year,
   canEdit = false,
   onDataChange,
+  sctAggregate,
 }, ref) {
   const selectedMonth = Number(month)
   const selectedYear = Number(year)
@@ -1186,6 +1187,20 @@ export default forwardRef(function Section12Editor({
     setOpenCase(null)
     setEditMonth(Math.max(0, visibleCount - 1))
 
+    if (sctAggregate) {
+      const aggregate = sctAggregate.sections[12]
+      setAnnual(aggregate?.annual || emptyAnnual())
+      setCases((aggregate?.cases || []).map(c => ({
+        ...EMPTY_CASE(), ...c,
+        time: formattedCaseTime(c.time),
+        result: normalizeResult(c.result),
+      })))
+      setOtherStats(aggregate?.otherStats || Array(12).fill(null))
+      setIsSaved(!!aggregate?.saved)
+      setLoading(false)
+      return () => { live = false }
+    }
+
     if (!validReport) {
       setLoading(false)
       return () => {
@@ -1353,6 +1368,7 @@ export default forwardRef(function Section12Editor({
     selectedYear,
     visibleCount,
     validReport,
+    sctAggregate,
   ])
 
   // ========================================

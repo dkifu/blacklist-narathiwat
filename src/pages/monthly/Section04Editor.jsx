@@ -404,6 +404,7 @@ export default forwardRef(function Section04Editor({
   year,
   canEdit = false,
   onDataChange,
+  sctAggregate,
 }, ref) {
 
   const previewRef = useRef(null)
@@ -493,6 +494,13 @@ export default forwardRef(function Section04Editor({
             EMPTY_REPAIR_ROWS.map(row => ({ ...row }))
             )
 
+            if (sctAggregate) {
+              const aggregate = sctAggregate.sections[4]
+              setRepairRows(aggregate?.rows || EMPTY_REPAIR_ROWS.map(row => ({...row})))
+              setLoadingRows(false)
+              return
+            }
+
             if (!center?.id) {
             setLoadingRows(false)
             return
@@ -567,7 +575,7 @@ export default forwardRef(function Section04Editor({
     return () => {
         active = false
     }
-    }, [report?.id, center?.id, year, calendarYear])
+    }, [report?.id, center?.id, year, calendarYear, sctAggregate])
 
 
   

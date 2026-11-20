@@ -2532,3 +2532,45 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+/* SCT_MONTHLY_LAYOUT_FIX_V5 — Shrink only event counts of 100 or more (full-size below 100). */
+.section02-overview-total-value.is-three-digits,
+.section02-overview-total-value.is-four-digits,
+.section02-overview-total-value.is-five-digits {
+  min-width: 0;
+  gap: 8px;
+  transform: translate(4px, 8px);
+}
+.section02-overview-total-value.is-three-digits .section02-total-number,
+.section02-overview-total-value.is-four-digits .section02-total-number,
+.section02-overview-total-value.is-five-digits .section02-total-number {
+  transform: none;
+  margin-bottom: 0;
+  letter-spacing: -0.03em;
+  flex: 0 0 auto;
+}
+.section02-overview-total-value.is-three-digits .section02-total-number {
+  font-size: 58px;
+}
+.section02-overview-total-value.is-four-digits .section02-total-number {
+  font-size: 43px;
+}
+.section02-overview-total-value.is-five-digits .section02-total-number {
+  font-size: 32px;
+}
+.section02-overview-total-value.is-three-digits .section02-total-label,
+.section02-overview-total-value.is-four-digits .section02-total-label,
+.section02-overview-total-value.is-five-digits .section02-total-label {
+  margin-left: 0;
+  transform: none;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.section02-overview-total-value.is-three-digits .section02-total-label {
+  font-size: 27px;
+}
+.section02-overview-total-value.is-four-digits .section02-total-label {
+  font-size: 24px;
+}
+.section02-overview-total-value.is-five-digits .section02-total-label {
+  font-size: 20px;
+}

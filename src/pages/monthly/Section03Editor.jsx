@@ -190,6 +190,7 @@ const Section03Editor = forwardRef(function Section03Editor({
   year,
   canEdit = false,
   onDataChange,
+  sctAggregate,
 }, ref) {
   const [rows, setRows] = useState([])
 
@@ -243,6 +244,20 @@ const Section03Editor = forwardRef(function Section03Editor({
       setSaveMessage('')
       setManualUtilizedKeys([])
       setSavedManualUtilizedKeys([])
+
+      if (sctAggregate) {
+        const aggregate = sctAggregate.sections[3]
+        const mergedRows = TYPES.map(type => {
+          const found = aggregate?.rows?.find(row => row.key === type.key)
+          return { ...type, values: found?.values || Array(12).fill(null),
+            total: found?.total ?? null, utilized: found?.utilized ?? null }
+        })
+        setRows(mergedRows)
+        setSavedRows(mergedRows)
+        setSourceRows(mergedRows)
+        setLoading(false)
+        return
+      }
 
       try {
         const centerId = Number(center?.id)
@@ -478,7 +493,7 @@ const displayRows = nextRows.map(row => ({
 
     load()
     return () => { active = false }
-  }, [center?.id, calendarYear, report?.id])
+  }, [center?.id, calendarYear, report?.id, sctAggregate])
 
   
   // =========================================

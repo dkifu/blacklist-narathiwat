@@ -1127,6 +1127,7 @@ const Section02Editor = forwardRef(
     year,
     canEdit,
     onDataChange,
+  sctAggregate,
     }, ref) {
 
   const fileInputRef = useRef(null)
@@ -1248,6 +1249,15 @@ const Section02Editor = forwardRef(
     let cancelled = false
 
     const loadSectionData = async () => {
+        if (sctAggregate) {
+          const aggregate = sctAggregate.sections[2]
+          setRows(aggregate?.rows || [])
+          setRowsPerPage(aggregate?.rowsPerPage || 14)
+          setPreviewPage(0)
+          setMessage('')
+          setSectionLoading(false)
+          return
+        }
         if (!report?.id) {
         setRows([])
         setRowsPerPage(14)
@@ -1339,7 +1349,7 @@ const Section02Editor = forwardRef(
     return () => {
         cancelled = true
     }
-    }, [report?.id])
+    }, [report?.id, sctAggregate])
   
 
     // =========================
@@ -3082,7 +3092,15 @@ const Section02Editor = forwardRef(
                       <Siren />
                     </div>
 
-                    <div className="section02-overview-total-value">
+                    <div className={`section02-overview-total-value${
+                        Number(summary.total) >= 10000
+                          ? ' is-five-digits'
+                          : Number(summary.total) >= 1000
+                            ? ' is-four-digits'
+                            : Number(summary.total) >= 100
+                              ? ' is-three-digits'
+                              : ''
+                      }`}>
                       <strong className="section02-total-number">
                         {summary.total}
                       </strong>
@@ -3710,3 +3728,4 @@ const Section02Editor = forwardRef(
 })
 
 export default Section02Editor
+// SCT_MONTHLY_LAYOUT_FIX_V5: event-count width adapts from 100+

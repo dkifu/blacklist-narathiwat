@@ -645,6 +645,7 @@ export default forwardRef(
     year,
     canEdit = false,
     onDataChange,
+  sctAggregate,
   }, ref) {
 
     const previewRef = useRef(null)
@@ -810,6 +811,18 @@ export default forwardRef(
         setDirty(false)
         setMessage('')
 
+        if (sctAggregate) {
+          const aggregate = sctAggregate.sections[11]
+          setSlides(aggregate?.slides || [])
+          setMode(aggregate?.mode || 'none')
+          setNoEventText(aggregate?.noEventText || DEFAULT_NO_EVENT)
+          setHasStoredData(!!aggregate?.saved)
+          setRowExists(!!aggregate?.saved)
+          setSourceName('รายงานรวม 6 ศูนย์')
+          setLoading(false)
+          return
+        }
+
         if (!report?.id) {
           setLoading(false)
           return
@@ -906,7 +919,7 @@ export default forwardRef(
       return () => {
         active = false
       }
-    }, [report?.id])
+    }, [report?.id, sctAggregate])
 
     /* ======================================
        RESPONSIVE PREVIEW

@@ -1027,3 +1027,10 @@
     max-height: 450px;
   }
 }
+/* SCT_MONTHLY_LAYOUT_FIX_V5 — Slightly tighter plate cells; preserve all characters. */
+.s10-report-table td.s10-cell-plate {
+  font-size: 11px;
+  line-height: 1.28;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}

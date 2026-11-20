@@ -49,6 +49,11 @@ const emptyVehicle = () => ({
 })
 const safe = v => String(v ?? '').trim()
 
+// V5: compact Bangkok name in the summary table only.
+// Keep stored plate, imported Excel, individual vehicle pages unchanged.
+const compactPlateForSummary = value =>
+  safe(value).replace(/กรุงเทพมหานคร|กรุงเทพฯ/g, 'กทม.')
+
     // จัดรูปแบบทะเบียนรถให้เป็นมาตรฐานเดียวกัน
     // ตัวอย่าง: บฉ9643นราธิวาส -> บฉ 9643 นราธิวาส
     function normalizePlate(value) {
@@ -473,7 +478,9 @@ function SummaryPage({
                               item.officerDate,
                               item.officerTime
                             )
-                          : item[col.key] || '—'}
+                          : col.key === 'plate'
+                            ? compactPlateForSummary(item.plate) || '—'
+                            : item[col.key] || '—'}
                     </td>
                   ))}
                 </tr>
@@ -596,7 +603,7 @@ function VehiclePage({center,month,year,item,index,total}) {
     
   </div>
 }
-export default forwardRef(function Section10Editor({report,center,month,year,canEdit=false,onDataChange},ref) {
+export default forwardRef(function Section10Editor({report,center,month,year,canEdit=false,onDataChange,sctAggregate},ref) {
   const centerId = Number(center?.id)
   const selectedMonth = Number(month)
   const selectedYear = Number(year)
@@ -677,6 +684,14 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
     let mounted=true
     setLoading(true);setError('');setMessage('');setVehicles([]);setSaved(false);setDirty(false)
     setOpenId(null);setActivePage(0);setTableSize('10');setAnnualCounts(Array(12).fill(null))
+    if (sctAggregate) {
+      const aggregate = sctAggregate.sections[10]
+      setVehicles((aggregate?.vehicles || []).map(normalizeVehicle))
+      setAnnualCounts(aggregate?.annualCounts || Array(12).fill(null))
+      setSaved(!!aggregate?.saved)
+      setLoading(false)
+      return () => { mounted = false }
+    }
     if (!valid) { setLoading(false);return () => {mounted=false} }
     ;(async()=>{
       try {
@@ -704,7 +719,7 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
       finally { if(mounted) setLoading(false) }
     })()
     return () => {mounted=false}
-  },[report?.id,centerId,selectedMonth,selectedYear,valid])
+  },[report?.id,centerId,selectedMonth,selectedYear,valid,sctAggregate])
 
   useEffect(()=>{
     const target=frameRef.current
@@ -1224,3 +1239,4 @@ const downloadPng = async () => {
     </section>
   </div>
 })
+// SCT_MONTHLY_LAYOUT_FIX_V5: shorten Bangkok in summary only

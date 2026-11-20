@@ -19,7 +19,7 @@ import Section09Editor from './monthly/Section09Editor'
 import Section10Editor from './monthly/Section10Editor'
 import Section11Editor from './monthly/Section11Editor'
 import Section12Editor from './monthly/Section12Editor'
-import SctCombinedSection from './monthly/SctCombinedSection'
+import { loadSctMergedData } from './monthly/SctMergedData'
 const MONTHS = [
   { value: 1, label: 'มกราคม' },
   { value: 2, label: 'กุมภาพันธ์' },
@@ -372,6 +372,10 @@ function MonthlyReport({ profile }) {
   const [centers, setCenters] =
     useState([])
   const [sctEntries, setSctEntries] = useState([])
+  // SCT_TRUE_AGGREGATION_V4 — one read-only merged data source for preview and PDF.
+  const [sctMergedData, setSctMergedData] = useState(null)
+  const [sctMergedLoading, setSctMergedLoading] = useState(false)
+  const [sctMergedError, setSctMergedError] = useState('')
   const [sctLoading, setSctLoading] = useState(false)
   const [sctError, setSctError] = useState('')
   const [sctRefresh, setSctRefresh] = useState(0)
@@ -474,6 +478,24 @@ function MonthlyReport({ profile }) {
     fetchSct()
     return () => { active = false }
   }, [selectedCenterId, centers, month, year, sctRefresh])
+  // Build a single report dataset from six source centers.
+  // No changes are persisted into ศชต. or source-center rows.
+  useEffect(() => {
+    let live = true
+    setSctMergedData(null)
+    setSctMergedError('')
+    if (!isSctMode || sctLoading || sctEntries.length !== SCT_STATUS_CENTERS.length) {
+      setSctMergedLoading(false)
+      return () => { live = false }
+    }
+    setSctMergedLoading(true)
+    loadSctMergedData(sctEntries, month, year)
+      .then(data => { if (live) setSctMergedData(data) })
+      .catch(err => { if (live) setSctMergedError(err.message || 'ไม่สามารถรวมข้อมูลได้') })
+      .finally(() => { if (live) setSctMergedLoading(false) })
+    return () => { live = false }
+  }, [isSctMode, sctLoading, sctEntries, month, year])
+
   // ========================================
   // LOAD CENTERS
   // ========================================
@@ -756,10 +778,17 @@ function MonthlyReport({ profile }) {
     String(entry.center.id) === String(sctDetailCenterId)
   )
   const combinedView = isSctMode && selectedSection !== 1 && !sctDetailCenterId
-  const displayReport = isSctMode && selectedSection !== 1
-    ? sctDetailEntry?.report || null : currentReport
-  const displayCenter = isSctMode && selectedSection !== 1
-    ? sctDetailEntry?.center || null : selectedCenter
+  const virtualSctReport = currentReport || {
+    id: `sct-virtual-${year}-${month}`,
+    center_id: SCT_CENTER_ID,
+    report_month: Number(month),
+    report_year: Number(year),
+    status: 'draft',
+  }
+  const displayReport = combinedView ? virtualSctReport
+    : isSctMode && selectedSection !== 1 ? sctDetailEntry?.report || null : currentReport
+  const displayCenter = combinedView ? (selectedCenter || {id: SCT_CENTER_ID, name: 'ศูนย์ศชต.', code: 'SCT'})
+    : isSctMode && selectedSection !== 1 ? sctDetailEntry?.center || null : selectedCenter
   const canEditSection = canEdit && (!isSctMode || selectedSection === 1)
   const exportEntry = sctEntries.find(entry =>
     String(entry.center.id) === String(pdfExportCenterId)
@@ -936,57 +965,18 @@ function MonthlyReport({ profile }) {
         }
         throw new Error(`หัวข้อ ${sctSectionLabel(item.sectionNo)} โหลดข้อมูลไม่สำเร็จหรือใช้เวลานานเกินไป`)
       }
-      if (isSctMode) {
-        if (sctLoading || sctError ||
-          sctEntries.length !== SCT_SOURCE_CENTER_IDS.size ||
-          sctEntries.some(entry => entry.error)) {
-          throw new Error('ยังไม่สามารถอ่านข้อมูลครบทั้ง 6 ศูนย์ กรุณาตรวจสอบสถานะรายศูนย์ก่อน')
+      if (isSctMode && (sctMergedLoading || sctMergedError || !sctMergedData)) {
+        throw new Error(sctMergedError || 'กำลังโหลดข้อมูลรวมของ 6 ศูนย์ กรุณารอสักครู่แล้วลองอีกครั้ง')
+      }
+      for (const item of sectionExporters) {
+        if (!requestedSections.has(item.sectionNo)) continue
+        const exporter = isSctMode ? await waitForExporter(item) : item.exporter.current
+        if (!exporter) continue
+        if (!exporter.isReady()) {
+          throw new Error(`หัวข้อ ${sctSectionLabel(item.sectionNo)} กำลังโหลดข้อมูล`)
         }
-        const bySection = new Map()
-        const append = (number, pages, sourceCenter) => {
-          if (!bySection.has(number)) bySection.set(number, [])
-          bySection.get(number).push(...pages.map(page => ({
-            ...page, sourceCenter,
-          })))
-        }
-        // Cover and appendix divider are owned by ศชต. only.
-        for (const number of [1, 8]) {
-          if (!requestedSections.has(number)) continue
-          const item = sectionExporters.find(x => x.sectionNo === number)
-          const exporter = await waitForExporter(item)
-          if (exporter.hasData()) append(number, await exporter.exportPdfPages(), selectedCenter?.code || 'SCT')
-        }
-        const requestedSourceSections = sectionExporters.filter(item =>
-          item.sectionNo !== 1 && item.sectionNo !== 8 && requestedSections.has(item.sectionNo)
-        )
-        for (const entry of sctEntries) {
-          if (!entry.report || entry.error) continue
-          flushSync(() => setPdfExportCenterId(String(entry.center.id)))
-          // Allow effects on newly mounted source editors to enter loading state.
-          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-          for (const item of requestedSourceSections) {
-            const exporter = await waitForExporter(item)
-            if (!exporter.hasData()) continue
-            const pages = await exporter.exportPdfPages()
-            append(item.sectionNo, pages, entry.center.code || String(entry.center.id))
-          }
-        }
-        for (const item of sectionExporters) {
-          if (requestedSections.has(item.sectionNo)) {
-            allPages.push(...(bySection.get(item.sectionNo) || []))
-          }
-        }
-      } else {
-        for (const item of sectionExporters) {
-          if (!requestedSections.has(item.sectionNo)) continue
-          const exporter = item.exporter.current
-          if (!exporter) continue
-          if (!exporter.isReady()) {
-            throw new Error(`หัวข้อ ${sctSectionLabel(item.sectionNo)} กำลังโหลดข้อมูล`)
-          }
-          if (!exporter.hasData()) continue
-          allPages.push(...await exporter.exportPdfPages())
-        }
+        if (!exporter.hasData()) continue
+        allPages.push(...await exporter.exportPdfPages())
       }
       if (allPages.length === 0) {
         setReportMessage(
@@ -1044,11 +1034,6 @@ function MonthlyReport({ profile }) {
           undefined,
           'FAST'
         )
-        if (isSctMode && page.sourceCenter) {
-          pdf.setFontSize(7)
-          pdf.setTextColor(80, 80, 90)
-          pdf.text(String(page.sourceCenter), PDF_MARGIN, 5)
-        }
       })
       // ======================================
       // PDF FILE NAME
@@ -1133,9 +1118,7 @@ function MonthlyReport({ profile }) {
       pdf.save(safePdfFileName)
       setReportMessage(
         `สร้าง PDF เรียบร้อยแล้ว ${allPages.length} หน้า` +
-        (isSctMode && sctEntries.some(entry => !entry.report)
-          ? ` (มี ${sctEntries.filter(entry => !entry.report).length} ศูนย์ที่ยังไม่มีรายงาน)`
-          : '')
+        (isSctMode ? ` (รวมข้อมูลจาก ${sctMergedData.centerCount}/6 ศูนย์)` : '')
       )
       setReportMessageType('success')
       setPdfDialogOpen(false)
@@ -1669,9 +1652,10 @@ function MonthlyReport({ profile }) {
             HIDDEN PDF EXPORT EDITORS
            ==================================== */}
         
-          {currentReport && (pdfDialogOpen || exportingPdf) && (
+          {currentReport && (pdfDialogOpen || exportingPdf) &&
+            (!isSctMode || (sctMergedData && !sctMergedLoading)) && (
             <div
-              key={`sct-export-${exportReport?.id || 'none'}`}
+              key={`sct-export-${exportReport?.id || 'none'}-${isSctMode ? 'merged' : 'single'}`}
               className="monthly-pdf-export-host"
               aria-hidden="true"
             >
@@ -1686,6 +1670,7 @@ function MonthlyReport({ profile }) {
             />
             <Section02Editor
               ref={section02ExportRef}
+              sctAggregate={isSctMode ? sctMergedData : undefined}
               report={exportReport}
               center={exportCenter}
               month={month}
@@ -1697,6 +1682,7 @@ function MonthlyReport({ profile }) {
                 `section03-export-${currentReport.id}-${section03ExportVersion}`
               }
               ref={section03ExportRef}
+              sctAggregate={isSctMode ? sctMergedData : undefined}
               report={exportReport}
               center={exportCenter}
               month={month}
@@ -1708,6 +1694,7 @@ function MonthlyReport({ profile }) {
                 `section04-export-${currentReport.id}-${section04ExportVersion}`
               }
               ref={section04ExportRef}
+              sctAggregate={isSctMode ? sctMergedData : undefined}
               report={exportReport}
               center={exportCenter}
               month={month}
@@ -1719,6 +1706,7 @@ function MonthlyReport({ profile }) {
                 `section05-export-${currentReport.id}-${section05ExportVersion}`
               }
               ref={section05ExportRef}
+              sctAggregate={isSctMode ? sctMergedData : undefined}
               report={exportReport}
               center={exportCenter}
               month={month}
@@ -1730,6 +1718,7 @@ function MonthlyReport({ profile }) {
                 `section06-export-${currentReport.id}-${section06ExportVersion}`
               }
               ref={section06ExportRef}
+              sctAggregate={isSctMode ? sctMergedData : undefined}
               report={exportReport}
               center={exportCenter}
               month={month}
@@ -1741,6 +1730,7 @@ function MonthlyReport({ profile }) {
                 `section07-export-${currentReport.id}-${section07ExportVersion}`
               }
               ref={section07ExportRef}
+              sctAggregate={isSctMode ? sctMergedData : undefined}
               report={exportReport}
               center={exportCenter}
               month={month}
@@ -1763,6 +1753,7 @@ function MonthlyReport({ profile }) {
                 `section09-export-${currentReport.id}-${section09ExportVersion}`
               }
               ref={section09ExportRef}
+              sctAggregate={isSctMode ? sctMergedData : undefined}
               report={exportReport}
               center={exportCenter}
               month={month}
@@ -1772,6 +1763,7 @@ function MonthlyReport({ profile }) {
             <Section10Editor
               key={`section10-export-${currentReport.id}-${section10ExportVersion}`}
               ref={section10ExportRef}
+              sctAggregate={isSctMode ? sctMergedData : undefined}
               report={exportReport}
               center={exportCenter}
               month={month}
@@ -1783,6 +1775,7 @@ function MonthlyReport({ profile }) {
                 `section11-export-${currentReport.id}-${section11ExportVersion}`
               }
               ref={section11ExportRef}
+              sctAggregate={isSctMode ? sctMergedData : undefined}
               report={exportReport}
               center={exportCenter}
               month={month}
@@ -1794,6 +1787,7 @@ function MonthlyReport({ profile }) {
                 `section12-export-${currentReport.id}-${section12ExportVersion}`
               }
               ref={section12ExportRef}
+              sctAggregate={isSctMode ? sctMergedData : undefined}
               report={exportReport}
               center={exportCenter}
               month={month}
@@ -1922,11 +1916,81 @@ function MonthlyReport({ profile }) {
               </div>
               <div className="monthly-editor-body">
                 {combinedView ? (
-                  <SctCombinedSection entries={sctEntries} sectionNo={selectedSection}
-                    month={month} year={year} onViewCenter={centerId => {
-                      setSctDetailCenterId(centerId)
-                      setEditMode(false)
-                    }} />
+                  sctMergedError ? (
+                    <div className="monthly-editor-placeholder">
+                      <h3>ไม่สามารถรวมข้อมูลรายงานได้</h3><p>{sctMergedError}</p>
+                    </div>
+                  ) : sctMergedLoading || !sctMergedData ? (
+                    <div className="monthly-editor-placeholder">
+                      <h3>กำลังประมวลผลรายงานรวม 6 ศูนย์...</h3>
+                      <p>ตรวจสอบและอ่านข้อมูลจากศูนย์ต้นทางโดยไม่แก้ข้อมูลเดิม</p>
+                    </div>
+                  ) : selectedSection === 8 ? (
+                    <Section08Editor report={displayReport} center={displayCenter}
+                      month={month} year={year} canEdit={false} />
+                  ) : (
+                  selectedSection === 2 ? <Section02Editor
+                    key={`sct-merged-2-${month}-${year}`}
+                    report={displayReport} center={displayCenter}
+                    month={month} year={year} canEdit={false}
+                    sctAggregate={sctMergedData}
+                  /> :
+                  selectedSection === 3 ? <Section03Editor
+                    key={`sct-merged-3-${month}-${year}`}
+                    report={displayReport} center={displayCenter}
+                    month={month} year={year} canEdit={false}
+                    sctAggregate={sctMergedData}
+                  /> :
+                  selectedSection === 4 ? <Section04Editor
+                    key={`sct-merged-4-${month}-${year}`}
+                    report={displayReport} center={displayCenter}
+                    month={month} year={year} canEdit={false}
+                    sctAggregate={sctMergedData}
+                  /> :
+                  selectedSection === 5 ? <Section05Editor
+                    key={`sct-merged-5-${month}-${year}`}
+                    report={displayReport} center={displayCenter}
+                    month={month} year={year} canEdit={false}
+                    sctAggregate={sctMergedData}
+                  /> :
+                  selectedSection === 6 ? <Section06Editor
+                    key={`sct-merged-6-${month}-${year}`}
+                    report={displayReport} center={displayCenter}
+                    month={month} year={year} canEdit={false}
+                    sctAggregate={sctMergedData}
+                  /> :
+                  selectedSection === 7 ? <Section07Editor
+                    key={`sct-merged-7-${month}-${year}`}
+                    report={displayReport} center={displayCenter}
+                    month={month} year={year} canEdit={false}
+                    sctAggregate={sctMergedData}
+                  /> :
+                  selectedSection === 9 ? <Section09Editor
+                    key={`sct-merged-9-${month}-${year}`}
+                    report={displayReport} center={displayCenter}
+                    month={month} year={year} canEdit={false}
+                    sctAggregate={sctMergedData}
+                  /> :
+                  selectedSection === 10 ? <Section10Editor
+                    key={`sct-merged-10-${month}-${year}`}
+                    report={displayReport} center={displayCenter}
+                    month={month} year={year} canEdit={false}
+                    sctAggregate={sctMergedData}
+                  /> :
+                  selectedSection === 11 ? <Section11Editor
+                    key={`sct-merged-11-${month}-${year}`}
+                    report={displayReport} center={displayCenter}
+                    month={month} year={year} canEdit={false}
+                    sctAggregate={sctMergedData}
+                  /> :
+                  selectedSection === 12 ? <Section12Editor
+                    key={`sct-merged-12-${month}-${year}`}
+                    report={displayReport} center={displayCenter}
+                    month={month} year={year} canEdit={false}
+                    sctAggregate={sctMergedData}
+                  /> :
+                    <div className="monthly-editor-placeholder">ไม่พบหัวข้อรายงาน</div>
+                  )
                 ) : !displayReport ? (
                   <div className="monthly-editor-placeholder">
                     <h3>ยังไม่มีรายงานจากศูนย์นี้</h3>

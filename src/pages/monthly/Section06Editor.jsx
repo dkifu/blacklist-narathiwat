@@ -324,6 +324,7 @@ export default forwardRef(function Section06Editor({
   year,
   canEdit = false,
   onDataChange,
+  sctAggregate,
 }, ref) {
 
   const previewRef = useRef(null)
@@ -408,6 +409,24 @@ export default forwardRef(function Section06Editor({
       setHasStoredData(false)
       setMessage('')
 
+      if (sctAggregate) {
+        const aggregate = sctAggregate.sections[6]
+        setData(aggregate?.saved ? {
+          normal: number(aggregate.normal),
+          issues: Object.fromEntries(PROBLEMS.map(p => [p.key, number(aggregate.issues?.[p.key])])),
+          parameter: {
+            dayNormal: number(aggregate.parameter?.dayNormal),
+            dayAbnormal: number(aggregate.parameter?.dayAbnormal),
+            nightNormal: number(aggregate.parameter?.nightNormal),
+            nightAbnormal: number(aggregate.parameter?.nightAbnormal),
+          },
+        } : emptyData())
+        setRowExists(!!aggregate?.saved)
+        setHasStoredData(!!aggregate?.saved)
+        setLoading(false)
+        return
+      }
+
       if (!report?.id) {
         setLoading(false)
         return
@@ -475,7 +494,7 @@ export default forwardRef(function Section06Editor({
     return () => {
       active = false
     }
-  }, [report?.id])
+  }, [report?.id, sctAggregate])
 
   // ========================================
   // SCALE PREVIEW
