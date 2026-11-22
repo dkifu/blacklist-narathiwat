@@ -10,20 +10,29 @@ const SECTION_NO = 10
 const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
 const MONTH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
 // คอลัมน์เหมือน Excel ตัวอย่าง (12 ช่อง) และตารางพรีวิวหน้าแรกทุกช่อง
-const FIELD_CONFIG = [
-  { key: 'date',         label: 'วันที่แจ้งเตือน',          width: 18 },
-  { key: 'time',         label: 'เวลา',                    width: 15 },
-  { key: 'location',     label: 'สถานที่',                 width: 26 },
-  { key: 'district',     label: 'อำเภอ',                   width: 20 },
-  { key: 'plate',        label: 'ป้ายทะเบียน',             width: 20 },
-  { key: 'vehicleType',  label: 'ประเภทรถ',               width: 23 },
-  { key: 'result',       label: 'ผลการตรวจสอบ',           width: 29 },
-  { key: 'behavior',     label: 'พฤติกรรม',               width: 35 },
-  { key: 'severityCode', label: 'รหัสความรุนแรง',         width: 19 },
-  { key: 'officerDate',  label: 'วันที่แจ้งเจ้าหน้าที่',     width: 22 },
-  { key: 'officerTime',  label: 'เวลาที่แจ้งเจ้าหน้าที่',     width: 21 },
-  { key: 'responsePlan', label: 'แผนเผชิญเหตุ',            width: 38 },
+// SECTION10_REPEAT_ALERTS_V2: 12-field legacy import stays readable.
+const LEGACY_FIELD_CONFIG = [
+  { key: 'date', label: 'วันที่แจ้งเตือน', width: 18 },
+  { key: 'time', label: 'เวลา', width: 15 },
+  { key: 'location', label: 'สถานที่', width: 26 },
+  { key: 'district', label: 'อำเภอ', width: 20 },
+  { key: 'plate', label: 'ป้ายทะเบียน', width: 20 },
+  { key: 'vehicleType', label: 'ประเภทรถ', width: 23 },
+  { key: 'result', label: 'ผลการตรวจสอบ', width: 29 },
+  { key: 'behavior', label: 'พฤติกรรม', width: 35 },
+  { key: 'severityCode', label: 'รหัสความรุนแรง', width: 19 },
+  { key: 'officerDate', label: 'วันที่แจ้งเจ้าหน้าที่', width: 22 },
+  { key: 'officerTime', label: 'เวลาที่แจ้งเจ้าหน้าที่', width: 21 },
+  { key: 'responsePlan', label: 'แผนเผชิญเหตุ', width: 38 },
 ]
+const RETIRED_DETAIL_KEYS = new Set(['result', 'officerDate', 'officerTime'])
+const FIELD_CONFIG = LEGACY_FIELD_CONFIG.filter(field => !RETIRED_DETAIL_KEYS.has(field.key))
+const LEGACY_HEADERS = LEGACY_FIELD_CONFIG.map(field => field.label)
+const LEGACY_FIELDS = LEGACY_FIELD_CONFIG.map(field => field.key)
+const STATIC_KEYS = ['plate', 'vehicleType', 'severityCode', 'behavior']
+const MAX_CASES_PER_PAGE = 4
+
+
 const HEADERS = FIELD_CONFIG.map(field => field.label)
 const FIELDS = FIELD_CONFIG.map(field => field.key)
 // จัดลำดับรหัสความรุนแรงแบบ A01 ก่อน B01 เสมอ
@@ -298,6 +307,48 @@ function formattedTime(value) {
   return original
 }
 
+// SECTION10_REPEAT_ALERTS_V2: normalize whitespace/punctuation for grouping,
+// not for changing stored plate text. Empty plates always remain separate.
+function monthVehicleKey(vehicle) {
+  const plate = compactPlateForSummary(normalizePlate(vehicle?.plate))
+    .normalize('NFKC')
+    .replace(/[\s\-‐‑‒–—−.]/g, '')
+    .toUpperCase()
+  return plate || null
+}
+
+function alertDateSortKey(vehicle) {
+  const value = dateBE(vehicle?.date)
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (!match) return null
+  const time = formattedTime(vehicle?.time).match(/^(\d{2})\.(\d{2})/)
+  return `${match[3]}-${match[2]}-${match[1]} ${time ? `${time[1]}:${time[2]}` : '00:00'}`
+}
+
+function groupMonthAlerts(displayRows) {
+  const byPlate = new Map()
+  displayRows.forEach((row, originalPosition) => {
+    // Do not merge records with missing plate or unknown identity.
+    const key = monthVehicleKey(row) || `__unidentified_${row.id || originalPosition}`
+    if (!byPlate.has(key)) byPlate.set(key, { key, events: [] })
+    byPlate.get(key).events.push({ ...row, _order: originalPosition })
+  })
+  return [...byPlate.values()].map(group => {
+    const originalEvents = group.events
+    const staticInfo = Object.fromEntries(STATIC_KEYS.map(key => [
+      key,
+      originalEvents.map(event => safe(event[key])).find(Boolean) || '',
+    ]))
+    const events = [...originalEvents].sort((a, b) => {
+      const ka = alertDateSortKey(a)
+      const kb = alertDateSortKey(b)
+      if (ka && kb && ka !== kb) return ka.localeCompare(kb)
+      return a._order - b._order
+    })
+    return { ...group, events, staticInfo }
+  })
+}
+
 async function compressImage(file) {
   if (!['image/jpeg','image/png','image/webp'].includes(file.type)) throw new Error('รูปต้องเป็น JPG, PNG หรือ WEBP')
   if (file.size > 15 * 1024 * 1024) throw new Error('ไฟล์ภาพต้องไม่เกิน 15 MB')
@@ -384,17 +435,15 @@ function SummaryPage({
 
   // รวมวันที่และเวลา เหลือ 10 คอลัมน์
   const columns = [
-    { key: 'dateTime', label: 'วันที่ / เวลาแจ้งเตือน', width: 92 },
-    { key: 'location', label: 'สถานที่', width: 146 },
-    { key: 'district', label: 'อำเภอ', width: 74 },
-    { key: 'plate', label: 'ป้ายทะเบียน', width: 74 },
-    { key: 'vehicleType', label: 'ประเภทรถ', width: 84 },
-    { key: 'result', label: 'ผลการตรวจสอบ', width: 64 },
-    { key: 'behavior', label: 'พฤติกรรม', width: 166 },
-    { key: 'severityCode', label: 'รหัสความรุนแรง', width: 63 },
-    { key: 'officerDateTime', label: 'วันที่ / เวลาแจ้งเจ้าหน้าที่', width: 92 },
-    { key: 'responsePlan', label: 'แผนเผชิญเหตุ', width: 193 },
-    ]
+  { key: 'dateTime', label: 'วันที่ / เวลาแจ้งเตือน', width: 104 },
+  { key: 'location', label: 'สถานที่', width: 170 },
+  { key: 'district', label: 'อำเภอ', width: 75 },
+  { key: 'plate', label: 'ป้ายทะเบียน', width: 125 },
+  { key: 'vehicleType', label: 'ประเภทรถ', width: 115 },
+  { key: 'behavior', label: 'พฤติกรรม', width: 180 },
+  { key: 'severityCode', label: 'รหัสความรุนแรง', width: 80 },
+  { key: 'responsePlan', label: 'แผนเผชิญเหตุ', width: 199 },
+]
 
   const renderDateTime = (date, time) => {
     const dateText = dateBE(date)
@@ -438,7 +487,7 @@ function SummaryPage({
         <div className="s10-card-title">
           <strong>ตารางสรุปการแจ้งเตือนรถบัญชีดำ</strong>
           <span>
-            หน้า {part}/{totalParts} · {rows.length} คัน
+            หน้า {part}/{totalParts} · {rows.length} ครั้ง
           </span>
         </div>
 
@@ -504,105 +553,79 @@ function SummaryPage({
   )
 }
 
-function VehiclePage({center,month,year,item,index,total}) {
-  return <div className="s10-paper s10-vehicle-page">
-    <Heading center={center} month={month} year={year} sub/>
-    <div className="s10-vehicle-hero">
-      <div>
-        <span>รถเป้าหมายคันที่ {String(index+1).padStart(2,'0')}</span>
-        <h3>{item.plate || 'ไม่ระบุป้ายทะเบียน'}</h3>
-        <p>{[item.vehicleType,item.location].filter(Boolean).join(' · ') || 'ข้อมูลการแจ้งเตือนรถบัญชีดำ'}</p>
-      </div>
-      <div className="s10-vehicle-chip">{item.severityCode || 'แจ้งเตือน'}</div>
-    </div>
-    <div className="s10-detail-grid">
-      <div className="s10-detail-panel">
-        <div className="s10-card-title"><strong>ข้อมูลรถและการดำเนินการ</strong><span>{index+1}/{total}</span></div>
-        
-        
-            <div className="s10-detail-fields">
-            {[
-                ...FIELD_CONFIG.filter(
-                field =>
-                    field.key !== 'behavior' &&
-                    field.key !== 'responsePlan'
-                ),
-
-                ...FIELD_CONFIG.filter(
-                field =>
-                    field.key === 'behavior' ||
-                    field.key === 'responsePlan'
-                ),
-            ].map(field => {
-                const isWide =
-                field.key === 'behavior' ||
-                field.key === 'responsePlan'
-
-                const value =
-                field.key === 'date' ||
-                field.key === 'officerDate'
-                    ? dateBE(item[field.key])
-                    : field.key === 'time' ||
-                        field.key === 'officerTime'
-                    ? formattedTime(item[field.key])
-                    : item[field.key]
-
-                return (
-                <div
-                    key={field.key}
-                    className={
-                    isWide
-                        ? 's10-detail-field s10-detail-field--wide'
-                        : 's10-detail-field'
-                    }
-                >
-                    <span>{field.label}</span>
-
-                    <strong>
-                    {value || '—'}
-                    </strong>
-                </div>
-                )
-            })}
-            </div>
-
-
-      </div>
-      
-      
-        <div className="s10-photo-panel">
-            <div className="s10-card-title">
-                <strong>ภาพประกอบจากกล้องวงจรปิด</strong>
-                <span>ภาพรถ 1 ภาพ</span>
-            </div>
-
-            <div className="s10-photo-grid">
-                <div className="s10-photo-cell">
-                {item.photos?.[0] ? (
-                    <img
-                    src={item.photos[0]}
-                    alt={`ภาพรถ ${item.plate}`}
-                    />
-                ) : (
-                    <div className="s10-photo-empty">
-                    ยังไม่มีภาพรถ
-                    </div>
-                )}
-
-                <span>ภาพรถ</span>
-                </div>
-            </div>
-
-            <div className="s10-photo-caption">
-                ภาพหลักฐานประกอบการแจ้งเตือนรถเป้าหมาย
-            </div>
+// SECTION10_DYNAMIC_IMAGES_V3: evidence layout adapts to per-page alert count
+function VehiclePage({ center, month, year, group, events, index, total, caseOffset, part, totalParts }) {
+  const info = group.staticInfo
+  const monthlyCount = group.events.length
+  return (
+    <div className="s10-paper s10-vehicle-page s10-grouped-vehicle-page">
+      <Heading center={center} month={month} year={year} sub />
+      <div className="s10-vehicle-hero s10-group-hero">
+        <div>
+          <span>รถเป้าหมายคันที่ {String(index + 1).padStart(2, '0')} / {total}</span>
+          <h3>{info.plate || 'ไม่ระบุป้ายทะเบียน'}</h3>
+          <p>ประวัติการแจ้งเตือนในเดือนนี้{totalParts > 1 ? ` · หน้ารายละเอียด ${part}/${totalParts}` : ''}</p>
         </div>
-
-
+        <div className="s10-vehicle-chip">{info.severityCode || 'ไม่ระบุรหัส'}</div>
+      </div>
+      <div className="s10-group-layout">
+        <section className="s10-events-panel">
+          <div className="s10-card-title">
+            <strong>ข้อมูลการแจ้งเตือนแต่ละครั้ง</strong>
+            <span>ครั้งที่ {caseOffset + 1}–{caseOffset + events.length} / {monthlyCount}</span>
+          </div>
+          <div className={`s10-event-list s10-event-list--${events.length}`} style={{ '--s10-visible-cases': events.length }}>
+            {events.map((event, i) => (
+              <article className="s10-event-card" key={event.id || `${caseOffset}-${i}`}>
+                <div className="s10-event-content">
+                  <div className="s10-event-number">ครั้งที่ {caseOffset + i + 1}</div>
+                  <div className="s10-event-fields">
+                    <div className="s10-event-field">
+                      <span>วันที่แจ้งเตือน</span><strong>{dateBE(event.date) || '—'}</strong>
+                    </div>
+                    <div className="s10-event-field">
+                      <span>เวลาที่แจ้งเตือน</span><strong>{formattedTime(event.time) || '—'}</strong>
+                    </div>
+                    <div className="s10-event-field">
+                      <span>สถานที่</span><strong>{event.location || '—'}</strong>
+                    </div>
+                    <div className="s10-event-field">
+                      <span>อำเภอ</span><strong>{event.district || '—'}</strong>
+                    </div>
+                    <div className="s10-event-field s10-event-plan">
+                      <span>แผนเผชิญเหตุ</span><strong>{event.responsePlan || '—'}</strong>
+                    </div>
+                  </div>
+                </div>
+                <div className="s10-event-photo">
+                  {event.photos?.[0] ? (
+                    <img src={event.photos[0]} alt={`ภาพประกอบการแจ้งเตือนครั้งที่ ${caseOffset + i + 1}`} />
+                  ) : (
+                    <span>ไม่มีภาพแนบ</span>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+        <aside className="s10-static-panel">
+          <div className="s10-card-title"><strong>ข้อมูลรถ</strong><span>ข้อมูลประจำคัน</span></div>
+          <div className="s10-static-body">
+            <div className="s10-static-field"><span>ป้ายทะเบียน</span><strong>{info.plate || '—'}</strong></div>
+            <div className="s10-static-field"><span>ประเภทรถ</span><strong>{info.vehicleType || '—'}</strong></div>
+            <div className="s10-static-field"><span>รหัสความรุนแรง</span><strong>{info.severityCode || '—'}</strong></div>
+            <div className="s10-static-field s10-static-behavior"><span>พฤติกรรม</span><strong>{info.behavior || '—'}</strong></div>
+            <div className="s10-static-count">
+              <span>เจอกี่ครั้งในเดือนนี้</span>
+              <strong>{formatNum(monthlyCount)} ครั้ง</strong>
+            </div>
+          </div>
+        </aside>
+      </div>
     </div>
-    
-  </div>
+  )
 }
+
 export default forwardRef(function Section10Editor({report,center,month,year,canEdit=false,onDataChange,sctAggregate},ref) {
   const centerId = Number(center?.id)
   const selectedMonth = Number(month)
@@ -612,6 +635,7 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
   const [vehicles,setVehicles] = useState([])
   const [annualCounts,setAnnualCounts] = useState(Array(12).fill(null))
   const [tableSize, setTableSize] = useState('10')
+  const [casesPerPage, setCasesPerPage] = useState(String(MAX_CASES_PER_PAGE))
   const [activePage,setActivePage] = useState(0)
   const [openId,setOpenId] = useState(null)
   const [loading,setLoading] = useState(true)
@@ -658,36 +682,47 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
     }    
 
 
+// Group repeated plates within this report month; one saved row = one alert.
+const groupedVehicles = useMemo(() => groupMonthAlerts(displayRows), [displayRows])
+const detailsPerPage = Math.max(1, Math.min(MAX_CASES_PER_PAGE, Number(casesPerPage) || MAX_CASES_PER_PAGE))
+
   const annualTotal = annualCounts.reduce((s,n,i) => s+(i===selectedMonth-1 ? vehicles.length : (n||0)),0)
   
   const a01Count = displayRows.filter(v => /^A01/i.test(safe(v.severityCode))).length
   const b01Count = displayRows.filter(v => /^B01/i.test(safe(v.severityCode))).length
   
-  // สร้างหน้ารายงานตามการแบ่งแถวล่าสุด
-    const pages = [
-    // หน้าสรุป ตามจำนวนแถวที่เลือก
-    ...summaryChunks.map((rows, index) => ({
-        kind: 'summary',
-        rows,
-        part: index + 1,
-    })),
+  // Summary is event-based; detail pages are grouped by normalized registration.
+const pages = [
+  ...summaryChunks.map((rows, index) => ({ kind: 'summary', rows, part: index + 1 })),
+]
+groupedVehicles.forEach((group, index) => {
+  const totalParts = Math.ceil(group.events.length / detailsPerPage)
+  for (let caseOffset = 0; caseOffset < group.events.length; caseOffset += detailsPerPage) {
+    pages.push({
+      kind: 'vehicle',
+      group,
+      events: group.events.slice(caseOffset, caseOffset + detailsPerPage),
+      index,
+      caseOffset,
+      part: Math.floor(caseOffset / detailsPerPage) + 1,
+      totalParts,
+    })
+  }
+})
 
-    // หน้ารายละเอียดรถ คันละหนึ่งหน้า
-    ...displayRows.map((vehicle, index) => ({
-        kind: 'vehicle',
-        vehicle,
-        index,
-    })),
-    ]
+useEffect(() => {
+  if (activePage >= pages.length) setActivePage(Math.max(0, pages.length - 1))
+}, [activePage, pages.length])
 
-  useEffect(() => {
+useEffect(() => {
     let mounted=true
     setLoading(true);setError('');setMessage('');setVehicles([]);setSaved(false);setDirty(false)
-    setOpenId(null);setActivePage(0);setTableSize('10');setAnnualCounts(Array(12).fill(null))
+    setOpenId(null);setActivePage(0);setTableSize('10');setCasesPerPage(String(MAX_CASES_PER_PAGE));setAnnualCounts(Array(12).fill(null))
     if (sctAggregate) {
       const aggregate = sctAggregate.sections[10]
       setVehicles((aggregate?.vehicles || []).map(normalizeVehicle))
       setAnnualCounts(aggregate?.annualCounts || Array(12).fill(null))
+      setCasesPerPage(String(Math.max(1, Math.min(MAX_CASES_PER_PAGE, Number(aggregate?.casesPerPage) || MAX_CASES_PER_PAGE))))
       setSaved(!!aggregate?.saved)
       setLoading(false)
       return () => { mounted = false }
@@ -714,6 +749,7 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
             PER_PAGE[savedTableSize] ? savedTableSize : '10'
             )
 
+        setCasesPerPage(String(Math.max(1, Math.min(MAX_CASES_PER_PAGE, Number(current?.content?.casesPerPage) || MAX_CASES_PER_PAGE))))
         setSaved(!!current)
       } catch(e) { if(mounted) setError(e.message || 'โหลดข้อมูลไม่สำเร็จ') }
       finally { if(mounted) setLoading(false) }
@@ -730,7 +766,20 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
     return ()=>observer.disconnect()
   },[canEdit])
 
-  const changeVehicle=(id,key,value)=>{setVehicles(prev=>prev.map(v=>v.id===id?{...v,[key]:value}:v));setDirty(true)}
+const changeVehicle = (id, key, value) => {
+  setVehicles(prev => {
+    const current = prev.find(v => v.id === id)
+    if (!current) return prev
+    if (!STATIC_KEYS.includes(key)) return prev.map(v => v.id === id ? { ...v, [key]: value } : v)
+    const groupKey = monthVehicleKey(current)
+    return prev.map(v => (
+      v.id === id || (groupKey && monthVehicleKey(v) === groupKey)
+        ? { ...v, [key]: value }
+        : v
+    ))
+  })
+  setDirty(true)
+}
   
   
     const onImages = async (id, files) => {
@@ -773,14 +822,14 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
     // ผู้ใช้พิมพ์เวลาได้ทั้ง 6, 6.00, 6:00 และแบบมี "น."
     const preparedRows = Math.max(rows.length, 151)
     for (let row = 2; row <= preparedRows; row++) {
-      for (const column of ['B', 'K']) {
+      for (const column of ['B']) {
         const address = `${column}${row}`
         sheet[address] = { ...(sheet[address] || { t: 's', v: '' }), z: '@' }
       }
     }
-    sheet['!ref'] = `A1:L${preparedRows}`
+    sheet['!ref'] = `A1:I${preparedRows}`
     sheet['!freeze']={xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft',state:'frozen'}
-    sheet['!autofilter']={ref:`A1:L${Math.max(2,rows.length)}`}
+    sheet['!autofilter']={ref:`A1:I${Math.max(2,rows.length)}`}
     XLSX.utils.book_append_sheet(workbook,sheet,'รายการรถ')
     XLSX.writeFile(workbook,`Blacklist_${center?.code||centerId}_${selectedMonth}_${selectedYear}.xlsx`)
   }
@@ -800,11 +849,16 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
       if(!sheet) throw new Error('ไม่พบตารางรายการรถใน Excel')
       const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:true})
       const incomingHeader=(rows[0]||[]).map(safe)
-      if(!HEADERS.every((name,i)=>incomingHeader[i]===name)) throw new Error('หัวคอลัมน์ไม่ตรง กรุณาดาวน์โหลด Template ใหม่')
+const importFields = HEADERS.every((name, i) => incomingHeader[i] === name)
+  ? FIELDS
+  : LEGACY_HEADERS.every((name, i) => incomingHeader[i] === name)
+    ? LEGACY_FIELDS
+    : null
+if (!importFields) throw new Error('หัวคอลัมน์ไม่ตรง กรุณาดาวน์โหลด Template ใหม่ (รองรับ Template 12 ช่องเดิมด้วย)')
       const incoming=rows.slice(1).filter(r=>r.some(c=>safe(c))).map(r=>{
         const v=emptyVehicle()
         
-        FIELDS.forEach((key, i) => {
+        importFields.forEach((key, i) => {
             if (key === 'plate') {
                 v[key] = normalizePlate(r[i])
             } else if (
@@ -847,7 +901,7 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
         setError('')
 
         setMessage(
-            `นำเข้า Excel สำเร็จ ${incoming.length} คัน ` +
+            `นำเข้า Excel สำเร็จ ${incoming.length} ครั้ง ` +
             `· แทนที่รายการเดิมของเดือน${MONTHS[selectedMonth - 1]}แล้ว ` +
             '· กรุณาตรวจสอบและกดบันทึก'
       )
@@ -867,7 +921,7 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
         const newer=existing.filter(r=>reportKey(r)>selectedYear*12+selectedMonth)
         if(newer.length>=2) throw new Error('มีภาพจากสองเดือนรายงานที่ใหม่กว่าแล้ว ไม่สามารถบันทึกภาพย้อนเดือนนี้ได้ แต่สามารถลบภาพและบันทึกข้อมูลตัวหนังสือได้')
       }
-      const content={version:1,tableSize,vehicles:vehicles.map(v=>({
+      const content={version:1,tableSize,casesPerPage:Number(casesPerPage),vehicles:vehicles.map(v=>({
         ...v,
 
         plate: normalizePlate(v.plate),
@@ -1084,22 +1138,26 @@ const downloadPng = async () => {
         tableSize={tableSize}
         />
     : <VehiclePage
-        center={center}
-        month={selectedMonth}
-        year={selectedYear}
-        item={page.vehicle}
-        index={page.index}
-        total={vehicles.length}
-        />
+    center={center}
+    month={selectedMonth}
+    year={selectedYear}
+    group={page.group}
+    events={page.events}
+    index={page.index}
+    total={groupedVehicles.length}
+    caseOffset={page.caseOffset}
+    part={page.part}
+    totalParts={page.totalParts}
+    />
   return <div className={`s10-editor ${canEdit?'editing':''}`}>
     {canEdit && <aside className="s10-side">
-      <div className="s10-side-header"><span>หัวข้อ 10</span><h3>รายงานแจ้งเตือนรถบัญชีดำ</h3><p>หน้าสรุป + รถแต่ละคันคันละหน้า</p></div>
+      <div className="s10-side-header"><span>หัวข้อ 10</span><h3>รายงานแจ้งเตือนรถบัญชีดำ</h3><p>หน้าสรุป + รวมทะเบียนซ้ำ (1–4 เคสต่อหน้า)</p></div>
       <div className="s10-side-body">
         <h4>นำเข้ารายการรถ</h4>
         <button type="button" className="s10-secondary" onClick={downloadTemplate}>↓ ดาวน์โหลด Template Excel</button>
         <button type="button" className="s10-secondary" onClick={()=>fileInput.current?.click()} disabled={loading||saving}>↑ อัปโหลด Excel</button>
         <input ref={fileInput} type="file" hidden accept=".xlsx,.xls" onChange={e=>{uploadExcel(e.target.files?.[0]);e.target.value=''}}/>
-        <p className="s10-hint">Template 12 คอลัมน์ตรงกับตารางพรีวิว · รถ 1 คันต่อ 1 แถว · ใช้เดือนรายงานจากระบบหลัก · วันที่ทั้งสองช่องรับ พ.ศ./ค.ศ. · รหัส A01 เรียงก่อน B01</p>
+        <p className="s10-hint">Template 9 คอลัมน์ · 1 แถวต่อการแจ้งเตือน · รองรับไฟล์ Excel 12 ช่องเดิม · ใช้เดือนรายงานจากระบบหลัก · วันที่ทั้งสองช่องรับ พ.ศ./ค.ศ. · รหัส A01 เรียงก่อน B01</p>
         <label className="s10-label">จำนวนแถวตารางสรุปต่อหน้า
           
             <select
@@ -1118,8 +1176,17 @@ const downloadPng = async () => {
             </select>
 
         </label>
-        <h4>รายการรถเดือน{MONTHS[selectedMonth-1]} ({vehicles.length} คัน)</h4>
-        <button type="button" className="s10-secondary" onClick={()=>{const next=emptyVehicle();setVehicles(v=>[...v,next]);setOpenId(next.id);setDirty(true)}}>+ เพิ่มรถด้วยตัวเอง</button>
+<label className="s10-label">จำนวนการแจ้งเตือนต่อหน้ารายละเอียด
+  <select
+    value={casesPerPage}
+    onChange={e => { setCasesPerPage(e.target.value); setDirty(true); setActivePage(0) }}
+  >
+    {[1, 2, 3, 4].map(n => <option key={n} value={String(n)}>{n} เคสต่อหน้า</option>)}
+  </select>
+</label>
+
+        <h4>รายการรถเดือน{MONTHS[selectedMonth-1]} ({groupedVehicles.length} คัน · {vehicles.length} ครั้ง)</h4>
+        <button type="button" className="s10-secondary" onClick={()=>{const next=emptyVehicle();setVehicles(v=>[...v,next]);setOpenId(next.id);setDirty(true)}}>+ เพิ่มการแจ้งเตือนด้วยตัวเอง</button>
         <div className="s10-case-list">{vehicles.map((v,i)=><div className="s10-case-edit" key={v.id}>
           <button type="button" className="s10-case-toggle" onClick={()=>setOpenId(openId===v.id?null:v.id)}>
             <b>{String(i+1).padStart(2,'0')}</b><span>{v.plate||'ไม่ระบุทะเบียน'}<small>{v.date||'—'} · {v.location||'ไม่ระบุสถานที่'}</small></span><span>{openId===v.id?'▴':'▾'}</span>
@@ -1166,7 +1233,7 @@ const downloadPng = async () => {
 
             
             <div className="s10-label">
-            ภาพประกอบรถ (1 ภาพต่อคัน)
+            ภาพประกอบ (1 ภาพต่อการแจ้งเตือน)
             </div>
 
             <label
@@ -1191,7 +1258,7 @@ const downloadPng = async () => {
             </strong>
 
             <small>
-                JPG / PNG / WEBP · 1 ภาพต่อคัน
+                JPG / PNG / WEBP · 1 ภาพต่อครั้ง
             </small>
             </label>
 
@@ -1217,7 +1284,7 @@ const downloadPng = async () => {
 
             
             
-            <button className="s10-danger" type="button" onClick={()=>{if(window.confirm('ลบรถคันนี้จากเดือนรายงาน?')){setVehicles(list=>list.filter(x=>x.id!==v.id));setOpenId(null);setDirty(true)}}}>ลบรายการรถคันนี้</button>
+            <button className="s10-danger" type="button" onClick={()=>{if(window.confirm('ลบการแจ้งเตือนครั้งนี้จากรายงาน?')){setVehicles(list=>list.filter(x=>x.id!==v.id));setOpenId(null);setDirty(true)}}}>ลบการแจ้งเตือนครั้งนี้</button>
           </div>}
         </div>)}</div>
         {dirty && <p className="s10-unsaved">มีข้อมูลแก้ไขที่ยังไม่ได้บันทึก</p>}
@@ -1229,7 +1296,7 @@ const downloadPng = async () => {
     <section className="s10-preview" ref={frameRef}>
       <div className="s10-page-tabs">
         {pages.map((page,i)=><button key={i} type="button" className={i===activePage?'active':''} onClick={()=>setActivePage(i)}>
-          {page.kind==='summary' ? `สรุป ${page.part}/${summaryChunks.length}` : `รถ ${page.index+1}/${vehicles.length}`}
+          {page.kind==='summary' ? `สรุป ${page.part}/${summaryChunks.length}` : `รถ ${page.index+1}/${groupedVehicles.length}${page.totalParts > 1 ? ` (${page.part}/${page.totalParts})` : ''}`}
         </button>)}
       </div>
       <div className="s10-stage" style={{width:PAPER_W*scale,height:PAPER_H*scale}}>
