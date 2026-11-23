@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import * as XLSX from 'xlsx'
 import JSZip from 'jszip'
@@ -31,17 +31,7 @@ const RETIRED_DETAIL_KEYS = new Set(['result', 'officerDate', 'officerTime'])
 const PREVIOUS_FIELD_CONFIG = LEGACY_FIELD_CONFIG.filter(field => !RETIRED_DETAIL_KEYS.has(field.key))
 const PREVIOUS_HEADERS = PREVIOUS_FIELD_CONFIG.map(field => field.label)
 const PREVIOUS_FIELDS = PREVIOUS_FIELD_CONFIG.map(field => field.key)
-const BLACKLIST_GROUPS = [
-  'รถเป้าหมาย',
-  'รถเฝ้าระวังตรวจสอบ',
-  'รถเฝ้าติดตาม',
-  'รถ Blacklist นฝต. A01',
-  'รถ Blacklist นฝต. B01',
-  'รถ Blacklist สขว.',
-  'รถเฉพาะกิจ',
-  'รถบุคคลสำคัญ',
-  'รถทดสอบ',
-]
+// SECTION10_GLOBAL_GROUPS_V2: all center accounts share the database group catalog.
 const FIELD_CONFIG = [
   ...PREVIOUS_FIELD_CONFIG.slice(0, 6),
   { key: 'blacklistGroup', label: 'กลุ่มบัญชีดำ', width: 26 },
@@ -114,6 +104,54 @@ const compactPlateForSummary = value =>
 }
 
 const formatNum = n => Number(n || 0).toLocaleString('th-TH')
+
+// PATCH_SECTION10_ANALYTICS_OVERVIEW_V1: separate analytics overview page.
+const SEVERITY_FAMILY_LABELS = {
+  A: 'หมวด A',
+  B: 'หมวด B',
+}
+
+function severityFamily(value) {
+  const code = safe(value).toUpperCase()
+  if (/^A\d+/i.test(code)) return 'A'
+  if (/^B\d+/i.test(code)) return 'B'
+  return ''
+}
+
+function groupIntensity(count) {
+  const n = Number(count) || 0
+
+  if (n <= 0) return 'zero'
+  if (n <= 2) return 'lv1'
+  if (n <= 4) return 'lv2'
+  if (n <= 6) return 'lv3'
+  if (n <= 8) return 'lv4'
+  return 'lv5' // 9 รายการขึ้นไป
+}
+
+
+
+function summarizeBlacklistGroups(rows, groupNames) {
+  const names = [...new Set(groupNames.map(safe).filter(Boolean))]
+  const counts = new Map(names.map(name => [name, 0]))
+  rows.forEach(item => {
+    const name = safe(item?.blacklistGroup)
+    if (name) counts.set(name, (counts.get(name) || 0) + 1)
+  })
+  return [...counts].map(([name, count]) => ({
+    name, count, palette: 'alert', intensity: groupIntensity(count),
+  }))
+}
+
+function percentText(part, total) {
+  if (!total) return '0.0%'
+  return `${((part / total) * 100).toFixed(1)}%`
+}
+
+function compactGroupLabel(name) {
+  return safe(name)
+}
+
 const reportKey = r => Number(r.report_year) * 12 + Number(r.report_month)
 const hasPhotos = content => Array.isArray(content?.vehicles) &&
   content.vehicles.some(v => Array.isArray(v.photos) && v.photos.some(Boolean))
@@ -435,6 +473,195 @@ function Heading({center,month,year,sub}) {
 
 // ตารางหน้าแรกใช้คอลัมน์เดียวกับเทมเพลต Excel ครบทั้ง 12 ช่อง
 // PATCH_SECTION10_FIXED_GRID_AUTOFIT_V2: identical ten-row physical grid for every center.
+// PATCH_SECTION10_ANALYTICS_OVERVIEW_V1: separate overview page before the table.
+// PATCH_SECTION10_ANALYTICS_OVERVIEW_V2: approved visual layout, real values.
+// PATCH_SECTION10_ANALYTICS_VISUAL_V4: icon-rich overview layout, larger donut, tighter right column.
+function AnalyticsPage({ center, month, year, monthCount, a01Count, b01Count, groupStats, allGroupStats, part, totalParts }) {
+  const maxCount = Math.max(0, ...groupStats.map(item => item.count || 0))
+  const tickStep = maxCount <= 8 ? 1 : Math.ceil(maxCount / 8)
+  const chartMax = Math.max(8, Math.ceil(maxCount / tickStep) * tickStep)
+  const ticks = Array.from({ length: chartMax / tickStep + 1 }, (_, i) => i * tickStep)
+  const activeGroupCount = allGroupStats.filter(item => item.count > 0).length
+  const topCount = Math.max(0, ...allGroupStats.map(item => item.count || 0))
+  const topGroup = topCount > 0 ? allGroupStats.find(item => item.count === topCount) : null
+  const otherSeverityCount = Math.max(0, monthCount - a01Count - b01Count)
+  const circumference = 2 * Math.PI * 72
+  const aArc = monthCount ? circumference * a01Count / monthCount : 0
+  const bArc = monthCount ? circumference * b01Count / monthCount : 0
+
+  // Number of chart rows and summary tiles adapts to the global catalog.
+  // <= 10 groups: one tile row. 11+: balanced rows within the same A4 page.
+  const groupCount = groupStats.length
+  const cardColumns = Math.min(10, groupCount <= 10 ? Math.max(1, groupCount) : Math.ceil(groupCount / 2))
+  const cardRows = Math.max(1, Math.ceil(groupCount / cardColumns))
+
+  return (
+    <div
+      className={`s10-paper s10-analytics-paper${groupCount > 10 ? ' s10-analytics-paper--many' : ''}${groupCount > 18 ? ' s10-analytics-paper--packed' : ''}`}
+      style={{
+        '--s10-group-count': Math.max(1, groupCount),
+        '--s10-card-columns': cardColumns,
+        '--s10-card-rows': cardRows,
+      }}
+    >
+      <header className="s10-heading s10-analytics-heading">
+        <h2>สรุปการแจ้งเตือนรถบัญชีดำ — ภาพรวมกลุ่มรถ</h2>
+        <p>{center?.name || 'ศูนย์กล้องวงจรปิด'} · ประจำเดือน {MONTHS[month - 1]} {year}</p>
+      </header>
+
+      <div className="s10-metrics s10-analytics-metrics">
+        <div className="blue">
+          <div className="s10-metric-copy"><span>แจ้งเตือนเดือนนี้</span><strong>{formatNum(monthCount)}</strong><small>รายการ</small></div>
+          <div className="s10-metric-icon s10-metric-icon--car" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 14l1.6-4.8A2 2 0 0 1 8.5 8h7a2 2 0 0 1 1.9 1.2L19 14" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 14h16v4a1 1 0 0 1-1 1h-1v-2H6v2H5a1 1 0 0 1-1-1v-4Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/><circle cx="7.5" cy="16" r="1.2" fill="currentColor"/><circle cx="16.5" cy="16" r="1.2" fill="currentColor"/></svg>
+          </div>
+        </div>
+        <div className="red">
+          <div className="s10-metric-copy"><span>ความรุนแรงหมวด A</span><strong>{formatNum(a01Count)}</strong><small>รายการ</small></div>
+          <div className="s10-metric-icon s10-metric-icon--a" aria-hidden="true">A</div>
+        </div>
+        <div className="green">
+          <div className="s10-metric-copy"><span>ความรุนแรงหมวด B</span><strong>{formatNum(b01Count)}</strong><small>รายการ</small></div>
+          <div className="s10-metric-icon s10-metric-icon--b" aria-hidden="true">B</div>
+        </div>
+      </div>
+
+      <section className="s10-analytics-card">
+        <div className="s10-analytics-card-head">
+          <div className="s10-analytics-card-titlewrap">
+            <div className="s10-analytics-title-icon s10-analytics-title-icon--chart" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M4 20h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M8 18v-6" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/><path d="M13 18V9" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/><path d="M18 18V6" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/></svg>
+            </div>
+            <div>
+              <strong>สรุปจำนวนการแจ้งเตือนแยกตามกลุ่มบัญชีดำ ({allGroupStats.length} กลุ่ม)</strong>
+              <span>แสดงจำนวนรายการแจ้งเตือนของรถในแต่ละกลุ่มประจำเดือนนี้</span>
+            </div>
+          </div>
+          <div className="s10-analytics-top-group">
+            <span aria-hidden="true">🏆</span>
+            <strong>{topGroup
+              ? `กลุ่มที่พบมากที่สุด : ${topGroup.name} (${formatNum(topGroup.count)} รายการ)`
+              : 'กลุ่มที่พบมากที่สุด : ยังไม่มีข้อมูล'}</strong>
+          </div>
+        </div>
+
+        <div className="s10-analytics-main">
+          <div className="s10-analytics-chart">
+            {groupStats.map(item => (
+              <div className="s10-analytics-row" key={item.name}>
+                <div className="s10-analytics-label" title={item.name}>{item.name}</div>
+                
+                <div
+                  className="s10-analytics-track"
+                  style={{
+                    '--s10-axis-steps': ticks.length - 1,
+                    '--s10-bar-width': `${Math.max(
+                      1.5,
+                      (item.count / chartMax) * 100
+                    )}%`,
+                  }}
+                >
+                  {item.count > 0 && (
+                    <>
+                      <div
+                        className={`s10-analytics-bar s10-analytics-bar--${item.intensity}`}
+                        style={{ width: 'var(--s10-bar-width)' }}
+                      />
+                      <div className="s10-analytics-value s10-analytics-value--at-end">
+                        {formatNum(item.count)}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+              </div>
+            ))}
+            <div className="s10-analytics-axis">
+              <div className="s10-analytics-ticks">
+                {ticks.map(tick => <span key={tick}>{formatNum(tick)}</span>)}
+              </div>
+              <span>จำนวนรายการ</span>
+            </div>
+          </div>
+
+          <aside className="s10-analytics-side">
+            <div className="s10-analytics-donut-wrap">
+              <div className="s10-analytics-donut">
+                <svg viewBox="0 0 176 176" className="s10-analytics-ring" aria-hidden="true">
+                  <circle cx="88" cy="88" r="72" fill="none" stroke="#e9edf4" strokeWidth="24" />
+                  {aArc > 0 && <circle cx="88" cy="88" r="72" fill="none" stroke="#e72c62"
+                    strokeWidth="24" strokeDasharray={`${aArc} ${circumference - aArc}`}
+                    transform="rotate(-90 88 88)" />}
+                  {bArc > 0 && <circle cx="88" cy="88" r="72" fill="none" stroke="#16a34a"
+                    strokeWidth="24" strokeDasharray={`${bArc} ${circumference - bArc}`}
+                    strokeDashoffset={-aArc} transform="rotate(-90 88 88)" />}
+                </svg>
+                <div className="s10-analytics-donut-inner">
+                  <strong>{formatNum(monthCount)}</strong><span>รายการ</span>
+                </div>
+              </div>
+              <div className="s10-analytics-donut-legend">
+                <div><i className="a" />หมวด A : {formatNum(a01Count)} รายการ ({percentText(a01Count, monthCount)})</div>
+                <div><i className="b" />หมวด B : {formatNum(b01Count)} รายการ ({percentText(b01Count, monthCount)})</div>
+                {otherSeverityCount > 0 && <div><i className="other" />อื่น ๆ / ไม่ระบุ : {formatNum(otherSeverityCount)} รายการ ({percentText(otherSeverityCount, monthCount)})</div>}
+              </div>
+            </div>
+            <div className="s10-analytics-found-box">
+              <div className="s10-analytics-found-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M5 14l1.6-4.8A2 2 0 0 1 8.5 8h7a2 2 0 0 1 1.9 1.2L19 14" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 14h16v4a1 1 0 0 1-1 1h-1v-2H6v2H5a1 1 0 0 1-1-1v-4Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/><circle cx="7.5" cy="16" r="1.2" fill="currentColor"/><circle cx="16.5" cy="16" r="1.2" fill="currentColor"/></svg>
+              </div>
+              <div className="s10-analytics-found-copy">
+                <strong>พบทั้งหมด <b>{formatNum(activeGroupCount)}</b> จาก {formatNum(allGroupStats.length)} กลุ่ม</strong>
+                <span>คิดเป็น {percentText(activeGroupCount, allGroupStats.length)} ของกลุ่มทั้งหมด</span>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      
+
+      <section className="s10-analytics-groups">
+        <div className="s10-card-title s10-card-title--icon">
+          <div className="s10-analytics-title-icon s10-analytics-title-icon--stack" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 4 3.5 8 12 12 20.5 8 12 4Z" fill="currentColor"/><path d="M5.5 12.3 12 15.3l6.5-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M5.5 16.3 12 19.3l6.5-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+          
+          
+          <div className="s10-analytics-group-heading">
+            <strong>สรุปจำนวนรายการรายกลุ่ม{totalParts > 1 ? ` (${part}/${totalParts})` : ""}</strong>
+          </div>
+
+          <div className="s10-analytics-scale-items">
+            <span><i className="zero" />ไม่มี (0)</span>
+            <span><i className="lv1" />1–2 รายการ</span>
+            <span><i className="lv2" />3–4 รายการ</span>
+            <span><i className="lv3" />5–6 รายการ</span>
+            <span><i className="lv4" />7–8 รายการ</span>
+            <span><i className="lv5" />9 รายการขึ้นไป</span>
+          </div>
+                  
+
+        </div>
+        <div className="s10-analytics-group-grid">
+          {groupStats.map(item => (
+            <article className={`s10-group-card s10-group-card--${item.palette} s10-group-card--${item.intensity}`}
+              key={item.name} title={`${item.name}: ${formatNum(item.count)} รายการ`}>
+              <h4>{item.name}</h4>
+              <strong>{item.count > 0 ? formatNum(item.count) : '—'}</strong>
+              <small>รายการ</small>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+// Existing summary table remains a separate page.
+
+// Existing summary table remains a separate page.
+
 function SummaryPage({
   center,
   month,
@@ -548,12 +775,12 @@ function SummaryPage({
           <small>รายการ</small>
         </div>
         <div className="red">
-          <span>จำนวน A01</span>
+          <span>ความรุนแรงหมวด A</span>
           <strong>{formatNum(a01Count)}</strong>
           <small>รายการ</small>
         </div>
         <div className="green">
-          <span>จำนวน B01</span>
+          <span>ความรุนแรงหมวด B</span>
           <strong>{formatNum(b01Count)}</strong>
           <small>รายการ</small>
         </div>
@@ -687,7 +914,7 @@ function VehiclePage({ center, month, year, group, events, index, total, caseOff
   )
 }
 
-export default forwardRef(function Section10Editor({report,center,month,year,canEdit=false,onDataChange,sctAggregate},ref) {
+export default forwardRef(function Section10Editor({report,center,month,year,canEdit=false,isAdmin=false,onDataChange,sctAggregate},ref) {
   const centerId = Number(center?.id)
   const selectedMonth = Number(month)
   const selectedYear = Number(year)
@@ -710,6 +937,102 @@ export default forwardRef(function Section10Editor({report,center,month,year,can
   const frameRef = useRef(null)
   const paperRefs = useRef([])
   const fileInput = useRef(null)
+  const [blacklistGroupRows, setBlacklistGroupRows] = useState([])
+  const [groupsLoading, setGroupsLoading] = useState(true)
+  const [groupsError, setGroupsError] = useState('')
+  const [newGroupName, setNewGroupName] = useState('')
+  const [groupActionBusy, setGroupActionBusy] = useState(false)
+  const [groupActionMessage, setGroupActionMessage] = useState('')
+  const [showGroupManager, setShowGroupManager] = useState(false)
+
+  const refreshBlacklistGroups = useCallback(async () => {
+    const { data, error: fetchError } = await supabase
+      .from('section10_blacklist_groups')
+      .select('id,name,is_active,sort_order')
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true })
+    if (fetchError) {
+      setGroupsError('โหลดกลุ่มรถส่วนกลางไม่สำเร็จ: ' + fetchError.message)
+      setBlacklistGroupRows([])
+      setGroupsLoading(false)
+      throw fetchError
+    }
+    setBlacklistGroupRows(data || [])
+    setGroupsError('')
+    setGroupsLoading(false)
+    return data || []
+  }, [])
+
+  // Realtime for connected stations; polling + window focus as a fallback.
+  useEffect(() => {
+    refreshBlacklistGroups().catch(() => {})
+    const channel = supabase.channel(`section10-blacklist-groups-${crypto.randomUUID()}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'section10_blacklist_groups',
+      }, () => { refreshBlacklistGroups().catch(() => {}) })
+      .subscribe()
+    const polling = window.setInterval(() => {
+      refreshBlacklistGroups().catch(() => {})
+    }, 30000)
+    const focused = () => refreshBlacklistGroups().catch(() => {})
+    window.addEventListener('focus', focused)
+    return () => {
+      window.clearInterval(polling)
+      window.removeEventListener('focus', focused)
+      supabase.removeChannel(channel)
+    }
+  }, [refreshBlacklistGroups])
+
+  const activeGroupNames = useMemo(() => blacklistGroupRows
+    .filter(row => row.is_active).map(row => row.name), [blacklistGroupRows])
+  const knownGroupNames = useMemo(() => blacklistGroupRows.map(row => row.name), [blacklistGroupRows])
+
+  const changeGroupCatalog = async (action, record = null) => {
+    if (!isAdmin || groupActionBusy) return
+    const name = newGroupName.trim()
+    if (action === 'add' && !name) return setGroupActionMessage('กรุณาระบุชื่อกลุ่มรถ')
+    if (action === 'deactivate' && !window.confirm(`นำกลุ่ม "${record.name}" ออกจากตัวเลือกของทุกศูนย์? ข้อมูลเก่าจะไม่ถูกลบ`)) return
+    // SECTION10_GROUP_HARD_DELETE_V1: explicit confirmation, inactive-only.
+    if (action === 'delete') {
+      if (!record || record.is_active) {
+        setGroupActionMessage('ต้องนำกลุ่มออกก่อน จึงจะลบถาวรได้')
+        return
+      }
+      const typedName = window.prompt(
+        `ลบกลุ่ม "${record.name}" ออกจากทุก สภ. อย่างถาวร\n` +
+        'หากมีข้อมูลในรายงานย้อนหลัง ระบบจะไม่อนุญาตให้ลบ\n' +
+        'พิมพ์ชื่อกลุ่มให้ตรงทุกตัวอักษรเพื่อยืนยัน:'
+      )
+      if (typedName === null) return
+      if (typedName.trim() !== record.name) {
+        setGroupActionMessage('ชื่อกลุ่มที่ยืนยันไม่ตรงกัน จึงไม่ได้ลบ')
+        return
+      }
+    }
+    setGroupActionBusy(true)
+    setGroupActionMessage('')
+    try {
+      const { error: updateError } = action === 'delete'
+        ? await supabase.rpc('section10_blacklist_group_delete', { p_id: record.id })
+        : await supabase.rpc('section10_blacklist_groups_manage', {
+            p_action: action,
+            p_name: action === 'add' ? name : null,
+            p_id: record?.id ?? null,
+          })
+      if (updateError) throw updateError
+      await refreshBlacklistGroups()
+      if (action === 'add') setNewGroupName('')
+      setGroupActionMessage(action === 'add' ? 'เพิ่มกลุ่มรถส่วนกลางแล้ว'
+        : action === 'activate' ? 'เปิดใช้งานกลุ่มรถแล้ว'
+        : action === 'delete' ? 'ลบกลุ่มรถออกจากฐานข้อมูลกลางอย่างถาวรแล้ว'
+        : 'นำกลุ่มรถออกจากตัวเลือกแล้ว (ประวัติยังอยู่)')
+    } catch (err) {
+      setGroupActionMessage('จัดการกลุ่มรถไม่สำเร็จ: ' + (err.message || String(err)))
+    } finally {
+      setGroupActionBusy(false)
+    }
+  }
+
   const displayRows = useMemo(() =>
     vehicles.map((v,i) => ({...v,originalOrder:i}))
       .sort((a,b) => severityOrder(a.severityCode)-severityOrder(b.severityCode) || a.originalOrder-b.originalOrder)
@@ -749,11 +1072,21 @@ const detailsPerPage = Math.max(1, Math.min(MAX_CASES_PER_PAGE, Number(casesPerP
 
   const annualTotal = annualCounts.reduce((s,n,i) => s+(i===selectedMonth-1 ? vehicles.length : (n||0)),0)
   
-  const a01Count = displayRows.filter(v => /^A01/i.test(safe(v.severityCode))).length
-  const b01Count = displayRows.filter(v => /^B01/i.test(safe(v.severityCode))).length
+  const a01Count = displayRows.filter(v => severityFamily(v.severityCode) === 'A').length
+  const b01Count = displayRows.filter(v => severityFamily(v.severityCode) === 'B').length
+
+  // Catalog groups are globally shared. Historical inactive names remain visible
+  // when referenced by an older report, without becoming selectable for new rows.
+  const groupStats = summarizeBlacklistGroups(displayRows, [
+    ...activeGroupNames, ...displayRows.map(row => safe(row.blacklistGroup)).filter(Boolean),
+  ])
+  // SECTION10_DASHBOARD_ONE_PAGE_V1:
+  // No more chunks of 9. All global groups appear on one A4 overview.
+  // The summary table and vehicle-detail pages continue to paginate normally.
   
   // Summary is event-based; detail pages are grouped by normalized registration.
 const pages = [
+  { kind: 'dashboard' },
   ...summaryChunks.map((rows, index) => ({ kind: 'summary', rows, part: index + 1 })),
 ]
 groupedVehicles.forEach((group, index) => {
@@ -874,6 +1207,10 @@ const changeVehicle = (id, key, value) => {
 
 
   const downloadTemplate=async()=>{
+    if (groupsLoading || groupsError || !activeGroupNames.length) {
+      setError(groupsError || 'ยังไม่มีข้อมูลกลุ่มรถส่วนกลาง กรุณาตรวจสอบ SQL หรือรอโหลดรายการ')
+      return
+    }
     const workbook=XLSX.utils.book_new()
     // Excel template uses FIELD_CONFIG; summary PDF uses its own fixed-width columns.
     const rows=[HEADERS,...displayRows.map(v => FIELDS.map(key => ['time', 'officerTime'].includes(key) ? formattedTime(v[key]) : (v[key] ?? '')))]
@@ -893,14 +1230,18 @@ const changeVehicle = (id, key, value) => {
     sheet['!freeze']={xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft',state:'frozen'}
     sheet['!autofilter'] = {ref: `A1:${lastColumn}${Math.max(2, rows.length)}`}
     XLSX.utils.book_append_sheet(workbook,sheet,'รายการรถ')
-    // PATCH_SECTION10_EXCEL_DROPDOWN_V1: make a real native Excel list dropdown
-    // in G2:G151. It is visible in desktop Excel, independent of AutoFilter.
-    // SheetJS writes the workbook; JSZip adds an OOXML dataValidation rule.
+    // SECTION10_GLOBAL_GROUPS_V2: hidden list + workbook named range.
+    // This avoids Excel's 255-character limit for inline list validations.
+    // Every newly downloaded template contains the latest active group choices.
     try {
-      const optionsText = BLACKLIST_GROUPS.join(',')
-      if (optionsText.length > 255) {
-        throw new Error('รายการกลุ่มบัญชีดำยาวเกินข้อจำกัดของ Excel')
-      }
+      const groupSheet = XLSX.utils.aoa_to_sheet(activeGroupNames.map(name => [name]))
+      groupSheet['!cols'] = [{ wch: 65 }]
+      XLSX.utils.book_append_sheet(workbook, groupSheet, 'กลุ่มรถ')
+      workbook.Workbook = workbook.Workbook || {}
+      workbook.Workbook.Sheets = [{ Hidden: 0 }, { Hidden: 1 }]
+      workbook.Workbook.Names = [
+        { Name: 'SECTION10_GROUP_CHOICES', Ref: `'กลุ่มรถ'!$A$1:$A$${activeGroupNames.length}` },
+      ]
 
       const workbookBytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
       const zip = await JSZip.loadAsync(workbookBytes)
@@ -915,15 +1256,12 @@ const changeVehicle = (id, key, value) => {
         throw new Error('Excel มี Data Validation อยู่แล้ว กรุณาตรวจสอบเทมเพลต')
       }
 
-      const xmlEscape = value => String(value).replace(/[&<>"']/g, ch => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;',
-      }[ch]))
-      const formula = xmlEscape(`"${optionsText.replace(/"/g, '""')}"`)
+      const formula = 'SECTION10_GROUP_CHOICES'
       const dataValidation =
         `<dataValidations count="1">` +
         `<dataValidation type="list" allowBlank="1" showDropDown="0" ` +
         `showInputMessage="1" promptTitle="กลุ่มบัญชีดำ" ` +
-        `prompt="เลือกจากรายการ 9 กลุ่ม" ` +
+        `prompt="เลือกจากรายการกลุ่มรถส่วนกลาง" ` +
         `showErrorMessage="1" errorStyle="stop" ` +
         `errorTitle="กลุ่มบัญชีดำไม่ถูกต้อง" ` +
         `error="กรุณาเลือกกลุ่มบัญชีดำจากรายการ" ` +
@@ -948,6 +1286,7 @@ const changeVehicle = (id, key, value) => {
   }
   const uploadExcel=async(file)=>{
     if(!file || !canEdit || loading || saving) return
+    if (groupsLoading || groupsError) { setError(groupsError || 'ยังโหลดรายการกลุ่มรถไม่เสร็จ'); return }
     try{
       
       const workbook = XLSX.read(
@@ -974,7 +1313,7 @@ if (!importFields) throw new Error('หัวคอลัมน์ไม่ต�
         const v=emptyVehicle()
         
         importFields.forEach((key, i) => {
-          if (key === 'blacklistGroup' && safe(r[i]) && !BLACKLIST_GROUPS.includes(safe(r[i]))) {
+          if (key === 'blacklistGroup' && safe(r[i]) && !knownGroupNames.includes(safe(r[i]))) {
             throw new Error(`กลุ่มบัญชีดำใน Excel ไม่ตรงกับตัวเลือก: ${safe(r[i])}`)
           }
             if (key === 'plate') {
@@ -1234,7 +1573,7 @@ const downloadPng = async () => {
 
 
   useImperativeHandle(ref,()=>({
-    isReady:()=>valid && !loading && !saving && !error,
+    isReady:()=>valid && !loading && !saving && !error && !groupsLoading && !groupsError,
     hasData:()=>saved,
     exportPdfPages:async()=>{
       const result=[]
@@ -1242,7 +1581,20 @@ const downloadPng = async () => {
       return result
     },
   }))
-  const drawPage=(page)=>page.kind==='summary'
+  const drawPage=(page)=>page.kind==='dashboard'
+    ? <AnalyticsPage
+        center={center}
+        month={selectedMonth}
+        year={selectedYear}
+        monthCount={vehicles.length}
+        a01Count={a01Count}
+        b01Count={b01Count}
+        groupStats={groupStats}
+        allGroupStats={groupStats}
+        part={1}
+        totalParts={1}
+      />
+    : page.kind==='summary'
     ? <SummaryPage
         center={center}
         month={selectedMonth}
@@ -1269,11 +1621,43 @@ const downloadPng = async () => {
     />
   return <div className={`s10-editor ${canEdit?'editing':''}`}>
     {canEdit && <aside className="s10-side">
-      <div className="s10-side-header"><span>หัวข้อ 10</span><h3>รายงานแจ้งเตือนรถบัญชีดำ</h3><p>หน้าสรุป + รวมทะเบียนซ้ำ (1–4 เคสต่อหน้า)</p></div>
+      <div className="s10-side-header"><span>หัวข้อ 10</span><h3>รายงานแจ้งเตือนรถบัญชีดำ</h3><p>หน้า Dashboard + ตารางสรุป + รวมทะเบียนซ้ำ (1–4 เคสต่อหน้า)</p></div>
       <div className="s10-side-body">
+        {isAdmin && <section className="s10-group-admin">
+          <button type="button" className="s10-group-admin-toggle" onClick={() => setShowGroupManager(value => !value)}>
+            <span>⚙ จัดการกลุ่มรถ (ทุก สภ.)</span><span>{showGroupManager ? '▴' : '▾'}</span>
+          </button>
+          {showGroupManager && <div className="s10-group-admin-panel">
+            <p>ใช้ร่วมกันทุกศูนย์ · นำออก/เปิดกลับได้ · ลบถาวรเฉพาะกลุ่มที่ไม่เคยมีข้อมูลในรายงาน</p>
+            <div className="s10-group-admin-add">
+              <input type="text" value={newGroupName} maxLength={100}
+                placeholder="ชื่อกลุ่มรถใหม่" onChange={e => setNewGroupName(e.target.value)} />
+              <button type="button" disabled={groupActionBusy || groupsLoading || !!groupsError}
+                onClick={() => changeGroupCatalog('add')}>+ เพิ่ม</button>
+            </div>
+            <div className="s10-group-admin-items">
+              {blacklistGroupRows.map(row => <div key={row.id} className={!row.is_active ? 'inactive' : ''}>
+                <span title={row.name}>{row.name}</span>
+                <button type="button" disabled={groupActionBusy || groupsLoading}
+                  onClick={() => changeGroupCatalog(row.is_active ? 'deactivate' : 'activate', row)}>
+                  {row.is_active ? 'นำออก' : 'เปิดกลับ'}
+                </button>
+                {!row.is_active && <button type="button" className="s10-group-admin-delete"
+                  title="ลบถาวรเฉพาะกลุ่มที่ไม่ถูกใช้ในรายงานย้อนหลัง"
+                  disabled={groupActionBusy || groupsLoading || !!groupsError}
+                  onClick={() => changeGroupCatalog('delete', row)}>
+                  ลบถาวร
+                </button>}
+              </div>)}
+            </div>
+            {groupActionMessage && <p className="s10-group-admin-status">{groupActionMessage}</p>}
+          </div>}
+        </section>}
+        {groupsError && <p className="s10-group-admin-error">{groupsError}</p>}
+        {groupsLoading && <p className="s10-hint">กำลังโหลดกลุ่มรถส่วนกลาง...</p>}
         <h4>นำเข้ารายการรถ</h4>
-        <button type="button" className="s10-secondary" onClick={downloadTemplate}>↓ ดาวน์โหลด Template Excel</button>
-        <button type="button" className="s10-secondary" onClick={()=>fileInput.current?.click()} disabled={loading||saving}>↑ อัปโหลด Excel</button>
+        <button type="button" className="s10-secondary" disabled={groupsLoading || !!groupsError} onClick={downloadTemplate}>↓ ดาวน์โหลด Template Excel</button>
+        <button type="button" className="s10-secondary" onClick={()=>fileInput.current?.click()} disabled={loading||saving||groupsLoading||!!groupsError}>↑ อัปโหลด Excel</button>
         <input ref={fileInput} type="file" hidden accept=".xlsx,.xls" onChange={e=>{uploadExcel(e.target.files?.[0]);e.target.value=''}}/>
         <p className="s10-hint">Template 11 คอลัมน์ · 1 แถวต่อการแจ้งเตือน · รองรับไฟล์ Excel 9 และ 12 ช่องเดิม · ใช้เดือนรายงานจากระบบหลัก · วันที่ทั้งสองช่องรับ พ.ศ./ค.ศ. · รหัส A01 เรียงก่อน B01</p>
         <label className="s10-label">จำนวนแถวตารางสรุปต่อหน้า
@@ -1312,9 +1696,12 @@ const downloadPng = async () => {
           {openId===v.id && <div className="s10-case-form">
             {FIELDS.map((key,i)=><label className="s10-label" key={key}>{HEADERS[i]}
               {key === 'blacklistGroup' ? (
-                  <select value={v[key] ?? ''} onChange={e => changeVehicle(v.id, key, e.target.value)}>
+                  <select value={v[key] ?? ''} disabled={groupsLoading || !!groupsError} onChange={e => changeVehicle(v.id, key, e.target.value)}>
                     <option value="">-- เลือกกลุ่มบัญชีดำ --</option>
-                    {BLACKLIST_GROUPS.map(group => <option key={group} value={group}>{group}</option>)}
+                    {activeGroupNames.map(group => <option key={group} value={group}>{group}</option>)}
+                    {!!v[key] && !activeGroupNames.includes(safe(v[key])) && (
+                      <option value={v[key]}>{v[key]} (เลิกใช้งาน/ข้อมูลเดิม)</option>
+                    )}
                   </select>
                 ) : ['behavior','responsePlan','result'].includes(key) ? <textarea rows={2} value={v[key] ?? ''} onChange={e=>changeVehicle(v.id,key,e.target.value)}/>
                 : <input
@@ -1419,7 +1806,7 @@ const downloadPng = async () => {
     <section className="s10-preview" ref={frameRef}>
       <div className="s10-page-tabs">
         {pages.map((page,i)=><button key={i} type="button" className={i===activePage?'active':''} onClick={()=>setActivePage(i)}>
-          {page.kind==='summary' ? `สรุป ${page.part}/${summaryChunks.length}` : `รถ ${page.index+1}/${groupedVehicles.length}${page.totalParts > 1 ? ` (${page.part}/${page.totalParts})` : ''}`}
+          {page.kind==='dashboard' ? 'ภาพรวม' : page.kind==='summary' ? `ตาราง ${page.part}/${summaryChunks.length}` : `รถ ${page.index+1}/${groupedVehicles.length}${page.totalParts > 1 ? ` (${page.part}/${page.totalParts})` : ''}`}
         </button>)}
       </div>
       <div className="s10-stage" style={{width:PAPER_W*scale,height:PAPER_H*scale}}>

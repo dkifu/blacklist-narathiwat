@@ -17,6 +17,7 @@ import Section07Editor from './monthly/Section07Editor'
 import Section08Editor from './monthly/Section08Editor'
 import Section09Editor from './monthly/Section09Editor'
 import Section10Editor from './monthly/Section10Editor'
+// SECTION10_GLOBAL_GROUPS_V2: editor receives admin-only menu permission.
 import Section11Editor from './monthly/Section11Editor'
 import Section12Editor from './monthly/Section12Editor'
 import { loadSctMergedData } from './monthly/SctMergedData'
@@ -2120,6 +2121,7 @@ function MonthlyReport({ profile }) {
                 ) : activeSection.id === 10 ? (
                   <Section10Editor
                     key={`section10-${displayReport.id}`}
+                    isAdmin={isAdmin}
                     report={displayReport}
                     center={displayCenter}
                     month={month}

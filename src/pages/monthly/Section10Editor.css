@@ -1283,3 +1283,843 @@
 }
 .s10-summary--fixed .s10-data-table td.s10-empty-row { grid-column: 1 / -1; }
 .s10-summary--fixed .s10-data-table .s10-fixed-empty-grid td { padding: 0; }
+
+/* ============================================================
+   SECTION10_DASHBOARD_CLEAN_V1
+   Dashboard เฉพาะหน้าแรก (A4 landscape 1120 x 792)
+   - Four rows only: heading / KPIs / charts / 9 group cards
+   - 6-step color legend lives INSIDE the 9-group title bar
+   - One CSS source of truth: no V1..V6 cascade overrides
+   - Does NOT affect fixed summary table or vehicle pages
+   ============================================================ */
+
+.s10-paper.s10-analytics-paper {
+  display: grid;
+  grid-template-rows: 48px 88px minmax(0, 1fr) 148px;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 1120px;
+  height: 792px;
+  padding: 24px 30px 18px;
+  overflow: hidden;
+  background: #fff;
+}
+.s10-analytics-paper > * { min-width: 0; min-height: 0; }
+.s10-analytics-paper .s10-analytics-heading h2 {
+  margin: 0 0 3px;
+  color: #831329;
+  font-size: 26px;
+  line-height: 1.25;
+}
+.s10-analytics-paper .s10-analytics-heading p {
+  margin: 0;
+  color: #6e7d93;
+  font-size: 12px;
+}
+
+/* 1) Three statistic cards with icon on the right. */
+.s10-analytics-paper .s10-analytics-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  height: 88px;
+  gap: 12px;
+}
+.s10-analytics-paper .s10-analytics-metrics > div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 88px;
+  padding: 9px 14px;
+  border: 1px solid #dfe6ef;
+  border-top: 4px solid var(--accent);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.s10-analytics-paper .s10-analytics-metrics .blue { --accent: #2563eb; }
+.s10-analytics-paper .s10-analytics-metrics .red { --accent: #e72c62; }
+.s10-analytics-paper .s10-analytics-metrics .green { --accent: #16a34a; border-top-color: #16a34a; }
+.s10-analytics-paper .s10-analytics-metrics .s10-metric-copy {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  grid-template-rows: auto auto;
+  align-content: center;
+  align-items: baseline;
+  justify-content: start;
+  column-gap: 8px;
+  row-gap: 2px;
+  min-width: 0;
+}
+.s10-analytics-paper .s10-analytics-metrics .s10-metric-copy > span {
+  grid-column: 1 / -1;
+  color: #6d7b92;
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+.s10-analytics-paper .s10-analytics-metrics .s10-metric-copy > strong {
+  grid-column: 1;
+  color: var(--accent);
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1.03;
+  font-variant-numeric: tabular-nums;
+}
+.s10-analytics-paper .s10-analytics-metrics .s10-metric-copy > small {
+  grid-column: 2;
+  align-self: end;
+  padding-bottom: 3px;
+  color: #7c8ca4;
+  font-size: 12px;
+  line-height: 1.15;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.s10-analytics-paper .s10-metric-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 60px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  font-size: 27px;
+  font-weight: 900;
+}
+.s10-analytics-paper .s10-metric-icon svg { width: 38px; height: 38px; }
+.s10-analytics-paper .s10-metric-icon--car { color: #4c93ff; background: #e6f1ff; }
+.s10-analytics-paper .s10-metric-icon--a { color: #db295b; background: #ffe3ec; }
+.s10-analytics-paper .s10-metric-icon--b { color: #10a84d; background: #dff7e8; }
+
+/* SECTION10_DONUT_AB_FIX_V1: enlarge only A/B badges; leave chart/page layout unchanged. */
+.s10-analytics-paper .s10-metric-icon.s10-metric-icon--a,
+.s10-analytics-paper .s10-metric-icon.s10-metric-icon--b {
+  flex: 0 0 66px;
+  width: 66px;
+  height: 66px;
+  font-size: 34px;
+  line-height: 1;
+}
+
+/* 2) Chart block: dedicated header and bounded body. */
+.s10-analytics-paper .s10-analytics-card {
+  display: grid;
+  grid-template-rows: 60px minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid #dfe7f1;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+.s10-analytics-paper .s10-analytics-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 0;
+  gap: 10px;
+  padding: 7px 14px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #fff3f7, #ffe9f1);
+  border-bottom: 1px solid #f4cddd;
+}
+.s10-analytics-paper .s10-analytics-card-titlewrap {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.s10-analytics-paper .s10-analytics-card-titlewrap > div:last-child { min-width: 0; }
+.s10-analytics-paper .s10-analytics-card-head strong {
+  display: block;
+  color: #ab0e39;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+.s10-analytics-paper .s10-analytics-card-head .s10-analytics-card-titlewrap span {
+  display: block;
+  margin-top: 3px;
+  color: #53667e;
+  font-size: 11px;
+}
+.s10-analytics-paper .s10-analytics-title-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #d81d4f;
+}
+.s10-analytics-paper .s10-analytics-title-icon svg { width: 100%; height: 100%; }
+.s10-analytics-paper .s10-analytics-title-icon--chart { width: 36px; height: 36px; }
+.s10-analytics-paper .s10-analytics-title-icon--stack { width: 23px; height: 23px; }
+.s10-analytics-paper .s10-analytics-top-group {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  max-width: 390px;
+  min-width: 0;
+  padding: 7px 11px;
+  border: 1px solid #ffb3ca;
+  border-radius: 999px;
+  background: #ffdce7;
+}
+.s10-analytics-paper .s10-analytics-top-group > span {
+  display: inline-block;
+  margin: 0;
+  font-size: 16px;
+}
+.s10-analytics-paper .s10-analytics-top-group > strong {
+  font-size: 11.5px;
+  font-weight: 900;
+  line-height: 1.3;
+  color: #b40e40;
+  overflow-wrap: anywhere;
+}
+.s10-analytics-paper .s10-analytics-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.72fr) minmax(0, 1fr);
+  gap: 14px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px 14px 9px;
+}
+
+/* 2a) Nine horizontal bars, end-of-bar labels and an inline axis title. */
+.s10-analytics-paper .s10-analytics-chart {
+  display: grid;
+  grid-template-rows: repeat(9, minmax(0, 1fr)) 22px;
+  gap: 3px;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+.s10-analytics-paper .s10-analytics-row {
+  display: grid;
+  grid-template-columns: 188px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 0;
+}
+.s10-analytics-paper .s10-analytics-label {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  max-height: 26px;
+  min-width: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #edf3fc, #e6edf7);
+  color: #1d304c;
+  font-size: 11.7px;
+  font-weight: 850;
+  line-height: 1.1;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.s10-analytics-paper .s10-analytics-track {
+  position: relative;
+  box-sizing: border-box;
+  height: 19px;
+  min-width: 0;
+  border-radius: 3px;
+  background: #f7f9fc;
+  background-image: linear-gradient(to right, rgba(166, 183, 203, .22) 1px, transparent 1px);
+  background-size: calc(100% / var(--s10-axis-steps, 8)) 100%;
+  overflow: visible;
+}
+.s10-analytics-paper .s10-analytics-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: #f0447c;
+}
+.s10-analytics-paper .s10-analytics-value--at-end {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--s10-bar-width) + 7px);
+  transform: translateY(-50%);
+  width: 30px;
+  margin: 0;
+  padding: 0;
+  color: #1b2d46;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: left;
+  white-space: nowrap;
+}
+.s10-analytics-paper .s10-analytics-axis {
+  display: grid;
+  grid-template-columns: 188px minmax(0, 1fr) 32px;
+  grid-template-rows: 22px;
+  align-items: center;
+  gap: 0 7px;
+  min-height: 0;
+  padding: 0;
+}
+.s10-analytics-paper .s10-analytics-axis > span {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: center;
+  margin: 0;
+  color: #526580;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+.s10-analytics-paper .s10-analytics-ticks {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  color: #253951;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* 2b) Right side is a REAL two-row grid; donut cannot overlap the pink box. */
+.s10-analytics-paper .s10-analytics-side {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 100px;
+  gap: 9px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+.s10-analytics-paper .s10-analytics-donut-wrap {
+  display: grid;
+  grid-template-columns: 184px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.s10-analytics-paper .s10-analytics-donut {
+  position: relative;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 184px;
+  height: 184px;
+  border-radius: 50%;
+}
+.s10-analytics-paper .s10-analytics-ring {
+  position: absolute;
+  inset: 0;
+  width: 184px;
+  height: 184px;
+}
+.s10-analytics-paper .s10-analytics-donut-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #eef2f7;
+}
+.s10-analytics-paper .s10-analytics-donut-inner strong {
+  color: #13243d;
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1;
+}
+.s10-analytics-paper .s10-analytics-donut-inner span {
+  margin-top: 6px;
+  color: #475970;
+  font-size: 12px;
+  font-weight: 800;
+}
+.s10-analytics-paper .s10-analytics-donut-legend {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 11px;
+  min-width: 0;
+  width: 100%;
+}
+.s10-analytics-paper .s10-analytics-donut-legend > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: #162841;
+  font-size: 11.2px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+.s10-analytics-paper .s10-analytics-donut-legend i {
+  display: inline-block;
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+}
+.s10-analytics-paper .s10-analytics-donut-legend i.a { background: #e72c62; }
+.s10-analytics-paper .s10-analytics-donut-legend i.b { background: #16a34a; }
+.s10-analytics-paper .s10-analytics-donut-legend i.other { background: #e9edf4; }
+.s10-analytics-paper .s10-analytics-found-box {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid #f7d2df;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff0f5, #ffdce8);
+  overflow: hidden;
+  transform: translateY(-15px);
+  
+}
+.s10-analytics-paper .s10-analytics-found-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  color: #f24477;
+}
+.s10-analytics-paper .s10-analytics-found-icon svg { width: 46px; height: 46px; }
+.s10-analytics-paper .s10-analytics-found-copy { min-width: 0; }
+.s10-analytics-paper .s10-analytics-found-box strong {
+  display: block;
+  color: #192a44;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+.s10-analytics-paper .s10-analytics-found-box strong b { color: #e82362; }
+.s10-analytics-paper .s10-analytics-found-box span {
+  display: block;
+  margin-top: 5px;
+  color: #334963;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* 3) The legend is INSIDE the group header. No separate legend row. */
+.s10-analytics-paper .s10-analytics-groups {
+  display: grid;
+  grid-template-rows: 36px minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid #e6ebf2;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.s10-analytics-paper .s10-analytics-groups .s10-card-title--icon {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 36px;
+  min-height: 36px;
+  padding: 4px 10px;
+  background: linear-gradient(180deg, #fff2f7, #ffe7f0);
+  border-bottom: 1px solid #f4cad9;
+  overflow: hidden;
+}
+.s10-analytics-paper .s10-analytics-group-heading {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.s10-analytics-paper .s10-analytics-group-heading > strong {
+  display: block;
+  color: #ab1241;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.s10-analytics-paper .s10-analytics-groups .s10-analytics-scale-items {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 5px;
+  min-width: 0;
+  margin-left: auto;
+}
+.s10-analytics-paper .s10-analytics-groups .s10-analytics-scale-items > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  color: #40516c;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+.s10-analytics-paper .s10-analytics-scale-items i {
+  display: inline-block;
+  flex: 0 0 23px;
+  box-sizing: border-box;
+  width: 23px;
+  height: 17px;
+  border-radius: 4px;
+}
+.s10-analytics-paper .s10-analytics-scale-items i.zero { background: #eff2f6; border: 1px solid #dfe4ec; }
+.s10-analytics-paper .s10-analytics-scale-items i.lv1 { background: #ffe8f0; }
+.s10-analytics-paper .s10-analytics-scale-items i.lv2 { background: #ffccdd; }
+.s10-analytics-paper .s10-analytics-scale-items i.lv3 { background: #ff9abb; }
+.s10-analytics-paper .s10-analytics-scale-items i.lv4 { background: #f0447c; }
+.s10-analytics-paper .s10-analytics-scale-items i.lv5 { background: #be185d; }
+
+/* 3a) Nine cards; one rose palette, intensity only by count. */
+.s10-analytics-paper .s10-analytics-group-grid {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  gap: 6px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 6px;
+}
+.s10-analytics-paper .s10-group-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 8px 5px 7px;
+  border: 1px solid #e3e9f1;
+  border-radius: 10px;
+  background: #f8fafc;
+  text-align: center;
+  overflow: hidden;
+}
+.s10-analytics-paper .s10-group-card h4 {
+  width: 100%;
+  min-height: 0;
+  max-height: 43px;
+  margin: 0;
+  color: #1b2c45;
+  font-size: 10.7px;
+  font-weight: 900;
+  line-height: 1.15;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.s10-analytics-paper .s10-group-card > strong {
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.s10-analytics-paper .s10-group-card small {
+  color: #4f617a;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1;
+}
+.s10-analytics-paper .s10-group-card--zero { background: #eff2f6; border-color: #dfe4ec; }
+.s10-analytics-paper .s10-group-card--zero > strong,
+.s10-analytics-paper .s10-group-card--zero small { color: #708198; }
+.s10-analytics-paper .s10-group-card--lv1 { background: #ffe8f0; border-color: #f9c8d9; }
+.s10-analytics-paper .s10-group-card--lv2 { background: #ffccdd; border-color: #f4a9c1; }
+.s10-analytics-paper .s10-group-card--lv3 { background: #ff9abb; border-color: #f5769f; }
+.s10-analytics-paper .s10-group-card--lv4 { background: #f0447c; border-color: #e52d69; }
+.s10-analytics-paper .s10-group-card--lv5 { background: #be185d; border-color: #9d174d; }
+.s10-analytics-paper .s10-group-card--lv1 > strong,
+.s10-analytics-paper .s10-group-card--lv2 > strong,
+.s10-analytics-paper .s10-group-card--lv3 > strong { color: #b51b50; }
+.s10-analytics-paper .s10-group-card--lv4 h4,
+.s10-analytics-paper .s10-group-card--lv4 > strong,
+.s10-analytics-paper .s10-group-card--lv4 small,
+.s10-analytics-paper .s10-group-card--lv5 h4,
+.s10-analytics-paper .s10-group-card--lv5 > strong,
+.s10-analytics-paper .s10-group-card--lv5 small { color: #fff; }
+
+/* Keep the chart bar colors consistent with the 6-level legend. */
+.s10-analytics-paper .s10-analytics-bar--lv1 { background: #ffe8f0; }
+.s10-analytics-paper .s10-analytics-bar--lv2 { background: #ffccdd; }
+.s10-analytics-paper .s10-analytics-bar--lv3 { background: #ff9abb; }
+.s10-analytics-paper .s10-analytics-bar--lv4 { background: #f0447c; }
+.s10-analytics-paper .s10-analytics-bar--lv5 { background: #be185d; }
+
+
+/* ==========================================
+   SECTION 10 - LEGEND ALIGNMENT & BORDERS
+   ขยับแถบสีไปทางขวา + เพิ่มเส้นขอบ
+   ========================================== */
+
+/* เว้นระยะจากหัวข้อด้านซ้าย */
+.s10-analytics-paper
+.s10-analytics-groups
+.s10-analytics-scale-items {
+  box-sizing: border-box;
+  padding-left: 150px;
+  gap: 4px;
+  min-width: 0;
+  justify-content: space-between;
+}
+
+/* เพิ่มขอบให้แถบสีทั้ง 6 ระดับ */
+.s10-analytics-paper
+.s10-analytics-groups
+.s10-analytics-scale-items > span > i {
+  box-sizing: border-box;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 18px;
+  border: 1px solid rgba(119, 45, 76, 0.35);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(30, 41, 59, 0.08);
+}
+
+/* ระดับ 0 - ขอบเทาชัดเจน */
+.s10-analytics-paper
+.s10-analytics-scale-items i.zero {
+  border-color: #CBD5E1;
+}
+
+/* ระดับ 1-2 - ขอบชมพู */
+.s10-analytics-paper
+.s10-analytics-scale-items i.lv1 {
+  border-color: #E8A8BD;
+}
+
+/* ระดับ 3-4 */
+.s10-analytics-paper
+.s10-analytics-scale-items i.lv2 {
+  border-color: #E894B1;
+}
+
+/* ระดับ 5-6 */
+.s10-analytics-paper
+.s10-analytics-scale-items i.lv3 {
+  border-color: #E66C98;
+}
+
+/* ระดับ 7-8 */
+.s10-analytics-paper
+.s10-analytics-scale-items i.lv4 {
+  border-color: #D82E69;
+}
+
+/* ระดับ 9 ขึ้นไป */
+.s10-analytics-paper
+.s10-analytics-scale-items i.lv5 {
+  border-color: #921044;
+}
+
+/* SECTION10_GLOBAL_GROUPS_V2: admin-only global group management in the sidebar. */
+.s10-group-admin {
+  border: 1px solid #40536e;
+  border-radius: 11px;
+  background: #192436;
+  margin: 0 0 14px;
+  overflow: hidden;
+}
+.s10-group-admin-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 0;
+  background: #23334b;
+  color: #fff;
+  text-align: left;
+  font: 800 12px 'Noto Sans Thai', sans-serif;
+  cursor: pointer;
+}
+.s10-group-admin-toggle:hover { background: #2d4160; }
+.s10-group-admin-panel { padding: 10px; }
+.s10-group-admin-panel > p {
+  margin: 0 0 9px;
+  color: #afc2db;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.s10-group-admin-add { display: flex; gap: 6px; margin-bottom: 10px; }
+.s10-group-admin-add input {
+  width: 0;
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 5px 8px;
+  border-radius: 7px;
+  border: 1px solid #445a77;
+  background: #101722;
+  color: #fff;
+  font: 700 11px 'Noto Sans Thai', sans-serif;
+}
+.s10-group-admin-add button {
+  border: 1px solid #e83b73;
+  border-radius: 7px;
+  padding: 0 10px;
+  background: #ba1949;
+  color: #fff;
+  white-space: nowrap;
+  font: 800 11px 'Noto Sans Thai', sans-serif;
+  cursor: pointer;
+}
+.s10-group-admin button:disabled { opacity: .55; cursor: not-allowed; }
+.s10-group-admin-items { display: flex; flex-direction: column; gap: 5px; max-height: 220px; overflow-y: auto; }
+.s10-group-admin-items > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 7px;
+  border: 1px solid #354760;
+  border-radius: 7px;
+  background: #182338;
+}
+.s10-group-admin-items > div.inactive { opacity: .7; background: #151b26; }
+.s10-group-admin-items > div > span {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+  color: #e2ebf7;
+}
+.s10-group-admin-items > div > button {
+  flex-shrink: 0;
+  border: 1px solid #4b5c73;
+  border-radius: 6px;
+  background: #2b3a51;
+  color: #fff;
+  padding: 4px 7px;
+  font: 700 10px 'Noto Sans Thai', sans-serif;
+  cursor: pointer;
+}
+.s10-group-admin-status { margin: 9px 0 0!important; color: #9fe4b6!important; }
+.s10-group-admin-error { color: #ff9caf; font-size: 11px; line-height: 1.4; }
+/* The dashboard remains A4 fixed-height, showing groups in pages of 9. */
+.s10-analytics-paper .s10-group-card h4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* SECTION10_DASHBOARD_ONE_PAGE_V1
+   All blacklist groups stay on ONE dashboard A4 sheet; only these selectors
+   are overridden. Other Section 10 report pages are untouched. */
+
+/* The existing 9-row chart grows/shrinks according to the number of groups. */
+.s10-analytics-paper .s10-analytics-chart {
+  grid-template-rows: repeat(var(--s10-group-count, 9), minmax(0, 1fr)) 22px;
+  row-gap: 3px;
+  min-height: 0;
+}
+.s10-analytics-paper .s10-analytics-row { min-height: 0; }
+.s10-analytics-paper .s10-analytics-label {
+  min-height: 0;
+  max-height: 26px;
+}
+
+/* 10 or fewer: use one horizontal row of 1..10 equal-width tiles. */
+.s10-analytics-paper .s10-analytics-group-grid {
+  grid-template-columns: repeat(var(--s10-card-columns, 9), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--s10-card-rows, 1), minmax(0, 1fr));
+  min-height: 0;
+}
+
+/* 11 or more: split tiles into rows INSIDE the same page, not a new page. */
+.s10-paper.s10-analytics-paper.s10-analytics-paper--many {
+  grid-template-rows: 48px 88px minmax(0, 1fr) 174px;
+}
+.s10-analytics-paper--many .s10-analytics-group-grid { gap: 4px; padding: 5px; }
+.s10-analytics-paper--many .s10-group-card {
+  padding: 4px 4px 3px;
+  gap: 1px;
+  border-radius: 7px;
+}
+.s10-analytics-paper--many .s10-group-card h4 {
+  font-size: 9.4px;
+  line-height: 1.12;
+  max-height: 23px;
+  -webkit-line-clamp: 2;
+}
+.s10-analytics-paper--many .s10-group-card > strong { font-size: 26px; }
+.s10-analytics-paper--many .s10-group-card small { font-size: 9px; }
+.s10-analytics-paper--many .s10-analytics-chart { row-gap: 2px; }
+.s10-analytics-paper--many .s10-analytics-label { font-size: 10.6px; }
+.s10-analytics-paper--many .s10-analytics-track { height: 17px; }
+
+/* More than 18: use a more compact layout to preserve all data on one sheet. */
+.s10-paper.s10-analytics-paper.s10-analytics-paper--packed {
+  grid-template-rows: 46px 78px minmax(0, 1fr) 188px;
+  gap: 7px;
+}
+.s10-analytics-paper--packed .s10-analytics-metrics,
+.s10-analytics-paper--packed .s10-analytics-metrics > div { height: 78px; }
+.s10-analytics-paper--packed .s10-analytics-chart { row-gap: 1px; }
+.s10-analytics-paper--packed .s10-analytics-label {
+  padding: 1px 6px;
+  font-size: 9px;
+  max-height: 17px;
+  line-height: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.s10-analytics-paper--packed .s10-analytics-track { height: 12px; }
+.s10-analytics-paper--packed .s10-analytics-value--at-end { font-size: 11px; }
+.s10-analytics-paper--packed .s10-group-card { padding: 2px 3px; }
+.s10-analytics-paper--packed .s10-group-card h4 { font-size: 8px; max-height: 20px; }
+.s10-analytics-paper--packed .s10-group-card > strong { font-size: 20px; }
+.s10-analytics-paper--packed .s10-group-card small { font-size: 8px; }
+
+/* SECTION10_GROUP_HARD_DELETE_V1: danger action for inactive, unused groups only. */
+.s10-group-admin-items > div > button.s10-group-admin-delete {
+  background: #522434;
+  border: 1px solid #a84862;
+  color: #ffdbe4;
+  padding: 4px 5px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+.s10-group-admin-items > div > button.s10-group-admin-delete:hover:not(:disabled) {
+  background: #92314f;
+  border-color: #ef7095;
+  color: #fff;
+}
+
+.s10-analytics-paper .s10-metric-icon--car svg {
+  width: 50px;
+  height: 50px;
+}
