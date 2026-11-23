@@ -2030,6 +2030,7 @@
 /* The dashboard remains A4 fixed-height, showing groups in pages of 9. */
 .s10-analytics-paper .s10-group-card h4 {
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
@@ -2073,6 +2074,7 @@
   font-size: 9.4px;
   line-height: 1.12;
   max-height: 23px;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
 }
 .s10-analytics-paper--many .s10-group-card > strong { font-size: 26px; }
