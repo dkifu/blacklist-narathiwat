@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import * as XLSX from 'xlsx'
 import JSZip from 'jszip'
@@ -434,6 +434,7 @@ function Heading({center,month,year,sub}) {
 }
 
 // ตารางหน้าแรกใช้คอลัมน์เดียวกับเทมเพลต Excel ครบทั้ง 12 ช่อง
+// PATCH_SECTION10_FIXED_GRID_AUTOFIT_V2: identical ten-row physical grid for every center.
 function SummaryPage({
   center,
   month,
@@ -444,17 +445,11 @@ function SummaryPage({
   monthCount,
   a01Count,
   b01Count,
-  tableSize,
 }) {
+  const summaryTableRef = useRef(null)
+  const GRID_SLOTS = 10
 
-    // ใช้ขนาดปกติทุกหน้า
-    // หน้าที่มีไม่เกิน 4 แถวใช้ขนาดใหญ่ขึ้นเล็กน้อย
-    const density =
-    rows.length <= 4
-        ? 'roomy'
-        : 'regular'
-
-  // รวมวันที่และเวลา เหลือ 10 คอลัมน์
+  // Widths total exactly 1048px: do not adapt columns to data length.
   const columns = [
     { key: 'dateTime', label: 'วันที่ / เวลาแจ้งเตือน', width: 94 },
     { key: 'location', label: 'สถานที่', width: 120 },
@@ -468,12 +463,20 @@ function SummaryPage({
     { key: 'responsePlan', label: 'แผนเผชิญเหตุ', width: 132 },
   ]
 
-const renderDateTime = (date, time) => {
+  const emptySlots = Math.max(0, GRID_SLOTS - Math.max(rows.length, 1))
+
+  const cellText = (item, key) => {
+    if (key === 'dateTime') {
+      return [dateBE(item.date), formattedTime(item.time)].filter(Boolean).join(' ') || '—'
+    }
+    if (key === 'plate') return compactPlateForSummary(item.plate) || '—'
+    return safe(item[key]) || '—'
+  }
+
+  const renderDateTime = (date, time) => {
     const dateText = dateBE(date)
     const timeText = formattedTime(time)
-
     if (!dateText && !timeText) return '—'
-
     return (
       <div className="s10-datetime-cell">
         <span>{dateText || '—'}</span>
@@ -482,96 +485,129 @@ const renderDateTime = (date, time) => {
     )
   }
 
+  // Measure actual browser line wrapping (Thai and Latin) after layout.
+  // Grid geometry never depends on measured text height.
+  useLayoutEffect(() => {
+    const table = summaryTableRef.current
+    if (!table) return undefined
+    let cancelled = false
+
+    const fitText = () => {
+      if (cancelled) return
+      table.querySelectorAll('.s10-fit-text').forEach(node => {
+        const parent = node.parentElement
+        if (!parent) return
+        const base = Number.parseFloat(window.getComputedStyle(parent).fontSize) || 11
+        const minimum = Math.min(base, 7)
+
+        // Always reset first, so edited/shortened text can regain its normal size.
+        node.style.fontSize = `${base}px`
+        node.style.maxHeight = 'none'
+        const lineHeight = () => {
+          const css = window.getComputedStyle(node)
+          return Number.parseFloat(css.lineHeight) ||
+            (Number.parseFloat(css.fontSize) || base) * 1.25
+        }
+        const aboveTwoLines = () => node.scrollHeight > (lineHeight() * 2 + 1.5)
+
+        // Binary search avoids dozens of reflows per cell on longer reports.
+        if (aboveTwoLines()) {
+          let low = minimum
+          let high = base
+          node.style.fontSize = `${low}px`
+          if (!aboveTwoLines()) {
+            for (let attempt = 0; attempt < 7 && high - low > 0.15; attempt += 1) {
+              const middle = (low + high) / 2
+              node.style.fontSize = `${middle}px`
+              if (aboveTwoLines()) high = middle
+              else low = middle
+            }
+          }
+          node.style.fontSize = `${low.toFixed(2)}px`
+        }
+
+        // Extremely long content at 7px is clipped visually, not erased.
+        node.style.maxHeight = `${Math.ceil(lineHeight() * 2 + 1)}px`
+      })
+    }
+
+    fitText()
+    // Noto Sans Thai may finish loading after initial render.
+    if (document.fonts?.ready) document.fonts.ready.then(fitText)
+    return () => { cancelled = true }
+  }, [rows])
+
   return (
-    <div className={`s10-paper s10-summary s10-summary--${density}`}>
+    <div className="s10-paper s10-summary s10-summary--fixed">
       <Heading center={center} month={month} year={year} />
 
       <div className="s10-metrics">
         <div className="blue">
-            <span>แจ้งเตือนเดือนนี้</span>
-            <strong>{formatNum(monthCount)}</strong>
-            <small>รายการ</small>
+          <span>แจ้งเตือนเดือนนี้</span>
+          <strong>{formatNum(monthCount)}</strong>
+          <small>รายการ</small>
         </div>
-
         <div className="red">
-            <span>จำนวน A01</span>
-            <strong>{formatNum(a01Count)}</strong>
-            <small>รายการ</small>
+          <span>จำนวน A01</span>
+          <strong>{formatNum(a01Count)}</strong>
+          <small>รายการ</small>
         </div>
-
         <div className="green">
-            <span>จำนวน B01</span>
-            <strong>{formatNum(b01Count)}</strong>
-            <small>รายการ</small>
+          <span>จำนวน B01</span>
+          <strong>{formatNum(b01Count)}</strong>
+          <small>รายการ</small>
         </div>
-        </div>
+      </div>
 
       <div className="s10-report-table">
         <div className="s10-card-title">
           <strong>ตารางสรุปการแจ้งเตือนรถบัญชีดำ</strong>
-          <span>
-            หน้า {part}/{totalParts} · {rows.length} ครั้ง
-          </span>
+          <span>หน้า {part}/{totalParts} · {rows.length} ครั้ง</span>
         </div>
 
-        <table className="s10-data-table">
+        <table className="s10-data-table" ref={summaryTableRef}>
           <colgroup>
-                {columns.map(col => (
-                    <col
-                    key={col.key}
-                    style={{ width: `${col.width}px` }}
-                    />
-                ))}
-            </colgroup>
-
+            {columns.map(col => <col key={col.key} style={{ width: `${col.width}px` }} />)}
+          </colgroup>
           <thead>
             <tr>
               {columns.map(col => (
                 <th scope="col" key={col.key}>
-                  {col.label}
+                  <span className="s10-fit-text" title={col.label}>{col.label}</span>
                 </th>
               ))}
             </tr>
           </thead>
-
           <tbody>
-            {rows.length > 0 ? (
-              rows.map(item => (
-                <tr key={item.id}>
-                  {columns.map(col => (
-                    <td
-                      key={col.key}
-                      className={`s10-cell-${col.key}`}
-                    >
+            {rows.length > 0 ? rows.map(item => (
+              <tr key={item.id}>
+                {columns.map(col => (
+                  <td key={col.key} className={`s10-cell-${col.key}`}>
+                    <span className="s10-fit-text" title={cellText(item, col.key)}>
                       {col.key === 'dateTime'
                         ? renderDateTime(item.date, item.time)
-                        : col.key === 'officerDateTime'
-                          ? renderDateTime(
-                              item.officerDate,
-                              item.officerTime
-                            )
-                          : col.key === 'plate'
-                            ? compactPlateForSummary(item.plate) || '—'
-                            : item[col.key] || '—'}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : (
+                        : cellText(item, col.key)}
+                    </span>
+                  </td>
+                ))}
+              </tr>
+            )) : (
               <tr>
-                <td
-                  colSpan={columns.length}
-                  className="s10-empty-row"
-                >
-                  ยังไม่มีรายการรถในเดือนนี้
+                <td colSpan={columns.length} className="s10-empty-row">
+                  <span className="s10-fit-text" title="ยังไม่มีรายการรถในเดือนนี้">
+                    ยังไม่มีรายการรถในเดือนนี้
+                  </span>
                 </td>
               </tr>
             )}
+            {Array.from({ length: emptySlots }, (_, index) => (
+              <tr key={`s10-fixed-empty-${index}`} className="s10-fixed-empty-grid" aria-hidden="true">
+                {columns.map(col => <td key={col.key} />)}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
-
-      
     </div>
   )
 }

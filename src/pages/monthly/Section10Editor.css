@@ -1200,3 +1200,86 @@
 .s10-grouped-vehicle-page .s10-static-field { padding: 7px 9px; }
 .s10-grouped-vehicle-page .s10-static-field > strong { font-size: 13.5px; }
 .s10-grouped-vehicle-page .s10-static-count { padding: 9px 11px; }
+
+/* PATCH_SECTION10_FIXED_GRID_AUTOFIT_V2
+   The same A4 landscape summary table for every center and PDF page.
+   Ten physical row positions (including unused slots), fixed column widths.
+   Only cell font size changes when text needs more than two lines.
+*/
+.s10-summary--fixed .s10-report-table {
+  min-height: 0;
+  overflow: hidden;
+}
+.s10-summary--fixed .s10-report-table .s10-data-table {
+  display: grid;
+  box-sizing: border-box;
+  width: 1048px;
+  min-width: 1048px;
+  max-width: 1048px;
+  height: 0;
+  min-height: 0;
+  flex: 1 1 0;
+  table-layout: fixed;
+  grid-template-rows: 55px repeat(10, minmax(0, 1fr));
+  overflow: hidden;
+}
+.s10-summary--fixed .s10-data-table colgroup { display: none; }
+.s10-summary--fixed .s10-data-table thead,
+.s10-summary--fixed .s10-data-table tbody { display: contents; }
+.s10-summary--fixed .s10-data-table thead tr,
+.s10-summary--fixed .s10-data-table tbody tr {
+  display: grid;
+  grid-template-columns: 94px 120px 70px 114px 90px 140px 110px 113px 65px 132px;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+}
+.s10-summary--fixed .s10-data-table td,
+.s10-summary--fixed .s10-data-table th {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 3px;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 1.25;
+}
+.s10-summary--fixed .s10-data-table td { font-size: 12px; }
+.s10-summary--fixed .s10-data-table th { font-size: 10.5px; }
+.s10-summary--fixed .s10-data-table td.s10-cell-plate { font-size: 11px; }
+.s10-summary--fixed .s10-data-table td.s10-cell-blacklistGroup,
+.s10-summary--fixed .s10-data-table td.s10-cell-blacklistOwner { font-size: 10.5px; }
+.s10-summary--fixed .s10-data-table .s10-fit-text {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 0 auto;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: 1.25;
+  color: inherit;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow: hidden;
+  max-height: 2.5em;
+}
+.s10-summary--fixed .s10-data-table .s10-datetime-cell {
+  gap: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+.s10-summary--fixed .s10-data-table .s10-datetime-cell span,
+.s10-summary--fixed .s10-data-table .s10-datetime-cell small {
+  font-size: inherit;
+  line-height: inherit;
+}
+.s10-summary--fixed .s10-data-table td.s10-empty-row { grid-column: 1 / -1; }
+.s10-summary--fixed .s10-data-table .s10-fixed-empty-grid td { padding: 0; }
