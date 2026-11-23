@@ -1184,3 +1184,19 @@
   object-fit: contain;
   object-position: center;
 }
+
+/* PATCH_SECTION10_BLACKLIST_META_V1: two new fields, same A4 paper size. */
+.s10-report-table td.s10-cell-blacklistGroup,
+.s10-report-table td.s10-cell-blacklistOwner {
+  font-size: 10.5px;
+  line-height: 1.25;
+  padding: 3px;
+}
+.s10-summary--roomy .s10-report-table td.s10-cell-blacklistGroup,
+.s10-summary--roomy .s10-report-table td.s10-cell-blacklistOwner {
+  font-size: 11.5px;
+}
+.s10-grouped-vehicle-page .s10-static-body { gap: 6px; padding: 9px; }
+.s10-grouped-vehicle-page .s10-static-field { padding: 7px 9px; }
+.s10-grouped-vehicle-page .s10-static-field > strong { font-size: 13.5px; }
+.s10-grouped-vehicle-page .s10-static-count { padding: 9px 11px; }

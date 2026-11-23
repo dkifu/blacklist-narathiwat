@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import * as XLSX from 'xlsx'
+import JSZip from 'jszip'
 import { supabase } from '../../lib/supabase'
 import './Section10Editor.css'
 
@@ -9,7 +10,7 @@ const PAPER_H = 792
 const SECTION_NO = 10
 const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
 const MONTH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
-// คอลัมน์เหมือน Excel ตัวอย่าง (12 ช่อง) และตารางพรีวิวหน้าแรกทุกช่อง
+// Template ใหม่ 11 ช่อง · ยังคงอ่าน Excel เดิม 9 และ 12 ช่อง
 // SECTION10_REPEAT_ALERTS_V2: 12-field legacy import stays readable.
 const LEGACY_FIELD_CONFIG = [
   { key: 'date', label: 'วันที่แจ้งเตือน', width: 18 },
@@ -26,10 +27,30 @@ const LEGACY_FIELD_CONFIG = [
   { key: 'responsePlan', label: 'แผนเผชิญเหตุ', width: 38 },
 ]
 const RETIRED_DETAIL_KEYS = new Set(['result', 'officerDate', 'officerTime'])
-const FIELD_CONFIG = LEGACY_FIELD_CONFIG.filter(field => !RETIRED_DETAIL_KEYS.has(field.key))
+// PATCH_SECTION10_BLACKLIST_META_V1: retain compatibility with 9-/12-column imports.
+const PREVIOUS_FIELD_CONFIG = LEGACY_FIELD_CONFIG.filter(field => !RETIRED_DETAIL_KEYS.has(field.key))
+const PREVIOUS_HEADERS = PREVIOUS_FIELD_CONFIG.map(field => field.label)
+const PREVIOUS_FIELDS = PREVIOUS_FIELD_CONFIG.map(field => field.key)
+const BLACKLIST_GROUPS = [
+  'รถเป้าหมาย',
+  'รถเฝ้าระวังตรวจสอบ',
+  'รถเฝ้าติดตาม',
+  'รถ Blacklist นฝต. A01',
+  'รถ Blacklist นฝต. B01',
+  'รถ Blacklist สขว.',
+  'รถเฉพาะกิจ',
+  'รถบุคคลสำคัญ',
+  'รถทดสอบ',
+]
+const FIELD_CONFIG = [
+  ...PREVIOUS_FIELD_CONFIG.slice(0, 6),
+  { key: 'blacklistGroup', label: 'กลุ่มบัญชีดำ', width: 26 },
+  { key: 'blacklistOwner', label: 'เจ้าของบัญชีดำ', width: 28 },
+  ...PREVIOUS_FIELD_CONFIG.slice(6),
+]
 const LEGACY_HEADERS = LEGACY_FIELD_CONFIG.map(field => field.label)
 const LEGACY_FIELDS = LEGACY_FIELD_CONFIG.map(field => field.key)
-const STATIC_KEYS = ['plate', 'vehicleType', 'severityCode', 'behavior']
+const STATIC_KEYS = ['plate', 'vehicleType', 'blacklistGroup', 'blacklistOwner', 'severityCode', 'behavior']
 const MAX_CASES_PER_PAGE = 4
 
 
@@ -435,17 +456,19 @@ function SummaryPage({
 
   // รวมวันที่และเวลา เหลือ 10 คอลัมน์
   const columns = [
-  { key: 'dateTime', label: 'วันที่ / เวลาแจ้งเตือน', width: 104 },
-  { key: 'location', label: 'สถานที่', width: 170 },
-  { key: 'district', label: 'อำเภอ', width: 75 },
-  { key: 'plate', label: 'ป้ายทะเบียน', width: 125 },
-  { key: 'vehicleType', label: 'ประเภทรถ', width: 115 },
-  { key: 'behavior', label: 'พฤติกรรม', width: 180 },
-  { key: 'severityCode', label: 'รหัสความรุนแรง', width: 80 },
-  { key: 'responsePlan', label: 'แผนเผชิญเหตุ', width: 199 },
-]
+    { key: 'dateTime', label: 'วันที่ / เวลาแจ้งเตือน', width: 94 },
+    { key: 'location', label: 'สถานที่', width: 120 },
+    { key: 'district', label: 'อำเภอ', width: 70 },
+    { key: 'plate', label: 'ป้ายทะเบียน', width: 114 },
+    { key: 'vehicleType', label: 'ประเภทรถ', width: 90 },
+    { key: 'blacklistGroup', label: 'กลุ่มบัญชีดำ', width: 140 },
+    { key: 'blacklistOwner', label: 'เจ้าของบัญชีดำ', width: 110 },
+    { key: 'behavior', label: 'พฤติกรรม', width: 113 },
+    { key: 'severityCode', label: 'รหัสความรุนแรง', width: 65 },
+    { key: 'responsePlan', label: 'แผนเผชิญเหตุ', width: 132 },
+  ]
 
-  const renderDateTime = (date, time) => {
+const renderDateTime = (date, time) => {
     const dateText = dateBE(date)
     const timeText = formattedTime(time)
 
@@ -613,6 +636,8 @@ function VehiclePage({ center, month, year, group, events, index, total, caseOff
           <div className="s10-static-body">
             <div className="s10-static-field"><span>ป้ายทะเบียน</span><strong>{info.plate || '—'}</strong></div>
             <div className="s10-static-field"><span>ประเภทรถ</span><strong>{info.vehicleType || '—'}</strong></div>
+          <div className="s10-static-field"><span>กลุ่มบัญชีดำ</span><strong>{info.blacklistGroup || '—'}</strong></div>
+          <div className="s10-static-field"><span>เจ้าของบัญชีดำ</span><strong>{info.blacklistOwner || '—'}</strong></div>
             <div className="s10-static-field"><span>รหัสความรุนแรง</span><strong>{info.severityCode || '—'}</strong></div>
             <div className="s10-static-field s10-static-behavior"><span>พฤติกรรม</span><strong>{info.behavior || '—'}</strong></div>
             <div className="s10-static-count">
@@ -812,13 +837,13 @@ const changeVehicle = (id, key, value) => {
     }
 
 
-  const downloadTemplate=()=>{
+  const downloadTemplate=async()=>{
     const workbook=XLSX.utils.book_new()
-    // ทั้งเทมเพลตและตารางหน้าแรกใช้ FIELD_CONFIG ชุดเดียวกัน
+    // Excel template uses FIELD_CONFIG; summary PDF uses its own fixed-width columns.
     const rows=[HEADERS,...displayRows.map(v => FIELDS.map(key => ['time', 'officerTime'].includes(key) ? formattedTime(v[key]) : (v[key] ?? '')))]
     const sheet=XLSX.utils.aoa_to_sheet(rows)
     sheet['!cols']=FIELD_CONFIG.map(field=>({wch:field.width}))
-    // เตรียมช่อง B และ K ให้เป็น Text สำหรับรายการรถสูงสุด 150 คัน
+    // ช่อง B (เวลา) เป็น Text สำหรับรายการแจ้งเตือนสูงสุด 150 ครั้ง
     // ผู้ใช้พิมพ์เวลาได้ทั้ง 6, 6.00, 6:00 และแบบมี "น."
     const preparedRows = Math.max(rows.length, 151)
     for (let row = 2; row <= preparedRows; row++) {
@@ -827,11 +852,63 @@ const changeVehicle = (id, key, value) => {
         sheet[address] = { ...(sheet[address] || { t: 's', v: '' }), z: '@' }
       }
     }
-    sheet['!ref'] = `A1:I${preparedRows}`
+    const lastColumn = XLSX.utils.encode_col(HEADERS.length - 1)
+    sheet['!ref'] = `A1:${lastColumn}${preparedRows}`
     sheet['!freeze']={xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft',state:'frozen'}
-    sheet['!autofilter']={ref:`A1:I${Math.max(2,rows.length)}`}
+    sheet['!autofilter'] = {ref: `A1:${lastColumn}${Math.max(2, rows.length)}`}
     XLSX.utils.book_append_sheet(workbook,sheet,'รายการรถ')
-    XLSX.writeFile(workbook,`Blacklist_${center?.code||centerId}_${selectedMonth}_${selectedYear}.xlsx`)
+    // PATCH_SECTION10_EXCEL_DROPDOWN_V1: make a real native Excel list dropdown
+    // in G2:G151. It is visible in desktop Excel, independent of AutoFilter.
+    // SheetJS writes the workbook; JSZip adds an OOXML dataValidation rule.
+    try {
+      const optionsText = BLACKLIST_GROUPS.join(',')
+      if (optionsText.length > 255) {
+        throw new Error('รายการกลุ่มบัญชีดำยาวเกินข้อจำกัดของ Excel')
+      }
+
+      const workbookBytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+      const zip = await JSZip.loadAsync(workbookBytes)
+      const sheetPath = 'xl/worksheets/sheet1.xml'
+      const sheetEntry = zip.file(sheetPath)
+      if (!sheetEntry) throw new Error('ไม่พบชีตสำหรับเพิ่ม Dropdown')
+
+      const worksheetXml = await sheetEntry.async('string')
+      const autoFilter = worksheetXml.match(/<autoFilter\b[^>]*\/>/)
+      if (!autoFilter) throw new Error('ไม่พบตำแหน่งสำหรับเพิ่ม Dropdown ใน Excel')
+      if (worksheetXml.includes('<dataValidations')) {
+        throw new Error('Excel มี Data Validation อยู่แล้ว กรุณาตรวจสอบเทมเพลต')
+      }
+
+      const xmlEscape = value => String(value).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;',
+      }[ch]))
+      const formula = xmlEscape(`"${optionsText.replace(/"/g, '""')}"`)
+      const dataValidation =
+        `<dataValidations count="1">` +
+        `<dataValidation type="list" allowBlank="1" showDropDown="0" ` +
+        `showInputMessage="1" promptTitle="กลุ่มบัญชีดำ" ` +
+        `prompt="เลือกจากรายการ 9 กลุ่ม" ` +
+        `showErrorMessage="1" errorStyle="stop" ` +
+        `errorTitle="กลุ่มบัญชีดำไม่ถูกต้อง" ` +
+        `error="กรุณาเลือกกลุ่มบัญชีดำจากรายการ" ` +
+        `sqref="G2:G${preparedRows}">` +
+        `<formula1>${formula}</formula1>` +
+        `</dataValidation></dataValidations>`
+      zip.file(sheetPath, worksheetXml.replace(autoFilter[0], autoFilter[0] + dataValidation))
+
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `Blacklist_${center?.code||centerId}_${selectedMonth}_${selectedYear}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      setError('')
+    } catch (e) {
+      setError(`สร้าง Excel พร้อม Dropdown ไม่สำเร็จ: ${e.message}`)
+    }
   }
   const uploadExcel=async(file)=>{
     if(!file || !canEdit || loading || saving) return
@@ -850,15 +927,20 @@ const changeVehicle = (id, key, value) => {
       const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:true})
       const incomingHeader=(rows[0]||[]).map(safe)
 const importFields = HEADERS.every((name, i) => incomingHeader[i] === name)
-  ? FIELDS
-  : LEGACY_HEADERS.every((name, i) => incomingHeader[i] === name)
-    ? LEGACY_FIELDS
-    : null
-if (!importFields) throw new Error('หัวคอลัมน์ไม่ตรง กรุณาดาวน์โหลด Template ใหม่ (รองรับ Template 12 ช่องเดิมด้วย)')
+        ? FIELDS
+        : PREVIOUS_HEADERS.every((name, i) => incomingHeader[i] === name)
+          ? PREVIOUS_FIELDS
+          : LEGACY_HEADERS.every((name, i) => incomingHeader[i] === name)
+            ? LEGACY_FIELDS
+            : null
+if (!importFields) throw new Error('หัวคอลัมน์ไม่ตรง กรุณาดาวน์โหลด Template ใหม่ (ยังรองรับ Template 9 และ 12 ช่องเดิม)')
       const incoming=rows.slice(1).filter(r=>r.some(c=>safe(c))).map(r=>{
         const v=emptyVehicle()
         
         importFields.forEach((key, i) => {
+          if (key === 'blacklistGroup' && safe(r[i]) && !BLACKLIST_GROUPS.includes(safe(r[i]))) {
+            throw new Error(`กลุ่มบัญชีดำใน Excel ไม่ตรงกับตัวเลือก: ${safe(r[i])}`)
+          }
             if (key === 'plate') {
                 v[key] = normalizePlate(r[i])
             } else if (
@@ -1157,7 +1239,7 @@ const downloadPng = async () => {
         <button type="button" className="s10-secondary" onClick={downloadTemplate}>↓ ดาวน์โหลด Template Excel</button>
         <button type="button" className="s10-secondary" onClick={()=>fileInput.current?.click()} disabled={loading||saving}>↑ อัปโหลด Excel</button>
         <input ref={fileInput} type="file" hidden accept=".xlsx,.xls" onChange={e=>{uploadExcel(e.target.files?.[0]);e.target.value=''}}/>
-        <p className="s10-hint">Template 9 คอลัมน์ · 1 แถวต่อการแจ้งเตือน · รองรับไฟล์ Excel 12 ช่องเดิม · ใช้เดือนรายงานจากระบบหลัก · วันที่ทั้งสองช่องรับ พ.ศ./ค.ศ. · รหัส A01 เรียงก่อน B01</p>
+        <p className="s10-hint">Template 11 คอลัมน์ · 1 แถวต่อการแจ้งเตือน · รองรับไฟล์ Excel 9 และ 12 ช่องเดิม · ใช้เดือนรายงานจากระบบหลัก · วันที่ทั้งสองช่องรับ พ.ศ./ค.ศ. · รหัส A01 เรียงก่อน B01</p>
         <label className="s10-label">จำนวนแถวตารางสรุปต่อหน้า
           
             <select
@@ -1193,7 +1275,12 @@ const downloadPng = async () => {
           </button>
           {openId===v.id && <div className="s10-case-form">
             {FIELDS.map((key,i)=><label className="s10-label" key={key}>{HEADERS[i]}
-              {['behavior','responsePlan','result'].includes(key) ? <textarea rows={2} value={v[key] ?? ''} onChange={e=>changeVehicle(v.id,key,e.target.value)}/>
+              {key === 'blacklistGroup' ? (
+                  <select value={v[key] ?? ''} onChange={e => changeVehicle(v.id, key, e.target.value)}>
+                    <option value="">-- เลือกกลุ่มบัญชีดำ --</option>
+                    {BLACKLIST_GROUPS.map(group => <option key={group} value={group}>{group}</option>)}
+                  </select>
+                ) : ['behavior','responsePlan','result'].includes(key) ? <textarea rows={2} value={v[key] ?? ''} onChange={e=>changeVehicle(v.id,key,e.target.value)}/>
                 : <input
                     type="text"
                     value={v[key] ?? ''}
