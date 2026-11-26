@@ -204,6 +204,7 @@ function AlertReport({ profile }) {
 
   const reportFrameRef = useRef(null)
   const tempReportFrameRef = useRef(null)
+  const historyFrameRef = useRef(null)
 
   const [selectedFile, setSelectedFile] =
     useState(null)
@@ -1691,6 +1692,95 @@ useEffect(() => {
       inspectorName:inspectors.find(p=>String(p.id)===String(selectedInspector))?.name||''
     },window.location.origin)
   },[selectedCenterId,selectedInspector,inspectors])
+
+  // VSS05_HISTORY_V1_20261127 — separate read-only iframe and RPC.
+  useEffect(() => {
+    if (activeReportTab !== 'history') return
+    let alive = true, seq = 0, dataset = null
+    const frame = () => historyFrameRef.current?.contentWindow
+    const center = Number(selectedCenterId)
+    const isCentral = center === 10
+    const valid = [1,2,4,7,8,9,10].includes(center)
+    const dateOk = value => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false
+      const d = new Date(value + 'T00:00:00Z')
+      return Number.isFinite(d.getTime()) && d.toISOString().slice(0,10) === value
+    }
+    const partition = items => {
+      const pages = []; let page = [], used = 0
+      for (const item of items) {
+        let rest = item.s.slice()
+        while (rest.length) {
+          const take = rest.splice(0, 8-used)
+          page.push({...item, s:take}); used += take.length
+          if (used === 8) { pages.push(page); page=[]; used=0 }
+        }
+      }
+      if (page.length) pages.push(page)
+      return pages
+    }
+    const onMessage = async event => {
+      if (!alive || event.origin !== window.location.origin || event.source !== frame()) return
+      const msg = event.data || {}
+      if (!['VSS05_HISTORY_GET','VSS05_HISTORY_PAGE'].includes(msg.type)) return
+      const current = ++seq
+      const send = result => {
+        if (alive && current === seq && event.source === frame()) {
+          frame()?.postMessage({type:'VSS05_HISTORY_RESULT',requestId:msg.requestId,...result},event.origin)
+        }
+      }
+      try {
+        if (!valid) throw new Error('กรุณาเลือกศูนย์ก่อนเรียกดูข้อมูล')
+        if (msg.type === 'VSS05_HISTORY_GET') {
+          dataset=null
+          if (!dateOk(msg.start) || !dateOk(msg.end) || msg.start > msg.end) throw new Error('ช่วงวันที่ไม่ถูกต้อง')
+          const {data,error}=await supabase.rpc('vss05_history_get',{
+            p_center_id:center,p_start:msg.start,p_end:msg.end
+          })
+          if (error) throw error
+          if (!alive || current !== seq) return
+          if (!Array.isArray(data?.records)) throw new Error('รูปแบบข้อมูลย้อนหลังไม่ถูกต้อง')
+          const lists={face:[],lpr:[]}
+          for (const rec of data.records) {
+            const name=vss05LiveRef.current.centers.find(c=>Number(c.id)===Number(rec.center_id))?.name || `ศูนย์ ${rec.center_id}`
+            for (const kind of ['face','lpr']) for (const item of rec.payload?.[kind] || []) {
+              const s=(Array.isArray(item.s)?item.s:[]).filter(x=>dateOk(x.d)&&x.d>=msg.start&&x.d<=msg.end)
+                .sort((a,b)=>(a.d+'T'+(a.t||'')).localeCompare(b.d+'T'+(b.t||'')))
+              if(s.length) lists[kind].push({...item,s,originCenterName:isCentral?name:'',sourceReportDate:rec.report_date})
+            }
+          }
+          for (const kind of ['face','lpr']) lists[kind].sort((a,b)=>(a.s[0].d+'T'+(a.s[0].t||'')).localeCompare(b.s[0].d+'T'+(b.s[0].t||'')))
+          const totals={face:lists.face.reduce((n,i)=>n+i.s.length,0),lpr:lists.lpr.reduce((n,i)=>n+i.s.length,0)}
+          const faces=partition(lists.face), cars=partition(lists.lpr)
+          dataset={start:msg.start,end:msg.end,totals,faces,cars,pages:Math.max(1,faces.length,cars.length)}
+        }
+        if(!dataset) throw new Error('กรุณาโหลดช่วงข้อมูลก่อน')
+        const page=msg.type==='VSS05_HISTORY_GET'?0:Number(msg.page)
+        if(!Number.isInteger(page)||page<0||page>=dataset.pages) throw new Error('หน้ารายงานไม่ถูกต้อง')
+        const face=structuredClone(dataset.faces[page]||[]),lpr=structuredClone(dataset.cars[page]||[])
+        let imageError=false
+        const items=[...face,...lpr].filter(i=>i.image_path)
+        const cache=new Map()
+        for(let i=0;i<items.length;i+=6){
+          if(!alive||current!==seq) return
+          await Promise.all(items.slice(i,i+6).map(async item=>{
+            try {
+              if(!cache.has(item.image_path)) cache.set(item.image_path,(async()=>{
+                const {data,error}=await supabase.storage.from('vss05-daily-assets').download(item.image_path)
+                if(error||!data) throw error||new Error('image unavailable')
+                return blobToDataUrl(data)
+              })())
+              item.imageDataUrl=await cache.get(item.image_path)
+            }catch{imageError=true}
+          }))
+        }
+        send({start:dataset.start,end:dataset.end,totals:dataset.totals,page,pages:dataset.pages,face,lpr,imageError})
+      }catch(error){send({error:error?.message||'โหลดข้อมูลย้อนหลังไม่สำเร็จ'})}
+    }
+    window.addEventListener('message',onMessage)
+    return ()=>{alive=false;seq++;window.removeEventListener('message',onMessage)}
+  },[activeReportTab,selectedCenterId])
+
 const handleDownload = () => {
 
     if (!convertedFile?.blob || !isVss05Confirmed) {
@@ -1757,12 +1847,18 @@ const handleDownload = () => {
         >
           รายงานชั่วคราว (สภ. / ไม่บันทึก)
         </button>
+        <button type="button" role="tab" aria-selected={activeReportTab === 'history'}
+          className={activeReportTab === 'history' ? 'active' : ''}
+          onClick={()=>{setActiveReportTab('history');setConvertedFile(null);setIsVss05Confirmed(false)}}>
+          รายงานย้อนหลัง (อ่านอย่างเดียว)
+        </button>
       </div>
 
       {/* VSS05_SHARED_UPLOAD_V6_20261108: บาร์อัปโหลดใช้ร่วมกัน แต่แปลงลง iframe ของแท็บที่เลือก */}
       {/* =========================================
           VSS05 TOOLBAR
       ========================================== */}
+      {activeReportTab !== 'history' && (
       <section className="vss05-toolbar">
 
         <div className="vss05-toolbar-head">
@@ -2121,6 +2217,29 @@ const handleDownload = () => {
         </div>
 
       </section>
+      )}
+
+      {activeReportTab === 'history' && (
+        <>
+          <section className="vss05-toolbar vss05-history-toolbar">
+            <div className="vss05-tool-block">
+              <div className="vss05-tool-label"><Building2 size={17}/> ศูนย์ที่แสดงข้อมูล</div>
+              {canChooseCenter ? (
+                <select className="vss05-select" value={selectedCenterId} disabled={centersLoading}
+                  onChange={e=>setSelectedCenterId(e.target.value)}>
+                  <option value="">-- เลือกศูนย์ --</option>
+                  {centers.filter(c=>[1,2,4,7,8,9,10].includes(Number(c.id))).map(c=><option key={c.id} value={String(c.id)}>{c.name}</option>)}
+                </select>
+              ) : <div className="vss05-fixed-value">{selectedCenter?.name || profile?.agency || '-'}</div>}
+            </div>
+            <div className="vss05-history-note">รายงานย้อนหลัง • อ่านอย่างเดียว • ยึดวันที่พบเหตุจริง ไม่ใช่วันที่จัดทำรายงาน</div>
+          </section>
+          <iframe key={'history-'+selectedCenterId} ref={historyFrameRef}
+            className="alert-report-frame" src={`${reportUrl}?mode=history`}
+            title="VSS05 รายงานย้อนหลัง — อ่านอย่างเดียว"/>
+        </>
+      )}
+
 
       {/* รายงานจริงยังคง iframe เดิมไว้ ไม่สลับทิ้งเมื่อกดแท็บชั่วคราว */}
       <div style={{ display: activeReportTab === 'official' ? 'block' : 'none' }}>

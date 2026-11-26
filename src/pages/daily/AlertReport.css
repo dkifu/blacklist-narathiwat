@@ -584,3 +584,8 @@
   .vss05-report-tabs { display: grid; grid-template-columns: 1fr; }
   .vss05-report-tabs button { width: 100%; }
 }
+
+/* VSS05_HISTORY_V1_20261127 */
+.vss05-history-toolbar { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+.vss05-history-toolbar .vss05-tool-block { flex:0 1 340px; }
+.vss05-history-note { color:#a9b9d0; font-size:12px; flex:1 1 240px; }
