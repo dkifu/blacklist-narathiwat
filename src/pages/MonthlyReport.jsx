@@ -397,6 +397,41 @@ function MonthlyReport({ profile }) {
     useState(true)
   const role = profile?.role
   const isAdmin = role === 'admin'
+  // SECTION10_GLOBAL_DETAILS_V1 — one shared setting for all editor/export instances.
+  const [s10Details, setS10Details] = useState(false)
+  const [s10Ready, setS10Ready] = useState(false)
+  const [s10Changing, setS10Changing] = useState(false)
+  const s10Request = useRef(0)
+  const s10Writing = useRef(false)
+  useEffect(() => {
+    let alive = true
+    const refresh = async () => {
+      if (s10Writing.current) return
+      const request = ++s10Request.current
+      try {
+        const {data,error} = await supabase.from('section10_global_settings').select('details_enabled').eq('id',1).single()
+        if (!alive || request !== s10Request.current) return
+        if (error || typeof data?.details_enabled !== 'boolean') throw error || new Error('Missing settings')
+        setS10Details(data.details_enabled); setS10Ready(true)
+      } catch (e) {
+        if (alive && request === s10Request.current) { setS10Details(false); setS10Ready(false) }
+      }
+    }
+    refresh()
+    const timer = window.setInterval(refresh, 3000)
+    window.addEventListener('focus', refresh)
+    return () => { alive = false; window.clearInterval(timer); window.removeEventListener('focus', refresh) }
+  }, [])
+  const toggleS10Details = async enabled => {
+    if (!isAdmin || !s10Ready || s10Writing.current) return
+    s10Writing.current = true; ++s10Request.current; setS10Changing(true)
+    try {
+      const {data,error} = await supabase.from('section10_global_settings').update({details_enabled:enabled}).eq('id',1).select('details_enabled').single()
+      if (error || data?.details_enabled !== enabled) throw error || new Error('บันทึกการตั้งค่าไม่สำเร็จ')
+      setS10Details(data.details_enabled)
+    } catch (e) { window.alert(e.message || 'บันทึกการตั้งค่าไม่สำเร็จ') }
+    finally { s10Writing.current = false; setS10Changing(false) }
+  }
   const isSupervisor = role === 'supervisor'
   const isOperator = role === 'operator'
   const isCenter = role === 'center'
@@ -1762,6 +1797,10 @@ function MonthlyReport({ profile }) {
               canEdit={false}
             />
             <Section10Editor
+                    timelineAllowed={Number(exportCenter?.id) === SCT_CENTER_ID && (isAdmin || isSupervisor || (isCenter && Number(profile?.center_id) === SCT_CENTER_ID))}
+                    timelineAdmin={isAdmin}
+                    detailsEnabled={s10Details}
+                    detailsReady={s10Ready}
               key={`section10-export-${currentReport.id}-${section10ExportVersion}`}
               ref={section10ExportRef}
               sctAggregate={isSctMode ? sctMergedData : undefined}
@@ -1973,6 +2012,10 @@ function MonthlyReport({ profile }) {
                     sctAggregate={sctMergedData}
                   /> :
                   selectedSection === 10 ? <Section10Editor
+                    timelineAllowed={Number(displayCenter?.id) === SCT_CENTER_ID && (isAdmin || isSupervisor || (isCenter && Number(profile?.center_id) === SCT_CENTER_ID))}
+                    timelineAdmin={isAdmin}
+                    detailsEnabled={s10Details}
+                    detailsReady={s10Ready}
                     key={`sct-merged-10-${month}-${year}`}
                     report={displayReport} center={displayCenter}
                     month={month} year={year} canEdit={false}
@@ -2120,8 +2163,14 @@ function MonthlyReport({ profile }) {
                   />
                 ) : activeSection.id === 10 ? (
                   <Section10Editor
+                    timelineAllowed={Number(displayCenter?.id) === SCT_CENTER_ID && (isAdmin || isSupervisor || (isCenter && Number(profile?.center_id) === SCT_CENTER_ID))}
+                    timelineAdmin={isAdmin}
+                    detailsEnabled={s10Details}
+                    detailsReady={s10Ready}
                     key={`section10-${displayReport.id}`}
                     isAdmin={isAdmin}
+                    onToggleDetails={isAdmin ? toggleS10Details : undefined}
+                    detailsChanging={s10Changing}
                     report={displayReport}
                     center={displayCenter}
                     month={month}

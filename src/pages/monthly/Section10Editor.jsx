@@ -914,12 +914,185 @@ function VehiclePage({ center, month, year, group, events, index, total, caseOff
   )
 }
 
-export default forwardRef(function Section10Editor({report,center,month,year,canEdit=false,isAdmin=false,onDataChange,sctAggregate},ref) {
+// SECTION10_TIMELINE_V1
+const TIMELINE_CENTERS = {1:['นราธิวาส','#2563eb'],2:['ปัตตานี','#9333ea'],4:['หาดใหญ่','#ea580c'],7:['ตากใบ','#15803d'],8:['สุไหง-โกลก','#db2777'],9:['เบตง','#0891b2']}
+async function loadTimelineRows(month,year) {
+  const {data:reports,error} = await supabase.from('monthly_reports').select('id,center_id').in('center_id',[1,2,4,7,8,9]).eq('report_month',month).eq('report_year',year)
+  if(error) throw error
+  if(!reports?.length) return []
+  const ids = new Map(reports.map(r=>[String(r.id),Number(r.center_id)]))
+  const {data:sections,error:sectionError} = await supabase.from('monthly_report_sections').select('report_id,content').eq('section_no',10).in('report_id',reports.map(r=>r.id))
+  if(sectionError) throw sectionError
+  return (sections||[]).flatMap(s=>(Array.isArray(s.content?.vehicles)?s.content.vehicles:[]).map(v=>({plate:normalizePlate(v.plate),date:v.date,time:v.time,location:safe(v.location ?? v.checkpoint),severityCode:safe(v.severityCode),sourceCenter:ids.get(String(s.report_id))})))
+}
+function timelineGroups(rows) {
+  const map = new Map()
+  for(const row of rows) {
+    const key=monthVehicleKey(row)
+    if(!key) continue
+    if(!map.has(key)) map.set(key,[])
+    map.get(key).push(row)
+  }
+  return [...map.entries()].filter(([,events])=>events.length>1).map(([key,events])=>({key,plate:events[0].plate,centers:new Set(events.map(e=>e.sourceCenter)).size,events:[...events].sort((a,b)=>(alertDateSortKey(a)||'9999').localeCompare(alertDateSortKey(b)||'9999'))})).sort((a,b)=>(b.centers>1)-(a.centers>1)||b.events.length-a.events.length||a.plate.localeCompare(b.plate,'th'))
+}
+// SECTION10_TIMELINE_ADAPTIVE_V3
+// SECTION10_TIMELINE_SPACE_V4
+// SECTION10_TIMELINE_LAYOUT_V6
+// SECTION10_TIMELINE_FIXED_V7
+const TIMELINE_COLUMNS = 5
+const TIMELINE_CARD_HEIGHT = 104
+const TIMELINE_ROW_GAP = 24
+const TIMELINE_BLOCK_GAP = 6
+// Page: 792 - 50 padding - (54+68+16) fixed header - 18 header gaps.
+const TIMELINE_HEIGHT_BUDGET = 586
+const TIMELINE_BLOCK_CHROME = 36
+function timelineBlockCost(rows) {
+  return TIMELINE_BLOCK_CHROME + rows * TIMELINE_CARD_HEIGHT + (rows-1)*TIMELINE_ROW_GAP
+}
+function packAdaptiveTimeline(groups) {
+  const pages = []
+  let page = [], used = 0, usedRows = 0
+  const flush = () => { if(page.length) pages.push(page); page=[]; used=0; usedRows=0 }
+  for (const group of groups) {
+    let offset=0
+    while(offset<group.events.length) {
+      const remainingRows = Math.ceil((group.events.length-offset)/TIMELINE_COLUMNS)
+      const gap=page.length ? TIMELINE_BLOCK_GAP : 0
+      let rows=Math.min(4-usedRows, remainingRows)
+      while(rows>0 && used+gap+timelineBlockCost(rows)>TIMELINE_HEIGHT_BUDGET) rows--
+      if(!rows){ if(!page.length) throw new Error('Timeline layout budget too small'); flush(); continue }
+      // Prefer keeping small groups together; otherwise fill remaining rows with a continuation.
+      if(offset===0 && remainingRows<=4 && remainingRows>rows && page.length){flush();continue}
+      const events=group.events.slice(offset,offset+rows*TIMELINE_COLUMNS)
+      page.push({group,offset,events,columns:TIMELINE_COLUMNS,height:TIMELINE_CARD_HEIGHT})
+      used+=gap+timelineBlockCost(rows);usedRows+=rows;offset+=events.length
+      if(usedRows===4)flush()
+    }
+  }
+  flush()
+  return pages.length?pages:[[]]
+}
+function TimelineCapsule({color, angle, x, y}) {
+  return <svg className="s10-adaptive-arrow" style={{left:`${x}%`,top:y,transform:`translate(-50%,-50%) rotate(${angle}deg)`}} viewBox="0 0 36 24" aria-hidden="true">
+    <rect x="0" y="1" width="36" height="22" rx="11" fill={color} fillOpacity=".15"/>
+    <path d="M6 12 H24" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+    <circle cx="25" cy="12" r="9" fill={color}/>
+    <path d="M20 12 H29 M25 8 L29 12 L25 16" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+}
+function TimelinePage({month,year,groups,blocks,part,totalParts}) {
+  const root = useRef(null)
+  useLayoutEffect(() => {
+    let active = true
+    const fit = () => {
+      if (!active || !root.current) return
+      root.current.querySelectorAll('.s10-timeline-location').forEach(node => {
+        const full = node.title
+        node.textContent = full
+        let size = 12
+        node.style.fontSize = `${size}px`
+        const fits = () => node.scrollHeight <= 30 && node.scrollWidth <= node.clientWidth + 1
+        while (!fits() && size > 8) {
+          size -= .5
+          node.style.fontSize = `${size}px`
+        }
+        if (!fits()) {
+          const chars = typeof Intl.Segmenter === 'function'
+            ? Array.from(new Intl.Segmenter('th', {granularity:'grapheme'}).segment(full), x=>x.segment)
+            : Array.from(full)
+          let lo=0, hi=chars.length
+          while(lo<hi){const mid=Math.ceil((lo+hi)/2);node.textContent=chars.slice(0,mid).join('')+'…';if(fits())lo=mid;else hi=mid-1}
+          node.textContent=chars.slice(0,lo).join('')+'…'
+        }
+      })
+    }
+    fit()
+    document.fonts?.ready.then(fit)
+    return () => { active = false }
+  }, [blocks])
+  return <div ref={root} className="s10-paper s10-timeline-paper s10-adaptive-paper">
+    <div className="s10-heading"><h2>Timeline การแจ้งเตือนรถบัญชีดำซ้ำ</h2><p>ศชต. · รวม 6 ศูนย์ · ประจำเดือน {MONTHS[month-1]} {year} · หน้า {part}/{totalParts}</p></div>
+    <div className="s10-timeline-kpi"><div>รถที่พบซ้ำ <b>{formatNum(groups.length)} คัน</b></div><div>แจ้งเตือนรวม <b>{formatNum(groups.reduce((n,g)=>n+g.events.length,0))} ครั้ง</b></div><div>พบข้ามศูนย์ <b>{formatNum(groups.filter(g=>g.centers>1).length)} คัน</b></div></div>
+    <div className="s10-timeline-legend">{Object.entries(TIMELINE_CENTERS).map(([id,[name,color]])=><span key={id} style={{color}}><i style={{background:color}}/>{name}</span>)}</div>
+    {!blocks.length && <div className="s10-timeline-empty">ไม่พบรถที่มีการแจ้งเตือนซ้ำในข้อมูลที่บันทึกไว้</div>}
+    {blocks.map(({group,offset,events,columns})=>{
+      const rows=Math.ceil(events.length/columns)
+      const height=TIMELINE_CARD_HEIGHT
+      const stride=height+TIMELINE_ROW_GAP
+      const position=i=>{
+        const row=Math.floor(i/columns), slot=i%columns
+        const reverse=(Math.floor(offset/columns)+row)%2===1
+        return {x:((reverse?columns-1-slot:slot)+.5)*100/columns,y:row*stride}
+      }
+      return <div className="s10-adaptive-block" key={`${group.key}-${offset}`}>
+        <div className="s10-timeline-head"><strong>{group.plate}</strong><span>พบ {group.events.length} ครั้ง · {group.centers} ศูนย์{offset>0?` · ต่อจากหน้าก่อน (${offset+1}–${offset+events.length})`:''}{offset+events.length<group.events.length?' · มีต่อหน้าถัดไป':''}</span></div>
+        <div className={`s10-adaptive-track cols-${columns}`} style={{height:(rows-1)*stride+height,'--flow-height':`${height}px`,'--flow-width':`calc(20% - 36px)`}}>
+          {events.slice(1).map((event,j)=>{
+            const a=position(j),b=position(j+1)
+            const color=(TIMELINE_CENTERS[event.sourceCenter]||['','#64748b'])[1]
+            return <TimelineCapsule key={j} color={color} angle={a.y!==b.y?90:b.x>a.x?0:180} x={(a.x+b.x)/2} y={(a.y+b.y)/2+height/2}/>
+          })}
+          {events.map((event,i)=>{
+            const p=position(i),[name,color]=TIMELINE_CENTERS[event.sourceCenter]||['ไม่ระบุศูนย์','#64748b']
+            const location=safe(event.location)||'ไม่ระบุจุดตรวจ'
+            const font=12
+            return <div key={i} className="s10-adaptive-event" style={{left:`${p.x}%`,top:p.y,'--flow-color':color}}>
+              <div className="s10-adaptive-ribbon"><b>{offset+i+1}</b><span>{name}</span></div>
+              <div className="s10-adaptive-body"><b>{dateBE(event.date)||'ไม่ระบุวันที่'}</b><span>{formattedTime(event.time)||'ไม่ระบุเวลา'}</span><strong className="s10-timeline-location" style={{fontSize:font}} title={location}>{location}</strong></div>
+            </div>
+          })}
+        </div>
+      </div>
+    })}
+  </div>
+}
+
+export default forwardRef(function Section10Editor({report,center,month,year,canEdit=false,isAdmin=false,onDataChange,sctAggregate,detailsEnabled=false,detailsReady=false,onToggleDetails,detailsChanging=false,timelineAllowed:timelinePermission=false,timelineAdmin=false},ref) {
   const centerId = Number(center?.id)
+  const timelineAllowed = timelinePermission && centerId === 10
   const selectedMonth = Number(month)
   const selectedYear = Number(year)
   const valid = !!report?.id && Number(report.center_id) === centerId &&
     Number(report.report_month) === selectedMonth && Number(report.report_year) === selectedYear
+  const [timelineSetting,setTimelineSetting] = useState(null)
+  const [timelineChanging,setTimelineChanging] = useState(false)
+  const timelineWrite = useRef(false)
+  const [timelineData,setTimelineData] = useState(null)
+  const [timelineError,setTimelineError] = useState('')
+  const timelineKey = `${selectedYear}-${selectedMonth}`
+  const timelineEnabled = timelineAllowed && timelineSetting === true
+  useEffect(()=>{
+    if(!timelineAllowed && !timelineAdmin) return
+    let live=true, request=0
+    const refresh=async()=>{
+      if(timelineWrite.current) return
+      const token=++request
+      const {data,error}=await supabase.from('section10_global_settings').select('timeline_enabled').eq('id',1).single()
+      if(live && token===request && !timelineWrite.current) setTimelineSetting(error || typeof data?.timeline_enabled!=='boolean'?null:data.timeline_enabled)
+    }
+    refresh(); const timer=window.setInterval(refresh,3000)
+    return ()=>{live=false;window.clearInterval(timer)}
+  },[timelineAllowed,timelineAdmin])
+  const toggleTimeline=async()=>{
+    if(!timelineAdmin || timelineSetting===null || timelineWrite.current) return
+    timelineWrite.current=true;setTimelineChanging(true)
+    try {
+      const next=!timelineSetting
+      const {data,error}=await supabase.from('section10_global_settings').update({timeline_enabled:next}).eq('id',1).select('timeline_enabled').single()
+      if(error || data?.timeline_enabled!==next) throw error||new Error('บันทึกไม่สำเร็จ')
+      setTimelineSetting(next)
+    } catch(e){window.alert(e.message||'บันทึก Timeline ไม่สำเร็จ')}
+    finally {timelineWrite.current=false;setTimelineChanging(false)}
+  }
+  useEffect(()=>{
+    let live=true
+    setTimelineData(null);setTimelineError('')
+    if(timelineEnabled) loadTimelineRows(selectedMonth,selectedYear).then(rows=>{if(live)setTimelineData({key:timelineKey,rows})}).catch(e=>{if(live)setTimelineError(e.message||'โหลด Timeline ไม่สำเร็จ')})
+    return ()=>{live=false}
+  },[timelineEnabled,timelineKey,report?.id])
+  const timelineReady=!timelineAllowed || (timelineSetting!==null && (!timelineEnabled || timelineData?.key===timelineKey))
+  const repeatedGroups=useMemo(()=>timelineGroups(timelineData?.key===timelineKey?timelineData.rows:[]),[timelineData,timelineKey])
+  const timelineChunks=packAdaptiveTimeline(repeatedGroups)
   const [vehicles,setVehicles] = useState([])
   const [annualCounts,setAnnualCounts] = useState(Array(12).fill(null))
   const [tableSize, setTableSize] = useState('10')
@@ -1089,7 +1262,8 @@ const pages = [
   { kind: 'dashboard' },
   ...summaryChunks.map((rows, index) => ({ kind: 'summary', rows, part: index + 1 })),
 ]
-groupedVehicles.forEach((group, index) => {
+if(timelineEnabled && timelineReady) timelineChunks.forEach((blocks,i)=>pages.push({kind:'timeline',blocks,part:i+1}))
+if (detailsEnabled) groupedVehicles.forEach((group, index) => {
   const totalParts = Math.ceil(group.events.length / detailsPerPage)
   for (let caseOffset = 0; caseOffset < group.events.length; caseOffset += detailsPerPage) {
     pages.push({
@@ -1177,6 +1351,7 @@ const changeVehicle = (id, key, value) => {
   
   
     const onImages = async (id, files) => {
+        if (!detailsEnabled || !detailsReady || !canEdit) return
         const file = files?.[0]
 
         if (!file) return
@@ -1573,11 +1748,15 @@ const downloadPng = async () => {
 
 
   useImperativeHandle(ref,()=>({
-    isReady:()=>valid && !loading && !saving && !error && !groupsLoading && !groupsError,
+    isReady:()=>(valid && !loading && !saving && !error && !groupsLoading && !groupsError) && detailsReady && timelineReady,
     hasData:()=>saved,
     exportPdfPages:async()=>{
+      const {data,error:settingError}=await supabase.from('section10_global_settings').select('details_enabled,timeline_enabled').eq('id',1).single()
+      if(settingError || !detailsReady || data?.details_enabled !== detailsEnabled || !timelineReady || (timelineAllowed && data?.timeline_enabled !== timelineSetting)) throw new Error('การตั้งค่ารายละเอียดรถเปลี่ยนแปลงหรือยังไม่พร้อม กรุณาส่งออก PDF ใหม่')
       const result=[]
       for(let i=0;i<pages.length;i++) result.push({orientation:'landscape',dataUrl:await capture(i)})
+      const {data:latest,error:latestError}=await supabase.from('section10_global_settings').select('details_enabled,timeline_enabled').eq('id',1).single()
+      if(latestError || latest?.details_enabled !== detailsEnabled || (timelineAllowed && latest?.timeline_enabled !== timelineSetting)) throw new Error('การตั้งค่ารายละเอียดรถเปลี่ยนระหว่างส่งออก กรุณาส่งออก PDF ใหม่')
       return result
     },
   }))
@@ -1607,6 +1786,7 @@ const downloadPng = async () => {
         b01Count={b01Count}
         tableSize={tableSize}
         />
+    : page.kind==='timeline' ? <TimelinePage month={selectedMonth} year={selectedYear} groups={repeatedGroups} blocks={page.blocks} part={page.part} totalParts={timelineChunks.length}/>
     : <VehiclePage
     center={center}
     month={selectedMonth}
@@ -1623,6 +1803,15 @@ const downloadPng = async () => {
     {canEdit && <aside className="s10-side">
       <div className="s10-side-header"><span>หัวข้อ 10</span><h3>รายงานแจ้งเตือนรถบัญชีดำ</h3><p>หน้า Dashboard + ตารางสรุป + รวมทะเบียนซ้ำ (1–4 เคสต่อหน้า)</p></div>
       <div className="s10-side-body">
+        {/* SECTION10_GLOBAL_DETAILS_V1 */}
+        {onToggleDetails && <button type="button" role="switch" aria-checked={detailsEnabled}
+          className="s10-global-switch" disabled={!detailsReady || detailsChanging}
+          onClick={() => onToggleDetails(!detailsEnabled)}>
+          <span>รายละเอียดรถทุกศูนย์<small>{detailsEnabled ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}</small></span>
+          <span className={`s10-switch-track ${detailsEnabled ? 'on' : ''}`}><i /></span>
+        </button>}
+        {!detailsReady && <p className="s10-hint">ยังไม่สามารถตรวจสอบการตั้งค่ากลางได้</p>}
+        {timelineAdmin && <button type="button" role="switch" aria-checked={timelineSetting===true} className="s10-global-switch" disabled={timelineSetting===null||timelineChanging} onClick={toggleTimeline}><span>Timeline รถที่พบซ้ำ (ศชต.)<small>{timelineSetting?'เปิดใช้งาน':'ปิดใช้งาน'}</small></span><span className={`s10-switch-track ${timelineSetting?'on':''}`}><i/></span></button>}
         {isAdmin && <section className="s10-group-admin">
           <button type="button" className="s10-group-admin-toggle" onClick={() => setShowGroupManager(value => !value)}>
             <span>⚙ จัดการกลุ่มรถ (ทุก สภ.)</span><span>{showGroupManager ? '▴' : '▾'}</span>
@@ -1681,6 +1870,7 @@ const downloadPng = async () => {
 <label className="s10-label">จำนวนการแจ้งเตือนต่อหน้ารายละเอียด
   <select
     value={casesPerPage}
+    disabled={!detailsEnabled || !detailsReady}
     onChange={e => { setCasesPerPage(e.target.value); setDirty(true); setActivePage(0) }}
   >
     {[1, 2, 3, 4].map(n => <option key={n} value={String(n)}>{n} เคสต่อหน้า</option>)}
@@ -1742,6 +1932,7 @@ const downloadPng = async () => {
             </label>)}
 
             
+            {detailsEnabled && detailsReady ? <>
             <div className="s10-label">
             ภาพประกอบ (1 ภาพต่อการแจ้งเตือน)
             </div>
@@ -1794,6 +1985,7 @@ const downloadPng = async () => {
 
             
             
+            </> : <p className="s10-hint">เพิ่มภาพประกอบไม่ได้: ปิดรายละเอียดรถ</p>}
             <button className="s10-danger" type="button" onClick={()=>{if(window.confirm('ลบการแจ้งเตือนครั้งนี้จากรายงาน?')){setVehicles(list=>list.filter(x=>x.id!==v.id));setOpenId(null);setDirty(true)}}}>ลบการแจ้งเตือนครั้งนี้</button>
           </div>}
         </div>)}</div>
@@ -1804,9 +1996,11 @@ const downloadPng = async () => {
       </div>
     </aside>}
     <section className="s10-preview" ref={frameRef}>
+      {timelineAllowed && timelineError && <p className="s10-error">Timeline: {timelineError}</p>}
+      {timelineEnabled && !timelineReady && !timelineError && <p className="s10-hint">กำลังโหลด Timeline รวม 6 ศูนย์</p>}
       <div className="s10-page-tabs">
         {pages.map((page,i)=><button key={i} type="button" className={i===activePage?'active':''} onClick={()=>setActivePage(i)}>
-          {page.kind==='dashboard' ? 'ภาพรวม' : page.kind==='summary' ? `ตาราง ${page.part}/${summaryChunks.length}` : `รถ ${page.index+1}/${groupedVehicles.length}${page.totalParts > 1 ? ` (${page.part}/${page.totalParts})` : ''}`}
+          {page.kind==='dashboard' ? 'ภาพรวม' : page.kind==='summary' ? `ตาราง ${page.part}/${summaryChunks.length}` : page.kind==='timeline' ? `Timeline ${page.part}/${timelineChunks.length}` : `รถ ${page.index+1}/${groupedVehicles.length}${page.totalParts > 1 ? ` (${page.part}/${page.totalParts})` : ''}`}
         </button>)}
       </div>
       <div className="s10-stage" style={{width:PAPER_W*scale,height:PAPER_H*scale}}>
